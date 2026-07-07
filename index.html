@@ -218,6 +218,11 @@
             <option value="7">7일</option><option value="14" selected>14일</option><option value="21">21일</option>
             <option value="30">30일</option><option value="custom">기타(직접 입력)</option></select></div>
           <div id="f-custom-wrap" class="hide"><label>직접 입력 (일수)</label><input id="f-custom" type="number" min="1" placeholder="예: 10"></div>
+          <div><label>제출 상태</label><select id="f-submit" onchange="onSubmitChange()">
+            <option value="미제출">미제출</option><option value="일부제출">일부제출(추후제출 예정)</option><option value="제출완료">제출완료</option></select></div>
+          <div id="f-followup-wrap" class="hide"><label>추후제출 예정일 ⏰</label><input id="f-followup" type="date"></div>
+          <div id="f-followupnote-wrap" class="hide"><label>추후제출 항목</label><input id="f-followupnote" placeholder="예: 소득증빙 추가분"></div>
+          <div class="full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ink)"><input type="checkbox" id="f-delay" style="width:18px;height:18px;accent-color:var(--brand)"> ⏳ 시간끌기(기한 최대 활용) — 전략적으로 기한을 꽉 채워 제출할 사건</label></div>
           <div class="full"><label>메모</label><textarea id="f-memo" placeholder="보정 내용, 필요 서류 등 자유 메모"></textarea></div>
         </div>
         <div style="margin-top:16px;display:flex;gap:8px;">
@@ -268,7 +273,7 @@
       </div>
     </div>
 
-    <div class="foot">전자소송 개인회생 송달 관리 · v2.1 · 공용 데이터베이스(케이스허브 연동) 저장</div>
+    <div class="foot">전자소송 개인회생 송달 관리 · v2.2 · 공용 데이터베이스(케이스허브 연동) 저장</div>
   </main>
 </div>
 
@@ -310,6 +315,13 @@ function procDueRaw(c){const sdt=serviceDate(c);if(!sdt)return null;return addDa
 function procDueDate(c){const raw=procDueRaw(c);if(!raw)return null;return rollFwd(raw);}
 function procRolled(c){const raw=procDueRaw(c);if(!raw)return false;return fmt(raw)!==fmt(procDueDate(c));}
 function procLeft(c){const due=procDueDate(c);if(!due)return null;const d=new Date(due);d.setHours(0,0,0,0);return Math.round((d-today0())/86400000);}
+function followupLeft(c){if(c.submitStatus!=="일부제출"||!c.followupDate)return null;const d=new Date(c.followupDate);d.setHours(0,0,0,0);return Math.round((d-today0())/86400000);}
+function todoKey(c){const vals=[];if(!c.confirmed)vals.push(confLeft(c));const pd=procLeft(c);if(pd!==null)vals.push(pd);const fl=followupLeft(c);if(fl!==null)vals.push(fl);return vals.length?Math.min(...vals):9999;}
+function submitChip(c){
+  if(c.submitStatus==="제출완료")return '<span class="chip ok">제출완료</span>';
+  if(c.submitStatus==="일부제출"){const fl=followupLeft(c);const t=c.followupDate?("추후제출 "+esc(c.followupDate)+(fl!==null?(fl<0?" (D+"+(-fl)+")":fl===0?" (오늘)":" (D-"+fl+")"):"")):"추후제출 예정";return '<span class="chip '+(fl!==null&&fl<=0?'bad':'wait')+'">⏰ 일부제출 · '+t+'</span>';}
+  return '';
+}
 function timeProg(c){const sdt=serviceDate(c);if(!sdt)return 0;const el=(today0()-sdt)/86400000;return Math.max(0,Math.min(100,Math.round(el/c.termDays*100)));}
 function docProg(c){if(!c.checklist||!c.checklist.length)return 0;return Math.round(c.checklist.filter(x=>x.done).length/c.checklist.length*100);}
 function badgeClass(days,done){if(done)return"done";if(days<=0)return"r";if(days<=2)return"a";return"g";}
@@ -337,13 +349,15 @@ function rowToCase(r){
     court:r.court||"", doctype:r.doctype||"", date:r.arrived_at||"", confirmed:!!r.confirmed,
     confirmedDate:r.confirmed_at||"", termDays:r.term_days||7, termType:termTypeOf(r.term_days||7),
     status:r.status||"진행중", checklist:Array.isArray(r.checklist)&&r.checklist.length?r.checklist:defaultDocs(),
-    memo:r.memo||"", log:Array.isArray(r.log)?r.log:[]};
+    memo:r.memo||"", log:Array.isArray(r.log)?r.log:[],
+    submitStatus:r.submit_status||"미제출", followupDate:r.followup_date||"", followupNote:r.followup_note||"", delayStrategy:!!r.delay_strategy};
 }
 function caseToRow(c){
   return {client_id:c.client_id||null, case_no:c.caseno, party_name:c.name, owner_id:c.owner_id||null,
     court:c.court||null, doctype:c.doctype||null, arrived_at:c.date||null, confirmed:!!c.confirmed,
     confirmed_at:c.confirmedDate||null, term_days:c.termDays, status:c.status||"진행중",
-    checklist:c.checklist||defaultDocs(), memo:c.memo||null, log:c.log||[]};
+    checklist:c.checklist||defaultDocs(), memo:c.memo||null, log:c.log||[],
+    submit_status:c.submitStatus||"미제출", followup_date:c.followupDate||null, followup_note:c.followupNote||null, delay_strategy:!!c.delayStrategy};
 }
 
 /* ---------- 인증 ---------- */
@@ -421,6 +435,7 @@ function cancelForm(){resetForm();hideForm();}
 function goRegister(){showView("list");resetForm();showForm();document.getElementById("f-clientq").focus();window.scrollTo({top:0,behavior:"smooth"});}
 function goDetail(id){showView("list");detailId=id;render();window.scrollTo({top:0,behavior:"smooth"});}
 function onTermChange(){document.getElementById("f-custom-wrap").classList.toggle("hide",v("f-term")!=="custom");}
+function onSubmitChange(){const part=v("f-submit")==="일부제출";document.getElementById("f-followup-wrap").classList.toggle("hide",!part);document.getElementById("f-followupnote-wrap").classList.toggle("hide",!part);}
 function getTermDays(){const t=v("f-term");if(t==="custom")return Math.max(1,parseInt(v("f-custom"))||7);return parseInt(t);}
 function fillOwnerSelect(){
   const sel=document.getElementById("f-owner");
@@ -460,17 +475,22 @@ async function saveCase(){
   const ownerSel=document.getElementById("f-owner").value;
   const owner_id=me.isMaster?(ownerSel||null):me.id;
   const td=getTermDays();
+  const submitStatus=v("f-submit")||"미제출";
+  const isPart=submitStatus==="일부제출";
+  const followup=isPart?(v("f-followup")||null):null;
+  const followupNote=isPart?(v("f-followupnote")||null):null;
+  const delay=document.getElementById("f-delay").checked;
   busy(true);
   try{
     if(editId){
       const c=cases.find(x=>x.id===editId);
-      const patch={case_no:caseno,party_name:name,owner_id,court:v("f-court")||null,doctype:v("f-doctype"),arrived_at:date,term_days:td,memo:v("f-memo")||null};
+      const patch={case_no:caseno,party_name:name,owner_id,court:v("f-court")||null,doctype:v("f-doctype"),arrived_at:date,term_days:td,memo:v("f-memo")||null,submit_status:submitStatus,followup_date:followup,followup_note:followupNote,delay_strategy:delay};
       if(pickedClientId)patch.client_id=pickedClientId;
       const {error}=await sd().from("deliveries").update(patch).eq("id",editId);
       if(error)throw error;
     }else{
       const nlog=[{t:fmt(new Date()),m:"사건 등록 ("+me.name+")"}];
-      const row={client_id:pickedClientId||null,case_no:caseno,party_name:name,owner_id,court:v("f-court")||null,doctype:v("f-doctype"),arrived_at:date,term_days:td,status:"진행중",confirmed:false,confirmed_at:null,checklist:defaultDocs(),log:nlog,memo:v("f-memo")||null};
+      const row={client_id:pickedClientId||null,case_no:caseno,party_name:name,owner_id,court:v("f-court")||null,doctype:v("f-doctype"),arrived_at:date,term_days:td,status:"진행중",confirmed:false,confirmed_at:null,checklist:defaultDocs(),log:nlog,memo:v("f-memo")||null,submit_status:submitStatus,followup_date:followup,followup_note:followupNote,delay_strategy:delay};
       const {error}=await sd().from("deliveries").insert(row);
       if(error)throw error;
     }
@@ -487,14 +507,18 @@ function editCase(id){
   if(me.isMaster)document.getElementById("f-owner").value=c.owner_id||"";
   const preset=["7","14","21","30"].includes(String(c.termDays))?String(c.termDays):"custom";
   set("f-term",preset);onTermChange();if(preset==="custom")set("f-custom",c.termDays);
+  set("f-submit",c.submitStatus||"미제출");onSubmitChange();
+  set("f-followup",c.followupDate||"");set("f-followupnote",c.followupNote||"");
+  document.getElementById("f-delay").checked=!!c.delayStrategy;
   document.getElementById("form-title").textContent="사건 수정";
   document.getElementById("save-btn").textContent="수정 저장";
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function resetForm(){
   editId=null;pickedClientId=null;fillOwnerSelect();
-  ["f-caseno","f-name","f-court","f-date","f-memo","f-custom","f-clientq"].forEach(i=>set(i,""));
+  ["f-caseno","f-name","f-court","f-date","f-memo","f-custom","f-clientq","f-followup","f-followupnote"].forEach(i=>set(i,""));
   set("f-doctype","보정명령");set("f-term","14");onTermChange();
+  set("f-submit","미제출");onSubmitChange();document.getElementById("f-delay").checked=false;
   document.getElementById("clientpick").classList.add("hide");
   document.getElementById("form-title").textContent="새 송달 등록";
   document.getElementById("save-btn").textContent="등록";
@@ -544,23 +568,23 @@ function render(){
   /* 오늘 할 일 */
   const todos=L.filter(c=>{
     if(c.status==="처리완료")return false;
-    const cd=confLeft(c),pd=procLeft(c);
-    return (!c.confirmed&&cd<=1)||(pd!==null&&pd<=2);
+    const cd=confLeft(c),pd=procLeft(c),fl=followupLeft(c);
+    return (!c.confirmed&&cd<=1)||(pd!==null&&pd<=2)||(fl!==null&&fl<=2);
   }).sort((a,b)=>{
-    const pa=procLeft(a),pb=procLeft(b);
-    const ka=pa===null?confLeft(a):pa, kb=pb===null?confLeft(b):pb;
+    const ka=todoKey(a), kb=todoKey(b);
     return ka-kb;
   });
   document.getElementById("todo-list").innerHTML=todos.map(c=>{
-    const pd=procLeft(c),cd=confLeft(c);
+    const pd=procLeft(c),cd=confLeft(c),fl=followupLeft(c);
     let act,red=false;
     if(!c.confirmed&&cd<=1){act=cd<0?("⚠ 미확인 "+(-cd)+"일 경과 — 간주송달 진행 중"):(cd===0?"오늘까지 송달 확인 필요":"내일까지 송달 확인 필요");red=cd<=0;}
+    else if(fl!==null&&fl<=2){act=fl<0?("⚠ 추후제출 예정일 "+(-fl)+"일 지남"):(fl===0?"⏰ 오늘이 추후제출 예정일":"⏰ 추후제출 D-"+fl+" ("+esc(c.followupDate)+")");red=fl<=0;}
     else{act=pd<0?("⚠ 처리기한 "+(-pd)+"일 지남"):(pd===0?"오늘이 처리기한 마감":"처리기한 D-"+pd+" ("+fmt(procDueDate(c))+")");red=pd<=0;}
     const on=ownerName(c.owner_id);
     return `<div class="todo ${red?'red':''}" onclick="goDetail('${c.id}')">
       ${procBadge(c)}
       <span class="t1">${esc(c.name)}</span>
-      <span class="t2">${esc(c.doctype||"")} · ${esc(c.caseno)}${on?" · "+esc(on):""}</span>
+      <span class="t2">${esc(c.doctype||"")} · ${esc(c.caseno)}${on?" · "+esc(on):""}${c.delayStrategy?' <span class="chip" style="background:#FCEFD3;color:#8a5a00">⏳ 시간끌기</span>':''}</span>
       <span class="spacer"></span>
       <span class="t2" style="font-weight:600;color:${red?'var(--red)':'var(--amber)'}">${act}</span>
     </div>`;
@@ -579,10 +603,10 @@ function render(){
     const dueTxt=due?fmt(due)+" ("+esc(c.termType)+")"+(procRolled(c)?" · 주말·공휴일 연장":""):"송달 확인 후 확정 (확인일 +"+c.termDays+"일)";
     const svc=isDeemed(c)?" · 간주송달 "+fmt(serviceDate(c)):(c.confirmed?" · 확인 "+esc(c.confirmedDate):"");
     const on=ownerName(c.owner_id);
-    return `<div class="pc ${isUnconfDanger(c)?'warn':''}">
+    return `<div class="pc ${isUnconfDanger(c)?'warn':''}" style="cursor:pointer" onclick="goDetail('${c.id}')">
     <div class="r1"><span class="nm">${esc(c.name)}</span>${procBadge(c)}</div>
     <div class="meta">${esc(c.doctype||"")} · ${esc(c.caseno)}${c.client_id?' <span class="pill" style="font-size:10px">허브연동</span>':''}<br>송달도착 ${esc(c.date)}${svc}<br>처리기한 ${dueTxt}</div>
-    <div class="chips">${confChip(c)}${on?'<span class="chip" style="background:var(--gray-bg);color:var(--muted)">'+esc(on)+'</span>':''}</div>
+    <div class="chips">${confChip(c)}${submitChip(c)}${c.delayStrategy?'<span class="chip" style="background:#FCEFD3;color:#8a5a00">⏳ 시간끌기</span>':''}${on?'<span class="chip" style="background:var(--gray-bg);color:var(--muted)">'+esc(on)+'</span>':''}</div>
     <div class="lab"><span>처리기한 진행</span><span>${timeProg(c)}%</span></div>
     <div class="bar"><i style="width:${timeProg(c)}%;background:${barc}"></i></div>
     <div class="lab"><span>서류 준비</span><span>${docProg(c)}%</span></div>
@@ -608,7 +632,7 @@ function render(){
     const due=procDueDate(c);
     return `<tr>
     <td>${procBadge(c)}<div style="font-size:11px;color:var(--muted);margin-top:3px">${due?fmt(due):"확인 후 확정"}${procRolled(c)?" ↗":""}</div></td>
-    <td><b>${esc(c.caseno)}</b>${c.client_id?' <span class="pill" style="font-size:10px">허브</span>':''}</td><td>${esc(c.name)}</td><td>${esc(c.doctype||"")}</td>
+    <td><b>${esc(c.caseno)}</b>${c.client_id?' <span class="pill" style="font-size:10px">허브</span>':''}</td><td>${esc(c.name)}${c.delayStrategy?' <span title="시간끌기">⏳</span>':''}${c.submitStatus==="일부제출"?'<br><span style="font-size:10.5px;color:var(--amber)">⏰추후 '+esc(c.followupDate||'')+'</span>':''}</td><td>${esc(c.doctype||"")}</td>
     <td>${esc(c.termType)}</td>
     <td><label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)"><input type="checkbox" class="cbx" ${c.confirmed?"checked":""} onchange="confirmToggle('${c.id}')">${c.confirmed?'확인':confChip(c)}</label></td>
     <td><span class="pill">${docProg(c)}%</span></td>
@@ -640,6 +664,8 @@ function renderDetail(){
     <div class="kv"><span class="k">송달확인 기한</span><span>${fmt(addDays(c.date,7))} · ${confChip(c)}</span></div>
     <div class="kv"><span class="k">송달 확인일</span><span>${confCell}</span></div>
     <div class="kv"><span class="k">문서 처리기한</span><span>${procCell}</span></div>
+    <div class="kv"><span class="k">제출 상태</span><span>${esc(c.submitStatus||"미제출")}${c.submitStatus==="일부제출"&&c.followupDate?' · 추후제출 예정 <b style="color:'+(followupLeft(c)!==null&&followupLeft(c)<=0?'var(--red)':'var(--amber)')+'">'+esc(c.followupDate)+'</b>'+(c.followupNote?' ('+esc(c.followupNote)+')':''):''}</span></div>
+    ${c.delayStrategy?'<div class="kv"><span class="k">대응 전략</span><span><span class="chip" style="background:#FCEFD3;color:#8a5a00">⏳ 시간끌기(기한 최대 활용)</span> 기한을 꽉 채워 제출 예정</span></div>':''}
     <div style="font-weight:600;font-size:13.5px;margin:14px 0 6px">준비 서류 체크리스트</div>
     ${c.checklist.map((d,i)=>`<label class="chk"><input type="checkbox" ${d.done?"checked":""} onchange="toggleDoc('${c.id}',${i})"><span class="${d.done?'done':''}">${esc(d.label)}</span></label>`).join("")}
     <div style="font-weight:600;font-size:13.5px;margin:16px 0 6px">메모</div>

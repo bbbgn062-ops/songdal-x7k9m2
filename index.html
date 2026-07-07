@@ -103,10 +103,30 @@
   .clientpick .cp:last-child{border-bottom:0;}
   .banner{background:var(--brand-soft);color:var(--brand-d);border-radius:12px;padding:10px 14px;font-size:12.5px;margin-bottom:16px;line-height:1.6;}
   .loading{position:fixed;top:14px;right:16px;background:var(--navy);color:#fff;font-size:12px;padding:7px 14px;border-radius:999px;z-index:99;box-shadow:var(--shadow);}
+  .todo{display:flex;align-items:center;gap:12px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;cursor:pointer;font-size:14.5px;background:#fff;}
+  .todo:hover{background:var(--brand-soft);}
+  .todo.red{border-color:#f2c9c9;background:#fffaf9;}
+  .todo .t1{font-weight:700;}
+  .todo .t2{color:var(--muted);font-size:12.5px;}
+  .todo .spacer{flex:1;}
+  .applinks{margin-top:14px;}
+  .applinks .cap{padding:0 8px 6px;font-size:11px;color:#c99aa5;}
+  .staffrow .cnt{display:flex;gap:6px;flex-wrap:wrap;}
   @media(max-width:900px){
     .app{flex-direction:column;} .side{width:100%;height:auto;position:static;flex-direction:row;align-items:center;gap:8px;overflow-x:auto;padding:12px 16px;}
     .brand{padding:0 10px 0 4px;} .who,.side .btm{display:none;} .nav{display:flex;gap:4px;} .nav a{margin:0;white-space:nowrap;}
+    .applinks{margin-top:0;display:flex;gap:4px;} .applinks .cap{display:none;}
     .main{padding:20px 16px 50px;} .stats{grid-template-columns:repeat(2,1fr);} .grid{grid-template-columns:1fr 1fr;}
+  }
+  @media(max-width:600px){
+    .grid{grid-template-columns:1fr;}
+    .stats{gap:10px;} .stat{padding:14px 16px;} .stat .n{font-size:24px;}
+    .main{padding:16px 12px 40px;}
+    .top{gap:8px;} .top h1{font-size:19px;}
+    .toolbar input,.toolbar select{flex:1;min-width:130px !important;}
+    .btn{padding:12px 16px;} .btn.mini{padding:8px 12px;}
+    th,td{padding:9px 6px;font-size:12.5px;}
+    .todo{flex-wrap:wrap;gap:8px;}
   }
 </style>
 </head>
@@ -136,6 +156,13 @@
       <a id="nav-staff" onclick="showView('staff')">👤 직원 현황</a>
       <a id="nav-set" onclick="showView('set')">⚙ 설정</a>
     </nav>
+    <div class="applinks">
+      <div class="cap">다른 앱 바로가기</div>
+      <nav class="nav">
+        <a href="https://bbbgn062-ops.github.io/docs-checklist-app/casehub.html" target="_blank" rel="noopener">🗂 케이스허브</a>
+        <a href="https://bbbgn062-ops.github.io/docs-checklist-app/" target="_blank" rel="noopener">📄 서류취합</a>
+      </nav>
+    </div>
     <div class="btm"><div class="logout" onclick="logout()">🚪 로그아웃</div></div>
   </aside>
 
@@ -149,6 +176,12 @@
     </div>
 
     <div id="view-dash">
+      <div class="sec">
+        <div class="h2row"><h2>🔔 오늘 할 일</h2>
+          <span class="sub" style="font-size:12.5px;color:var(--muted)">확인 기한이 오늘·지남 또는 처리기한이 이틀 내인 사건 · 누르면 상세로 이동</span></div>
+        <div id="todo-list"></div>
+        <div class="empty" id="todo-empty" style="display:none;padding:20px 0;">오늘 처리할 급한 일이 없습니다 🎉</div>
+      </div>
       <div class="stats">
         <div class="stat b"><div class="n" id="s-total">0</div><div class="l" id="s-total-l">전체 사건</div></div>
         <div class="stat a"><div class="n" id="s-unconf">0</div><div class="l">송달확인 필요</div></div>
@@ -164,7 +197,7 @@
     </div>
 
     <div id="view-list" class="hide">
-      <div class="sec">
+      <div class="sec hide" id="form-sec">
         <h2 id="form-title">새 송달 등록</h2>
         <div class="banner">💡 <b>케이스허브 사건 자동 연동:</b> 아래 검색창에 이름이나 사건번호를 입력하면 케이스허브에 등록된 사건이 나타나고, 선택하면 사건번호·이름이 자동으로 채워집니다.</div>
         <div class="fld">
@@ -189,7 +222,7 @@
         </div>
         <div style="margin-top:16px;display:flex;gap:8px;">
           <button class="btn primary" id="save-btn" onclick="saveCase()">등록</button>
-          <button class="btn ghost" id="cancel-btn" onclick="resetForm()" style="display:none;">취소</button>
+          <button class="btn ghost" id="cancel-btn" onclick="cancelForm()">닫기</button>
         </div>
       </div>
 
@@ -235,7 +268,7 @@
       </div>
     </div>
 
-    <div class="foot">전자소송 개인회생 송달 관리 · v2.0 · 공용 데이터베이스(케이스허브 연동) 저장</div>
+    <div class="foot">전자소송 개인회생 송달 관리 · v2.1 · 공용 데이터베이스(케이스허브 연동) 저장</div>
   </main>
 </div>
 
@@ -379,10 +412,14 @@ function showView(vw){
   document.getElementById("view-sub").textContent=subs[vw];
   if(vw==="staff")renderStaff();
   if(vw==="set")document.getElementById("holi-input").value=holidays.join("\n");
-  if(vw==="list")resetForm();
+  if(vw==="list"){resetForm();hideForm();}
   render();
 }
-function goRegister(){showView("list");resetForm();document.getElementById("f-clientq").focus();window.scrollTo({top:0,behavior:"smooth"});}
+function showForm(){document.getElementById("form-sec").classList.remove("hide");}
+function hideForm(){document.getElementById("form-sec").classList.add("hide");}
+function cancelForm(){resetForm();hideForm();}
+function goRegister(){showView("list");resetForm();showForm();document.getElementById("f-clientq").focus();window.scrollTo({top:0,behavior:"smooth"});}
+function goDetail(id){showView("list");detailId=id;render();window.scrollTo({top:0,behavior:"smooth"});}
 function onTermChange(){document.getElementById("f-custom-wrap").classList.toggle("hide",v("f-term")!=="custom");}
 function getTermDays(){const t=v("f-term");if(t==="custom")return Math.max(1,parseInt(v("f-custom"))||7);return parseInt(t);}
 function fillOwnerSelect(){
@@ -437,14 +474,14 @@ async function saveCase(){
       const {error}=await sd().from("deliveries").insert(row);
       if(error)throw error;
     }
-    resetForm();
+    resetForm();hideForm();
     await refreshAll();
   }catch(e){alert("저장 실패: "+(e.message||e));}
   finally{busy(false);}
 }
 function editCase(id){
   const c=cases.find(x=>x.id===id);if(!c)return;
-  showView("list");editId=id;pickedClientId=c.client_id||null;fillOwnerSelect();
+  showView("list");showForm();editId=id;pickedClientId=c.client_id||null;fillOwnerSelect();
   set("f-caseno",c.caseno);set("f-name",c.name);set("f-court",c.court||"");set("f-doctype",c.doctype||"보정명령");set("f-date",c.date);set("f-memo",c.memo||"");
   set("f-clientq",c.client_id?(c.name+" (연동됨)"):"");
   if(me.isMaster)document.getElementById("f-owner").value=c.owner_id||"";
@@ -452,7 +489,6 @@ function editCase(id){
   set("f-term",preset);onTermChange();if(preset==="custom")set("f-custom",c.termDays);
   document.getElementById("form-title").textContent="사건 수정";
   document.getElementById("save-btn").textContent="수정 저장";
-  document.getElementById("cancel-btn").style.display="inline-block";
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function resetForm(){
@@ -462,7 +498,6 @@ function resetForm(){
   document.getElementById("clientpick").classList.add("hide");
   document.getElementById("form-title").textContent="새 송달 등록";
   document.getElementById("save-btn").textContent="등록";
-  document.getElementById("cancel-btn").style.display="none";
 }
 async function delCase(id){
   if(!confirm("이 사건을 삭제할까요?"))return;
@@ -505,6 +540,32 @@ function render(){
   document.getElementById("s-unconf").textContent=L.filter(c=>!c.confirmed&&c.status!=="처리완료").length;
   document.getElementById("s-soon").textContent=L.filter(c=>{const pd=procLeft(c);return c.status!=="처리완료"&&pd!==null&&pd<=2;}).length;
   document.getElementById("s-done").textContent=L.filter(c=>c.status==="처리완료").length;
+
+  /* 오늘 할 일 */
+  const todos=L.filter(c=>{
+    if(c.status==="처리완료")return false;
+    const cd=confLeft(c),pd=procLeft(c);
+    return (!c.confirmed&&cd<=1)||(pd!==null&&pd<=2);
+  }).sort((a,b)=>{
+    const pa=procLeft(a),pb=procLeft(b);
+    const ka=pa===null?confLeft(a):pa, kb=pb===null?confLeft(b):pb;
+    return ka-kb;
+  });
+  document.getElementById("todo-list").innerHTML=todos.map(c=>{
+    const pd=procLeft(c),cd=confLeft(c);
+    let act,red=false;
+    if(!c.confirmed&&cd<=1){act=cd<0?("⚠ 미확인 "+(-cd)+"일 경과 — 간주송달 진행 중"):(cd===0?"오늘까지 송달 확인 필요":"내일까지 송달 확인 필요");red=cd<=0;}
+    else{act=pd<0?("⚠ 처리기한 "+(-pd)+"일 지남"):(pd===0?"오늘이 처리기한 마감":"처리기한 D-"+pd+" ("+fmt(procDueDate(c))+")");red=pd<=0;}
+    const on=ownerName(c.owner_id);
+    return `<div class="todo ${red?'red':''}" onclick="goDetail('${c.id}')">
+      ${procBadge(c)}
+      <span class="t1">${esc(c.name)}</span>
+      <span class="t2">${esc(c.doctype||"")} · ${esc(c.caseno)}${on?" · "+esc(on):""}</span>
+      <span class="spacer"></span>
+      <span class="t2" style="font-weight:600;color:${red?'var(--red)':'var(--amber)'}">${act}</span>
+    </div>`;
+  }).join("");
+  document.getElementById("todo-empty").style.display=todos.length?"none":"block";
 
   const active=L.filter(c=>c.status!=="처리완료").sort((a,b)=>{
     const au=isUnconfDanger(a),bu=isUnconfDanger(b);if(au!==bu)return au?-1:1;
@@ -591,9 +652,29 @@ function renderDetail(){
 
 function renderStaff(){
   const el=document.getElementById("stafflist");
-  el.innerHTML=staff.map(s=>`<div class="staffrow"><span class="n">${esc(s.name||"이름 미설정")}</span>
-    <span style="font-size:12.5px;color:var(--muted)">${s.role==="master"?"관리자(master)":esc(s.role||"담당자")}</span></div>`).join("");
-  document.getElementById("staffempty").style.display=staff.length?"none":"block";
+  const rows=staff.map(s=>{
+    const mine=cases.filter(c=>c.owner_id===s.id);
+    const act=mine.filter(c=>c.status!=="처리완료").length;
+    const unc=mine.filter(c=>!c.confirmed&&c.status!=="처리완료").length;
+    const urg=mine.filter(c=>{if(c.status==="처리완료")return false;const pd=procLeft(c);return isUnconfDanger(c)||(pd!==null&&pd<=2);}).length;
+    const done=mine.filter(c=>c.status==="처리완료").length;
+    return `<div class="staffrow"><span class="n">${esc(s.name||"이름 미설정")}</span>
+      <span style="font-size:12px;color:var(--muted)">${s.role==="master"?"관리자":esc(s.role||"담당자")}</span>
+      <span class="cnt">
+        <span class="chip" style="background:var(--gray-bg);color:var(--muted)">진행 ${act}</span>
+        <span class="chip wait">미확인 ${unc}</span>
+        <span class="chip ${urg?'bad':'ok'}">임박·경과 ${urg}</span>
+        <span class="chip ok">완료 ${done}</span>
+      </span></div>`;
+  });
+  const noOwner=cases.filter(c=>!c.owner_id);
+  if(noOwner.length){
+    const act=noOwner.filter(c=>c.status!=="처리완료").length;
+    rows.push(`<div class="staffrow"><span class="n" style="color:var(--muted)">담당 미지정</span>
+      <span class="cnt"><span class="chip bad">진행 ${act} — 담당자를 지정하세요</span></span></div>`);
+  }
+  el.innerHTML=rows.join("");
+  document.getElementById("staffempty").style.display=(staff.length||noOwner.length)?"none":"block";
 }
 
 /* ---------- 공휴일 (공용 저장) ---------- */

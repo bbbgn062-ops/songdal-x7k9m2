@@ -452,10 +452,10 @@ async function clientSearch(){
   const box=document.getElementById("clientpick");
   if(!q||q.length<1){box.classList.add("hide");box.innerHTML="";return;}
   try{
-    const {data,error}=await sbc.from("clients").select("id,name,case_no,case_type,stage").or(`name.ilike.%${q}%,case_no.ilike.%${q}%`).limit(20);
+    const {data,error}=await sbc.from("clients").select("id,name,case_no,court,case_type,stage").or(`name.ilike.%${q}%,case_no.ilike.%${q}%`).limit(20);
     if(error)throw error;
     if(!data||!data.length){box.innerHTML='<div class="cp" style="cursor:default;color:var(--muted)">검색 결과 없음 — 아래에 직접 입력하세요.</div>';box.classList.remove("hide");return;}
-    box.innerHTML=data.map(c=>`<div class="cp" onclick="pickClient('${esc(c.id)}','${esc((c.case_no||"").replace(/'/g,""))}','${esc((c.name||"").replace(/'/g,""))}')"><b>${esc(c.name||"이름없음")}</b> · ${esc(c.case_no||"사건번호 미입력")} <span style="color:var(--muted);font-size:12px">${esc(c.case_type||"")} ${esc(c.stage||"")}</span></div>`).join("");
+    box.innerHTML=data.map(c=>`<div class="cp" onclick="pickClient('${esc(c.id)}','${esc((c.case_no||"").replace(/'/g,""))}','${esc((c.court||"").replace(/'/g,""))}','${esc((c.name||"").replace(/'/g,""))}')"><b>${esc(c.name||"이름없음")}</b> · ${esc(c.case_no||"사건번호 미입력")} <span style="color:var(--muted);font-size:12px">${esc(c.case_type||"")} ${esc(c.stage||"")}</span></div>`).join("");
     box.classList.remove("hide");
   }catch(e){
     box.innerHTML='<div class="cp" style="cursor:default;color:var(--muted)">검색 오류: '+esc(e.message||e)+'</div>';box.classList.remove("hide");
@@ -467,11 +467,11 @@ function splitCourtCase(s){
   if(m){return {court:s.slice(0,m.index).trim(), caseNo:m[1]+m[2]+m[3]};}
   return {court:"", caseNo:s};
 }
-function pickClient(id,caseno,name){
+function pickClient(id,caseno,court,name){
   pickedClientId=id;
   const p=splitCourtCase(caseno);
   if(p.caseNo)set("f-caseno",p.caseNo);
-  if(p.court)set("f-court",p.court);
+  set("f-court",(court&&court.trim())||p.court||"");
   set("f-name",name);
   document.getElementById("clientpick").classList.add("hide");
   set("f-clientq",name+(caseno?" ("+caseno+")":""));

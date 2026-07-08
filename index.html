@@ -546,6 +546,10 @@ function confirmToggle(id){
   else{patchCase(id,{confirmed:false,confirmed_at:null},"송달확인 취소");}
 }
 function setConfirmDate(id,val){if(val)patchCase(id,{confirmed:true,confirmed_at:val},"송달확인일 수정 → "+val);}
+function setTermInline(id,val){
+  if(val==="custom"){const n=prompt("처리기한 일수를 직접 입력하세요 (예: 10)","10");const d=parseInt(n);if(!d||d<1)return;patchCase(id,{term_days:d},"처리기한 → "+d+"일");}
+  else patchCase(id,{term_days:parseInt(val)},"처리기한 → "+val+"일");
+}
 function toggleDoc(id,idx){
   const c=cases.find(x=>x.id===id);if(!c)return;
   const cl=c.checklist.map((d,i)=>i===idx?{...d,done:!d.done}:d);
@@ -664,7 +668,7 @@ function renderDetail(){
     <div class="kv"><span class="k">송달 도착일</span><span>${esc(c.date)}</span></div>
     <div class="kv"><span class="k">송달확인 기한</span><span>${fmt(addDays(c.date,7))} · ${confChip(c)}</span></div>
     <div class="kv"><span class="k">송달 확인일</span><span>${confCell}</span></div>
-    <div class="kv"><span class="k">문서 처리기한</span><span>${procCell}</span></div>
+    <div class="kv"><span class="k">문서 처리기한</span><span><select onchange="setTermInline('${c.id}',this.value)" style="width:auto;padding:5px 8px;font-size:12px;margin-right:8px">${[7,14,21,30].map(d=>`<option value="${d}" ${c.termDays===d?'selected':''}>${d}일</option>`).join("")}${![7,14,21,30].includes(c.termDays)?`<option value="${c.termDays}" selected>${c.termDays}일(기타)</option>`:''}<option value="custom">기타 직접입력…</option></select>${procCell}</span></div>
     <div class="kv"><span class="k">제출 상태</span><span>${esc(c.submitStatus||"미제출")}${c.submitStatus==="일부제출"&&c.followupDate?' · 추후제출 예정 <b style="color:'+(followupLeft(c)!==null&&followupLeft(c)<=0?'var(--red)':'var(--amber)')+'">'+esc(c.followupDate)+'</b>'+(c.followupNote?' ('+esc(c.followupNote)+')':''):''}</span></div>
     ${c.delayStrategy?'<div class="kv"><span class="k">대응 전략</span><span><span class="chip" style="background:#FCEFD3;color:#8a5a00">⏳ 시간끌기(기한 최대 활용)</span> 기한을 꽉 채워 제출 예정</span></div>':''}
     <div style="font-weight:600;font-size:13.5px;margin:14px 0 6px">준비 서류 체크리스트</div>

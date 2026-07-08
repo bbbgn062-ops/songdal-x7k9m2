@@ -259,6 +259,16 @@
       </div>
     </div>
 
+    <div id="view-pending" class="hide">
+      <div class="sec">
+        <div class="h2row"><h2>🔔 감지 대기함 — 전자소송 자동 감지 결과</h2>
+          <button class="btn ghost mini" onclick="loadPending()">↺ 새로고침</button></div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 14px">자동 감지 프로그램이 전자소송 미확인송달문서에서 읽어온 목록이에요. <b>케이스허브에 등록된 우리 사건과 일치하는 것만 "우리 사건"으로 표시</b>돼요. 확인 후 <b>[승인]</b>하면 사건 목록에 정식 등록되고(담당자 지정 후), 우리 사건이 아니면 <b>[무시]</b>하세요. 승인 전까지는 아무 것도 자동 등록되지 않아요(3단계 안전장치).</p>
+        <div id="pending-list"></div>
+        <div class="empty" id="pending-empty" style="display:none;">감지된 새 송달이 없습니다.</div>
+      </div>
+    </div>
+
     <div id="view-set" class="hide">
       <div class="sec">
         <h2>공휴일 관리 (마감 자동 연장에 사용 · 전 직원 공유)</h2>
@@ -273,7 +283,7 @@
       </div>
     </div>
 
-    <div class="foot">전자소송 개인회생 송달 관리 · v2.2 · 공용 데이터베이스(케이스허브 연동) 저장</div>
+    <div class="foot">전자소송 개인회생 송달 관리 · v2.5 · 공용 데이터베이스(케이스허브 연동) 저장</div>
   </main>
 </div>
 
@@ -617,7 +627,7 @@ function render(){
     const svc=isDeemed(c)?" · 간주송달 "+fmt(serviceDate(c)):(c.confirmed?" · 확인 "+esc(c.confirmedDate):"");
     const on=ownerName(c.owner_id);
     return `<div class="pc ${isUnconfDanger(c)?'warn':''}" style="cursor:pointer" onclick="goDetail('${c.id}')">
-    <div class="r1"><span class="nm">${esc(c.name)}</span>${procBadge(c)}</div>
+    <div class="r1"><span class="nm">${esc(c.name)}${(c.memo&&c.memo.indexOf("자동감지")>=0)?' <span title="전자소송 자동감지 등록" style="font-size:13px">🔔</span>':''}</span>${procBadge(c)}</div>
     <div class="meta">${esc(c.doctype||"")} · ${esc(c.caseno)}${c.client_id?' <span class="pill" style="font-size:10px">허브연동</span>':''}<br>송달도착 ${esc(c.date)}${svc}<br>처리기한 ${dueTxt}</div>
     <div class="chips">${confChip(c)}${submitChip(c)}${c.delayStrategy?'<span class="chip" style="background:#FCEFD3;color:#8a5a00">⏳ 시간끌기</span>':''}${on?'<span class="chip" style="background:var(--gray-bg);color:var(--muted)">'+esc(on)+'</span>':''}</div>
     <div class="lab"><span>처리기한 진행</span><span>${timeProg(c)}%</span></div>
@@ -689,6 +699,68 @@ function renderDetail(){
   </div>`;
 }
 
+/* ---------- 감지 대기함 (자동감지 승인) ---------- */
+let pendingRows=[];
+async function loadPending(){
+  if(!me||!me.isMaster)return;
+  try{
+    const {data,error}=await sd().from("pending_detect").select("*").eq("status","대기").order("detected_at",{ascending:false});
+    if(error)throw error;
+    pendingRows=data||[];
+  }catch(e){pendingRows=[];}
+  renderPending();updatePendingBadge();
+}
+function updatePendingBadge(){
+  const b=document.getElementById("pending-badge");if(!b)return;
+  const n=pendingRows.length;b.textContent=n;b.style.display=n?"inline-block":"none";
+}
+function renderPending(){
+  const el=document.getElementById("pending-list");if(!el)return;
+  document.getElementById("pending-empty").style.display=pendingRows.length?"none":"block";
+  el.innerHTML=pendingRows.map(p=>`<div class="pc" style="margin-bottom:10px">
+    <div class="r1"><span class="nm">${esc(p.doctype||"송달문서")}</span><span class="dd a">감지 ${esc(p.sent_date||"")}</span></div>
+    <div class="meta">${esc(p.court||"")} · ${esc(p.case_no||"")}</div>
+    <div id="pmatch-${p.id}" class="meta" style="color:var(--muted)">케이스허브 매칭 확인 중…</div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn primary mini" id="papprove-${p.id}" onclick="approvePending('${p.id}')" disabled>승인(정식 등록)</button>
+      <button class="btn ghost mini" onclick="rejectPending('${p.id}')">무시</button>
+    </div></div>`).join("");
+  pendingRows.forEach(matchPending);
+}
+async function matchPending(p){
+  try{
+    const {data}=await sbc.from("clients").select("id,name,case_no,court,case_type").ilike("case_no","%"+p.case_no+"%").limit(1);
+    const cell=document.getElementById("pmatch-"+p.id),btn=document.getElementById("papprove-"+p.id);
+    if(data&&data.length){
+      const c=data[0];p._client=c;
+      if(cell)cell.innerHTML='<span class="chip ok">우리 사건: '+esc(c.name)+'</span> '+esc(c.case_type||"");
+      if(btn)btn.disabled=false;
+    }else{
+      if(cell)cell.innerHTML='<span class="chip" style="background:var(--gray-bg);color:var(--muted)">케이스허브에 없음 — 우리 사건이 아닐 수 있어요</span>';
+    }
+  }catch(e){}
+}
+async function approvePending(id){
+  const p=pendingRows.find(x=>x.id===id);if(!p||!p._client){alert("우리 사건으로 확인된 건만 승인할 수 있어요.");return;}
+  const c=p._client;busy(true);
+  try{
+    const nlog=[{t:fmt(new Date()),m:"전자소송 자동감지 → 승인 등록 ("+me.name+")"}];
+    const row={client_id:c.id,case_no:splitCourtCase(c.case_no).caseNo||p.case_no,party_name:c.name,owner_id:null,court:c.court||p.court||null,doctype:p.doctype||null,arrived_at:p.sent_date?p.sent_date.replace(/\./g,"-").replace(/-$/,""):null,term_days:7,status:"진행중",confirmed:false,confirmed_at:null,checklist:defaultDocs(),log:nlog,memo:"전자소송 자동감지 → 담당자 승인 등록"};
+    const ins=await sd().from("deliveries").upsert(row,{onConflict:"case_no,doctype,arrived_at"});
+    if(ins.error)throw ins.error;
+    await sd().from("pending_detect").update({status:"승인"}).eq("id",id);
+    await loadPending();await refreshAll();
+    alert(c.name+" 사건을 정식 등록했어요. 사건 목록에서 담당자를 지정하세요.");
+  }catch(e){alert("승인 실패: "+(e.message||e));}
+  finally{busy(false);}
+}
+async function rejectPending(id){
+  if(!confirm("이 감지 건을 무시할까요? (송달앱 목록엔 등록되지 않아요)"))return;
+  busy(true);
+  try{await sd().from("pending_detect").update({status:"무시"}).eq("id",id);await loadPending();}
+  catch(e){alert("실패: "+(e.message||e));}
+  finally{busy(false);}
+}
 function renderStaff(){
   const el=document.getElementById("stafflist");
   const rows=staff.map(s=>{

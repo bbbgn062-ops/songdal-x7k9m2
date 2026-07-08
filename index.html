@@ -297,13 +297,14 @@ function v(id){return document.getElementById(id).value.trim();}
 function set(id,val){document.getElementById(id).value=val;}
 function busy(on){document.getElementById("loading").classList.toggle("hide",!on);}
 function defaultDocs(){return ["주민등록등본","가족관계증명서","소득증빙(급여명세·원천징수)","채권자목록","재산목록","최근 통장거래내역","임대차계약서","부채증명서"].map(l=>({label:l,done:false}));}
-function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function parseD(s){if(!s)return null;if(s instanceof Date)return new Date(s.getFullYear(),s.getMonth(),s.getDate());const p=String(s).split("-");if(p.length<3)return null;return new Date(+p[0],(+p[1])-1,+p[2]);}
+function addDays(d,n){const x=parseD(d)||new Date(d);x.setDate(x.getDate()+n);return x;}
 function fmt(d){const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");}
 function today0(){const t=new Date();t.setHours(0,0,0,0);return t;}
 function leftFrom(date,days){const due=addDays(date,days);due.setHours(0,0,0,0);return Math.round((due-today0())/86400000);}
 function confLeft(c){return leftFrom(c.date,7);}
 function serviceDate(c){
-  if(c.confirmed&&c.confirmedDate){const d=new Date(c.confirmedDate);d.setHours(0,0,0,0);return d;}
+  if(c.confirmed&&c.confirmedDate){return parseD(c.confirmedDate);}
   const deemed=addDays(c.date,7);deemed.setHours(0,0,0,0);
   if(today0()>deemed)return deemed;
   return null;
@@ -315,7 +316,7 @@ function procDueRaw(c){const sdt=serviceDate(c);if(!sdt)return null;return addDa
 function procDueDate(c){const raw=procDueRaw(c);if(!raw)return null;return rollFwd(raw);}
 function procRolled(c){const raw=procDueRaw(c);if(!raw)return false;return fmt(raw)!==fmt(procDueDate(c));}
 function procLeft(c){const due=procDueDate(c);if(!due)return null;const d=new Date(due);d.setHours(0,0,0,0);return Math.round((d-today0())/86400000);}
-function followupLeft(c){if(c.submitStatus!=="일부제출"||!c.followupDate)return null;const d=new Date(c.followupDate);d.setHours(0,0,0,0);return Math.round((d-today0())/86400000);}
+function followupLeft(c){if(c.submitStatus!=="일부제출"||!c.followupDate)return null;const d=parseD(c.followupDate);return Math.round((d-today0())/86400000);}
 function todoKey(c){const vals=[];if(!c.confirmed)vals.push(confLeft(c));const pd=procLeft(c);if(pd!==null)vals.push(pd);const fl=followupLeft(c);if(fl!==null)vals.push(fl);return vals.length?Math.min(...vals):9999;}
 function submitChip(c){
   if(c.submitStatus==="제출완료")return '<span class="chip ok">제출완료</span>';

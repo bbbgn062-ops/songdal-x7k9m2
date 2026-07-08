@@ -283,7 +283,7 @@
       </div>
     </div>
 
-    <div class="foot">전자소송 개인회생 송달 관리 · v2.5 · 공용 데이터베이스(케이스허브 연동) 저장</div>
+    <div class="foot">전자소송 개인회생 송달 관리 · v2.6 · 공용 데이터베이스(케이스허브 연동) 저장</div>
   </main>
 </div>
 
@@ -683,6 +683,7 @@ function renderDetail(){
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">닫기</button></div>
     <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")}</span></div>
     <div class="kv"><span class="k">담당자</span><span>${esc(ownerName(c.owner_id)||"미지정")}</span></div>
+    ${c.client_id?'<div id="clientinfo-'+c.id+'" style="margin:8px 0;padding:10px 12px;background:#faf8f6;border-radius:10px;font-size:13px">의뢰인 정보 불러오는 중…</div>':''}
     <div class="kv"><span class="k">송달 도착일</span><span>${esc(c.date)}</span></div>
     <div class="kv"><span class="k">송달확인 기한</span><span>${fmt(addDays(c.date,7))} · ${confChip(c)}</span></div>
     <div class="kv"><span class="k">송달 확인일</span><span>${confCell}</span></div>
@@ -696,7 +697,82 @@ function renderDetail(){
     <div style="margin-top:10px"><button class="btn primary mini" onclick="saveDetailMemo('${c.id}')">메모 저장</button></div>
     <div style="font-weight:600;font-size:13.5px;margin:16px 0 6px">처리 이력</div>
     <div style="font-size:12.5px;color:var(--muted);line-height:1.7">${(c.log||[]).slice().reverse().map(l=>esc(l.t)+" · "+esc(l.m)).join("<br>")||"기록 없음"}</div>
+    ${c.client_id?'<div style="font-weight:600;font-size:13.5px;margin:16px 0 6px">📎 보정서 파일 (사무소별 보안 저장)</div><div id="bojeong-'+c.id+'" style="font-size:13px">불러오는 중…</div><div style="margin-top:8px"><label class="btn ghost mini" style="margin:0;cursor:pointer">＋ 보정서 올리기<input type="file" accept="application/pdf,image/*" onchange="uploadBojeong(\''+c.id+'\',event)" style="display:none"></label></div>':''}
   </div>`;
+  if(c.client_id){loadClientInfo(c);loadBojeong(c);}
+}
+
+/* ---------- 의뢰인 정보(전화·주민번호) + 보정서 파일 ---------- */
+let _clientCache={};
+function maskRrn(r){r=String(r||"").replace(/[^0-9]/g,"");if(r.length<7)return String(r||"");return r.slice(0,6)+"-"+r.slice(6,7)+"******";}
+async function loadClientInfo(c){
+  try{
+    const {data}=await sbc.from("clients").select("id,phone,rrn,office_id").eq("id",c.client_id).single();
+    if(!data)return; _clientCache[c.id]=data;
+    const el=document.getElementById("clientinfo-"+c.id); if(!el)return;
+    const canEdit=me.isMaster||me.role==="staff";
+    el.innerHTML=`<div style="font-weight:600;font-size:12.5px;margin-bottom:6px;color:var(--brand)">의뢰인 정보 (케이스허브 연동 · 수정하면 전 앱 동기화)</div>
+      <div class="kv"><span class="k">전화번호</span><span>${canEdit?'<input id="ph-'+c.id+'" value="'+esc(data.phone||"")+'" placeholder="010-0000-0000" style="width:auto;padding:5px 8px;font-size:12px">':esc(data.phone||"-")}</span></div>
+      <div class="kv"><span class="k">주민번호</span><span><span id="rrnview-${c.id}">${data.rrn?esc(maskRrn(data.rrn)):"-"}</span>${data.rrn?' <button class="btn ghost mini" id="rrnbtn-'+c.id+'" onclick="toggleRrn(\''+c.id+'\')">보기</button>':""}${canEdit?' <input id="rrn-'+c.id+'" value="" placeholder="변경 시에만 입력" style="width:auto;padding:5px 8px;font-size:12px">':""}</span></div>
+      ${canEdit?'<button class="btn primary mini" onclick="saveClientInfo(\''+c.id+'\')">의뢰인 정보 저장</button>':""}`;
+  }catch(e){}
+}
+function toggleRrn(id){
+  const data=_clientCache[id]; if(!data||!data.rrn)return;
+  const view=document.getElementById("rrnview-"+id),btn=document.getElementById("rrnbtn-"+id);
+  if(btn.textContent==="보기"){const r=String(data.rrn).replace(/[^0-9]/g,"");view.textContent=r.length>=7?r.slice(0,6)+"-"+r.slice(6):data.rrn;btn.textContent="가리기";}
+  else{view.textContent=maskRrn(data.rrn);btn.textContent="보기";}
+}
+async function saveClientInfo(id){
+  const c=cases.find(x=>x.id===id); if(!c||!c.client_id)return;
+  const phEl=document.getElementById("ph-"+id),rrnEl=document.getElementById("rrn-"+id);
+  const patch={}; if(phEl)patch.phone=phEl.value.trim()||null;
+  const newRrn=rrnEl?rrnEl.value.trim():""; if(newRrn)patch.rrn=newRrn;
+  if(!Object.keys(patch).length){alert("변경할 내용이 없어요.");return;}
+  busy(true);
+  try{
+    const {error}=await sbc.from("clients").update(patch).eq("id",c.client_id);
+    if(error)throw error;
+    if(_clientCache[id]){if("phone"in patch)_clientCache[id].phone=patch.phone;if("rrn"in patch)_clientCache[id].rrn=patch.rrn;}
+    alert("의뢰인 정보를 저장했어요 (케이스허브·서류취합에도 반영돼요).");
+    if(rrnEl)rrnEl.value="";
+    renderDetail();
+  }catch(e){alert("저장 실패: "+(e.message||e)+"\\n(원사무소 계정은 의뢰인 정보 수정 권한이 없을 수 있어요.)");}
+  finally{busy(false);}
+}
+async function loadBojeong(c){
+  const el=document.getElementById("bojeong-"+c.id); if(!el)return;
+  const data=_clientCache[c.id]; if(!data){setTimeout(()=>loadBojeong(c),600);return;}
+  const folder=(data.office_id||"none")+"/"+c.client_id;
+  try{
+    const {data:files,error}=await sbc.storage.from("bojeong").list(folder,{limit:100});
+    if(error)throw error;
+    const real=(files||[]).filter(f=>f.name&&f.id);
+    if(!real.length){el.innerHTML='<span style="color:var(--muted);font-size:12.5px">첨부된 보정서가 없어요.</span>';return;}
+    el.innerHTML=real.map(f=>'<div style="display:flex;align-items:center;gap:8px;padding:4px 0">📄 <span style="flex:1">'+esc(f.name.replace(/^\\d+_/,""))+'</span><button class="btn ghost mini" onclick="downloadBojeong(\''+folder+'/'+esc(f.name)+'\')">내려받기</button></div>').join("");
+  }catch(e){el.innerHTML='<span style="color:var(--muted);font-size:12.5px">목록을 불러오지 못했어요.</span>';}
+}
+async function uploadBojeong(id,ev){
+  const file=ev.target.files[0]; if(!file)return;
+  const c=cases.find(x=>x.id===id),data=_clientCache[id];
+  if(!data||!data.office_id){alert("의뢰인 정보를 먼저 불러온 뒤 다시 시도하세요.");ev.target.value="";return;}
+  const path=data.office_id+"/"+c.client_id+"/"+Date.now()+"_"+file.name;
+  busy(true);
+  try{
+    const {error}=await sbc.storage.from("bojeong").upload(path,file,{upsert:false});
+    if(error)throw error;
+    alert("보정서를 올렸어요.");await loadBojeong(c);
+  }catch(e){alert("업로드 실패: "+(e.message||e));}
+  finally{busy(false);ev.target.value="";}
+}
+async function downloadBojeong(path){
+  busy(true);
+  try{
+    const {data,error}=await sbc.storage.from("bojeong").createSignedUrl(path,120);
+    if(error)throw error;
+    window.open(data.signedUrl,"_blank");
+  }catch(e){alert("내려받기 실패: "+(e.message||e));}
+  finally{busy(false);}
 }
 
 /* ---------- 감지 대기함 (자동감지 승인) ---------- */

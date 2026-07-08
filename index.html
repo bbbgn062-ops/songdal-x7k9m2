@@ -461,9 +461,17 @@ async function clientSearch(){
     box.innerHTML='<div class="cp" style="cursor:default;color:var(--muted)">검색 오류: '+esc(e.message||e)+'</div>';box.classList.remove("hide");
   }
 }
+function splitCourtCase(s){
+  s=String(s||"").trim();
+  const m=s.match(/(\d{4})\s*([가-힣]+)\s*(\d+)/);
+  if(m){return {court:s.slice(0,m.index).trim(), caseNo:m[1]+m[2]+m[3]};}
+  return {court:"", caseNo:s};
+}
 function pickClient(id,caseno,name){
   pickedClientId=id;
-  if(caseno)set("f-caseno",caseno);
+  const p=splitCourtCase(caseno);
+  if(p.caseNo)set("f-caseno",p.caseNo);
+  if(p.court)set("f-court",p.court);
   set("f-name",name);
   document.getElementById("clientpick").classList.add("hide");
   set("f-clientq",name+(caseno?" ("+caseno+")":""));

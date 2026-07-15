@@ -128,6 +128,124 @@
     th,td{padding:9px 6px;font-size:12.5px;}
     .todo{flex-wrap:wrap;gap:8px;}
   }
+  /* ===== 보정 판독 (세션 L) ===== */
+  .bj-drop{border:2px dashed var(--brand);border-radius:12px;padding:22px;text-align:center;color:var(--brand-d);background:var(--brand-soft);cursor:pointer;font-size:13.5px;transition:background .15s}
+  .bj-drop.over{background:#F2D7DE}
+  .bj-drop b{font-size:15px}
+  .bj-bcard{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;background:#fff}
+  .bj-bcard .bhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .bj-kind{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:var(--brand-soft);color:var(--brand-d)}
+  .bj-kind.warn{background:#FDE8E8;color:#B42318}
+  .bj-kind.std{background:#E8F0FE;color:#1A4FA0}
+  .bj-kind.fast{background:#E6F4EA;color:#137333}
+  .bj-note{font-size:12px;color:var(--muted)}
+  .bj-ref{font-size:12px;color:var(--muted);background:#faf8f6;border-radius:8px;padding:6px 10px;display:inline-block}
+  .bj-alert{border-radius:10px;padding:10px 12px;font-size:13px;margin:8px 0;line-height:1.6}
+  .bj-alert.red{background:#FDE8E8;color:#B42318;border:1px solid #F5C2C0}
+  .bj-alert.green{background:#E6F4EA;color:#137333;border:1px solid #C6E5CE}
+  .bj-alert.amber{background:#FCEFD3;color:#8a5a00;border:1px solid #F2DFAE}
+  .bj-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:900px){.bj-cols{grid-template-columns:1fr}}
+  .bj-raw{background:#faf8f6;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:12.5px;line-height:1.7;white-space:pre-wrap;max-height:480px;overflow:auto}
+  .bj-item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff}
+  .bj-item .no{font-weight:700;color:var(--brand);margin-right:6px}
+  .bj-item .ops{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .bj-item textarea{min-height:80px;margin-top:8px}
+  .bj-step{display:flex;gap:6px;align-items:center;margin:6px 0 14px;flex-wrap:wrap}
+  .bj-step span{padding:4px 12px;border-radius:999px;font-size:12px;background:#eee;color:#888}
+  .bj-step span.on{background:var(--brand);color:#fff;font-weight:700}
+  .bj-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+  .bj-tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer}
+  .bj-tabs button.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700}
+  .bj-tcard{border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;background:#fff;cursor:pointer}
+  .bj-tcard:hover{border-color:var(--brand)}
+  .bj-tcard.sel{border-color:var(--brand);background:var(--brand-soft)}
+  .bj-tcard .tname{font-weight:700;font-size:13.5px}
+  .bj-tcard .tex{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.6}
+  .bj-sent{background:#fff;border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.7;margin-bottom:10px}
+  .bj-stditem{display:flex;align-items:flex-start;gap:8px;padding:7px 4px;border-bottom:1px dashed var(--line);font-size:13px;line-height:1.55}
+  .bj-stditem input{width:18px;height:18px;accent-color:var(--brand);margin-top:2px;flex:none}
+  .bj-raw{font-size:13.5px;line-height:1.9}
+  .bj-raw mark{background:#FFE58A;border-radius:3px;padding:0 2px}
+  .bj-item{cursor:pointer}
+  .bj-item.now{border-color:var(--brand);box-shadow:0 3px 12px rgba(155,27,51,.10)}
+  .bj-item .txt{font-size:13.5px;line-height:1.7;display:block}
+  .bj-item.clamp .txt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .bj-item .chead{display:flex;gap:8px;align-items:center;margin-bottom:5px}
+  .bj-item .cstat{font-size:11.5px;color:var(--muted)}
+  .bj-item .cstat.ok{color:#137333;font-weight:700}
+  .bj-vtabs{display:flex;gap:6px;margin-bottom:8px;align-items:center;flex-wrap:wrap}
+  .bj-vtabs button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer}
+  .bj-vtabs button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  .bj-frame{width:100%;height:620px;border:1px solid var(--line);border-radius:10px;background:#54504B}
+  .bj-one{position:fixed;inset:0;background:rgba(30,24,20,.45);z-index:60;display:flex;align-items:flex-start;justify-content:center;padding:56px 16px;overflow:auto}
+  .bj-ocard{background:#fff;border-radius:16px;max-width:680px;width:100%;padding:22px 26px;box-shadow:0 16px 44px rgba(0,0,0,.25)}
+  .oprog{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+  .obar{flex:1;height:8px;background:#EFEAE4;border-radius:99px;overflow:hidden}
+  .obar i{display:block;height:100%;background:var(--brand);border-radius:99px}
+  .osent{font-size:16px;line-height:1.8;font-weight:600;margin:8px 0 10px}
+  .octx{background:#FAF8F5;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:12.5px;line-height:1.8;color:#6D655D;max-height:170px;overflow:auto}
+  .octx b{background:#FFE58A;color:var(--ink);font-weight:600;border-radius:3px;padding:0 2px}
+  /* ===== 확정·전달 (세션 M) ===== */
+  .bj-doc{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff;display:flex;gap:10px;align-items:flex-start}
+  .bj-doc.dup{background:#faf8f6}
+  .bj-doc .dname{font-weight:700;font-size:13.5px}
+  .bj-doc .dhow{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.55}
+  .bj-doc .dsrc{font-size:11px;color:#a89f97;margin-top:3px}
+  .bj-itsel{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:6px;background:#fff;font-size:13px;line-height:1.6}
+  .bj-itsel input{width:18px;height:18px;accent-color:var(--brand);margin-top:2px;flex:none}
+  .bj-itsel.red{border-color:#F5C2C0;background:#FFFAF9}
+  .bj-itsel.locked{background:#faf8f6;color:var(--muted)}
+  .bj-msg{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:#fff}
+  .bj-msg textarea{min-height:280px;font-size:13px;line-height:1.7}
+  .bj-msg .mhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;font-weight:700}
+  .bj-script{background:#faf8f6;border:1px solid var(--line);border-radius:10px;padding:14px;font-size:13.5px;line-height:1.9;white-space:pre-wrap}
+  .bj-roundcard{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;background:#fff}
+  /* ===== 화면 디자인 개편 (세션 M-2) ===== */
+  .bj-big{padding:15px 26px;font-size:16px;border-radius:13px}
+  .bj-fix{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-top:14px;box-shadow:0 -2px 14px rgba(60,40,30,.06);flex-wrap:wrap}
+  .bj-link{color:var(--brand);font-size:13px;font-weight:700;cursor:pointer}
+  .bj-sp2{display:grid;grid-template-columns:250px 1fr;gap:16px;align-items:start}
+  .bj-sp2r{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+  @media(max-width:900px){.bj-sp2,.bj-sp2r{grid-template-columns:1fr}}
+  .bj-flist{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;box-shadow:var(--shadow)}
+  .bj-flist .fh{padding:11px 14px;font-size:12.5px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--line);background:#faf8f6}
+  .bj-flist .fi{padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+  .bj-flist .fi:last-child{border-bottom:0}
+  .bj-flist .fi.on{background:var(--brand-soft);border-left:4px solid var(--brand)}
+  .bj-flist .fi .fn{font-weight:700;font-size:14px;word-break:break-all}
+  .bj-flist .fi .st{font-size:12px;margin-top:4px}
+  .bj-ok{color:var(--green);font-weight:700}
+  .bj-nok{color:var(--red);font-weight:700}
+  .bj-wz{border:1px solid var(--line);border-radius:16px;padding:24px;background:#fff;box-shadow:var(--shadow)}
+  .bj-dots{display:flex;gap:6px;justify-content:center;margin-bottom:14px}
+  .bj-dots i{width:9px;height:9px;border-radius:99px;background:#E3DBD3;display:block}
+  .bj-dots i.on{background:var(--brand);width:28px}
+  .bj-wzt{text-align:center;font-weight:800;font-size:19px;margin-bottom:5px;word-break:break-all}
+  .bj-wzs{text-align:center;color:var(--muted);font-size:13px;margin-bottom:16px}
+  .bj-summ{display:flex;align-items:center;gap:10px;background:var(--gray-bg);border-radius:10px;padding:11px 14px;font-size:13.5px;color:var(--muted);margin-bottom:8px;flex-wrap:wrap}
+  .bj-summ b{color:var(--ink)}
+  .bj-acc{border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:#fff;overflow:hidden}
+  .bj-acc .ah{display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;flex-wrap:wrap}
+  .bj-acc .ah .t{font-weight:800;font-size:15px}
+  .bj-acc .ah .sm{color:var(--muted);font-size:13px}
+  .bj-acc .ab{padding:0 16px 16px;border-top:1px dashed var(--line)}
+  .bj-match{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  @media(max-width:860px){.bj-match{grid-template-columns:1fr}}
+  .bj-match .ml{background:#faf8f6;padding:18px;border-right:1px solid var(--line)}
+  .bj-match .mr{padding:10px}
+  .bj-mrow{padding:11px 12px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13px;border-radius:8px}
+  .bj-mrow:last-child{border-bottom:0}
+  .bj-mrow.sel{background:var(--brand-soft)}
+  .bj-mrow b{font-size:13.5px}
+  .bj-side{border:1px solid var(--line);border-radius:14px;padding:16px;background:#fff;position:sticky;top:16px}
+  .bj-side .st{font-weight:800;font-size:15px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .bj-dday{background:var(--red-bg);color:var(--red);font-weight:800;font-size:13px;padding:5px 12px;border-radius:999px;white-space:nowrap}
+  .bj-board{border:1px solid var(--line);border-left:6px solid var(--red);border-radius:14px;padding:16px 18px;background:#fff;margin-bottom:12px;box-shadow:var(--shadow)}
+  .bj-board.calm{border-left-color:var(--green)}
+  .bj-tsmall{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+  .bj-tsmall button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-size:12.5px;cursor:pointer;font-weight:600}
+  .bj-tsmall button.on{background:var(--brand);border-color:var(--brand);color:#fff}
 </style>
 </head>
 <body>
@@ -201,6 +319,21 @@
         <h2 id="form-title">새 송달 등록</h2>
         <div class="banner">💡 <b>케이스허브 사건 자동 연동:</b> 아래 검색창에 이름이나 사건번호를 입력하면 케이스허브에 등록된 사건이 나타나고, 선택하면 사건번호·이름이 자동으로 채워집니다.</div>
         <div class="fld">
+          <label>보정명령 PDF 자동 채우기 (여러 개 한꺼번에 가능)</label>
+          <div class="bj-drop" id="bj-drop"
+               ondragover="event.preventDefault();this.classList.add('over')"
+               ondragleave="this.classList.remove('over')"
+               ondrop="bjDrop(event)"
+               onclick="document.getElementById('bj-file').click()">
+            📄 <b>PDF를 여기에 끌어다 놓으세요</b> · 사건번호/법원/문서종류/기한을 자동으로 읽어요
+            <div style="margin-top:8px"><span class="btn ghost mini" style="margin:0">파일 선택</span></div>
+            <input type="file" id="bj-file" accept="application/pdf" multiple onchange="bjPick(event)" style="display:none">
+          </div>
+          <div class="bj-note" style="margin-top:6px">PDF는 이 컴퓨터 브라우저 안에서만 읽어요(외부 전송 없음). 서류에 찍힌 송달일은 참고용이고, 기한 계산은 아래에서 직접 입력하는 <b>실제 송달확인일</b> 기준이에요.</div>
+        </div>
+        <div id="bj-batch"></div>
+
+        <div class="fld">
           <label>케이스허브 사건 검색 (이름 또는 사건번호)</label>
           <input id="f-clientq" placeholder="🔎 예: 홍길동 또는 2026개회" oninput="clientSearchDebounced()" autocomplete="off">
           <div class="clientpick hide" id="clientpick"></div>
@@ -250,6 +383,11 @@
       </div>
     </div>
 
+    <div id="view-bj" class="hide">
+      <input type="file" id="bj-file2" accept="application/pdf" onchange="bjPick2(event)" style="display:none">
+      <div class="sec" id="bj-wrap"><div class="empty">불러오는 중…</div></div>
+    </div>
+
     <div id="view-staff" class="hide">
       <div class="sec">
         <h2>직원 현황</h2>
@@ -283,11 +421,12 @@
       </div>
     </div>
 
-    <div class="foot">전자소송 개인회생 송달 관리 · v2.6 · 공용 데이터베이스(케이스허브 연동) 저장</div>
+    <div class="foot">전자소송 개인회생 송달 관리 · v2.8-M(확정·전달) · 공용 데이터베이스(케이스허브 연동) 저장</div>
   </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
 const SB_URL="https://zxwsfwhyjkixsnfpzpkt.supabase.co";
 const SB_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4d3Nmd2h5amtpeHNuZnB6cGt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NjUxMzIsImV4cCI6MjA5ODA0MTEzMn0.mHfZJNRMmH-I2XI3ISutaYNemIbjKvWzFlOzMLmi-aQ";
@@ -394,7 +533,21 @@ async function boot(){
   const uid=session.user.id;
   let prof=null;
   try{const {data}=await sbc.from("profiles").select("id,name,role,active").eq("id",uid).single();prof=data;}catch(e){}
-  me={id:uid, name:(prof&&prof.name)||session.user.email, role:(prof&&prof.role)||"staff", isMaster:!!(prof&&prof.role==="master")};
+  /* ★내부 전용 문지기 — 이 앱은 법무법인 이준 내부(master/staff)만 들어온다.
+     원사무소(office) 계정은 링크를 알아도 화면이 아예 열리지 않고 바로 로그아웃된다.
+     계정 정보(profiles)를 못 읽은 경우도 막는다(모르면 열지 않는다). */
+  const _role = prof && prof.role;
+  if(!(_role==="master" || _role==="staff")){
+    await sbc.auth.signOut();
+    me=null; cases=[]; staff=[];
+    document.getElementById("app").classList.add("hide");
+    document.getElementById("gate").classList.remove("hide");
+    document.getElementById("g-err").textContent = _role
+      ? "이 앱은 법무법인 이준 내부 직원 전용입니다. 접근 권한이 없습니다."
+      : "계정 정보를 확인하지 못했습니다. 관리자에게 문의하세요.";
+    return;
+  }
+  me={id:uid, name:(prof&&prof.name)||session.user.email, role:_role, isMaster:(_role==="master")};
   document.getElementById("gate").classList.add("hide");
   document.getElementById("app").classList.remove("hide");
   document.getElementById("who").innerHTML=me.isMaster?("<b>"+esc(me.name)+"</b> 관리자<br>전체 사건 열람"):("<b>"+esc(me.name)+"</b> 담당자<br>내 사건만 열람");
@@ -428,15 +581,16 @@ async function refreshAll(){
 /* ---------- 화면 전환 ---------- */
 function showView(vw){
   view=vw;detailId=null;
-  ["dash","list","staff","set"].forEach(k=>document.getElementById("view-"+k).classList.toggle("hide",k!==vw));
+  ["dash","list","staff","set","bj"].forEach(k=>{const el=document.getElementById("view-"+k);if(el)el.classList.toggle("hide",k!==vw);});
   ["dash","list","staff","set"].forEach(k=>document.getElementById("nav-"+k).classList.toggle("active",k===vw));
-  document.getElementById("add-btn").classList.toggle("hide",vw==="staff"||vw==="set");
-  const titles={dash:"대시보드",list:"사건 목록",staff:"직원 현황",set:"설정"};
-  const subs={dash:me&&me.isMaster?"전체 사건을 한눈에":"내 담당 사건을 한눈에",list:"송달 등록·수정·검색 (케이스허브 사건 연동)",staff:"공용 계정 현황",set:"공휴일·데이터 관리"};
+  document.getElementById("add-btn").classList.toggle("hide",vw==="staff"||vw==="set"||vw==="bj");
+  const titles={dash:"대시보드",list:"사건 목록",staff:"직원 현황",set:"설정",bj:"보정 판독"};
+  const subs={dash:me&&me.isMaster?"전체 사건을 한눈에":"내 담당 사건을 한눈에",list:"송달 등록·수정·검색 (케이스허브 사건 연동)",staff:"공용 계정 현황",set:"공휴일·데이터 관리",bj:"등록 → 판독 → 유형 선택 → 서류 확정 → 안내 발송"};
   document.getElementById("view-title").textContent=titles[vw];
   document.getElementById("view-sub").textContent=subs[vw];
   if(vw==="staff")renderStaff();
   if(vw==="set")document.getElementById("holi-input").value=holidays.join("\n");
+  if(vw==="bj")bjRender();
   if(vw==="list"){resetForm();hideForm();}
   render();
 }
@@ -543,9 +697,17 @@ function resetForm(){
   document.getElementById("save-btn").textContent="등록";
 }
 async function delCase(id){
-  if(!confirm("이 사건을 삭제할까요?"))return;
+  if(!confirm("이 사건을 삭제할까요? (연결된 보정 판독 기록과 PDF도 함께 지워져요)"))return;
   busy(true);
-  try{const {error}=await sd().from("deliveries").delete().eq("id",id);if(error)throw error;await refreshAll();}
+  try{
+    /* 연결된 보정 판독 기록 + 보관 PDF 정리 (고아 기록 방지) */
+    try{
+      const docs=await sbc.from("bj_documents").select("id,pdf_path").eq("delivery_id",id);
+      const paths=(docs.data||[]).map(d=>d.pdf_path).filter(Boolean);
+      if(paths.length)await sbc.storage.from("bojeong").remove(paths);
+      if((docs.data||[]).length)await sbc.from("bj_documents").delete().eq("delivery_id",id);
+    }catch(e){}
+    const {error}=await sd().from("deliveries").delete().eq("id",id);if(error)throw error;await refreshAll();}
   catch(e){alert("삭제 실패: "+(e.message||e));}
   finally{busy(false);}
 }
@@ -681,7 +843,7 @@ function renderDetail(){
   w.innerHTML=`<div class="detail">
     <div class="h2row"><h2 style="margin:0">${esc(c.name)} · ${esc(c.caseno)} <span class="pill">서류 ${docProg(c)}%</span></h2>
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">닫기</button></div>
-    <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")}</span></div>
+    <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")}${(c.doctype||"").includes("보정")?` <button class="btn primary mini" onclick="bjFromDelivery('${c.id}')">🔍 보정 판독</button>`:""}</span></div>
     <div class="kv"><span class="k">담당자</span><span>${esc(ownerName(c.owner_id)||"미지정")}</span></div>
     ${c.client_id?'<div id="clientinfo-'+c.id+'" style="margin:8px 0;padding:10px 12px;background:#faf8f6;border-radius:10px;font-size:13px">의뢰인 정보 불러오는 중…</div>':''}
     <div class="kv"><span class="k">송달 도착일</span><span>${esc(c.date)}</span></div>
@@ -704,40 +866,56 @@ function renderDetail(){
 
 /* ---------- 의뢰인 정보(전화·주민번호) + 보정서 파일 ---------- */
 let _clientCache={};
-function maskRrn(r){r=String(r||"").replace(/[^0-9]/g,"");if(r.length<7)return String(r||"");return r.slice(0,6)+"-"+r.slice(6,7)+"******";}
+function maskRrn(r){r=String(r||"").replace(/[^0-9]/g,"");if(!r)return"";if(r.length<7)return r;return r.slice(0,6)+"-"+r.slice(6,7)+"******";}
+/* ★주민등록번호는 앱이 들고 있지 않다. DB에 암호로 잠겨 있고(client_rrn),
+   [보기]를 누를 때만 서버 함수 rrn_get으로 풀어서 보여준다. 저장도 서버 함수 rrn_set이 한다.
+   화면에 평소 보이는 것은 앞 7자리(clients.rrn_front)를 가린 형태뿐이다. */
 async function loadClientInfo(c){
   try{
-    const {data}=await sbc.from("clients").select("id,phone,rrn,office_id").eq("id",c.client_id).single();
+    const {data}=await sbc.from("clients").select("id,phone,rrn_front,office_id").eq("id",c.client_id).single();
     if(!data)return; _clientCache[c.id]=data;
     const el=document.getElementById("clientinfo-"+c.id); if(!el)return;
     const canEdit=me.isMaster||me.role==="staff";
     el.innerHTML=`<div style="font-weight:600;font-size:12.5px;margin-bottom:6px;color:var(--brand)">의뢰인 정보 (케이스허브 연동 · 수정하면 전 앱 동기화)</div>
       <div class="kv"><span class="k">전화번호</span><span>${canEdit?'<input id="ph-'+c.id+'" value="'+esc(data.phone||"")+'" placeholder="010-0000-0000" style="width:auto;padding:5px 8px;font-size:12px">':esc(data.phone||"-")}</span></div>
-      <div class="kv"><span class="k">주민번호</span><span><span id="rrnview-${c.id}">${data.rrn?esc(maskRrn(data.rrn)):"-"}</span>${data.rrn?' <button class="btn ghost mini" id="rrnbtn-'+c.id+'" onclick="toggleRrn(\''+c.id+'\')">보기</button>':""}${canEdit?' <input id="rrn-'+c.id+'" value="" placeholder="변경 시에만 입력" style="width:auto;padding:5px 8px;font-size:12px">':""}</span></div>
+      <div class="kv"><span class="k">주민번호</span><span><span id="rrnview-${c.id}">${data.rrn_front?esc(maskRrn(data.rrn_front)):"-"}</span>${data.rrn_front?' <button class="btn ghost mini" id="rrnbtn-'+c.id+'" onclick="toggleRrn(\''+c.id+'\')">보기</button>':""}${canEdit?' <input id="rrn-'+c.id+'" value="" placeholder="변경 시에만 입력" style="width:auto;padding:5px 8px;font-size:12px">':""}</span></div>
       ${canEdit?'<button class="btn primary mini" onclick="saveClientInfo(\''+c.id+'\')">의뢰인 정보 저장</button>':""}`;
   }catch(e){}
 }
-function toggleRrn(id){
-  const data=_clientCache[id]; if(!data||!data.rrn)return;
-  const view=document.getElementById("rrnview-"+id),btn=document.getElementById("rrnbtn-"+id);
-  if(btn.textContent==="보기"){const r=String(data.rrn).replace(/[^0-9]/g,"");view.textContent=r.length>=7?r.slice(0,6)+"-"+r.slice(6):data.rrn;btn.textContent="가리기";}
-  else{view.textContent=maskRrn(data.rrn);btn.textContent="보기";}
+async function toggleRrn(id){
+  const data=_clientCache[id]; if(!data)return;
+  const view=document.getElementById("rrnview-"+id),btn=document.getElementById("rrnbtn-"+id); if(!view||!btn)return;
+  if(btn.textContent==="보기"){
+    btn.disabled=true;
+    try{ const {data:full,error}=await sbc.rpc("rrn_get",{p_cid:data.id}); if(error)throw error;
+         view.textContent=full||"등록된 번호 없음"; btn.textContent="가리기"; }
+    catch(e){ alert("주민번호를 불러오지 못했어요: "+(e.message||e)); }
+    finally{ btn.disabled=false; }
+  }else{ view.textContent=maskRrn(data.rrn_front); btn.textContent="보기"; }
 }
 async function saveClientInfo(id){
   const c=cases.find(x=>x.id===id); if(!c||!c.client_id)return;
   const phEl=document.getElementById("ph-"+id),rrnEl=document.getElementById("rrn-"+id);
   const patch={}; if(phEl)patch.phone=phEl.value.trim()||null;
-  const newRrn=rrnEl?rrnEl.value.trim():""; if(newRrn)patch.rrn=newRrn;
-  if(!Object.keys(patch).length){alert("변경할 내용이 없어요.");return;}
+  const rd=rrnEl?String(rrnEl.value).replace(/[^0-9]/g,""):"";
+  if(rd && rd.length!==13){alert("주민등록번호는 숫자 13자리로 입력해 주세요.");return;}
+  if(!Object.keys(patch).length && !rd){alert("변경할 내용이 없어요.");return;}
   busy(true);
   try{
-    const {error}=await sbc.from("clients").update(patch).eq("id",c.client_id);
-    if(error)throw error;
-    if(_clientCache[id]){if("phone"in patch)_clientCache[id].phone=patch.phone;if("rrn"in patch)_clientCache[id].rrn=patch.rrn;}
+    if(Object.keys(patch).length){
+      const {error}=await sbc.from("clients").update(patch).eq("id",c.client_id);
+      if(error)throw error;
+      if(_clientCache[id]&&"phone"in patch)_clientCache[id].phone=patch.phone;
+    }
+    if(rd){
+      const {error:re}=await sbc.rpc("rrn_set",{p_cid:c.client_id, p_rrn:rd});
+      if(re)throw re;
+      if(_clientCache[id])_clientCache[id].rrn_front=rd.slice(0,6)+"-"+rd.slice(6,7);
+    }
     alert("의뢰인 정보를 저장했어요 (케이스허브·서류취합에도 반영돼요).");
     if(rrnEl)rrnEl.value="";
     renderDetail();
-  }catch(e){alert("저장 실패: "+(e.message||e)+"\\n(원사무소 계정은 의뢰인 정보 수정 권한이 없을 수 있어요.)");}
+  }catch(e){alert("저장 실패: "+(e.message||e));}
   finally{busy(false);}
 }
 async function loadBojeong(c){
@@ -919,6 +1097,1696 @@ function parseCSVLine(line){
     else{if(ch=='"'){q=true;}else if(ch==','){out.push(cur);cur="";}else{cur+=ch;}}
   }
   out.push(cur);return out;
+}
+
+
+/* ================================================================
+   보정 판독 (세션 L) : 등록+판독 통합 · 문서종류 배너 · 기한 대조 ·
+   항목 쪼개기 교정 · 유형 선택.  규칙은 97건 회귀시험 통과본(k_regression) 이식.
+   ================================================================ */
+/*==BJ_RULES_START==*/
+var BJ_WM=[/개인정보유출주의/,/제출자\s*:/,/송달물\s*등재일시/,/출력자\s*:/,/다운로드일시/];
+var BJ_PG=[/^\s*-\s*\d+\s*-\s*$/,/^\s*\d+\s*\/\s*\d+\s*$/];
+function bjNospace(s){return String(s||"").replace(/\s+/g,"");}
+function bjClean(t){
+  var out=[],rm=0;
+  t.split("\n").forEach(function(ln){
+    for(var i=0;i<BJ_WM.length;i++){if(BJ_WM[i].test(ln)){rm++;return;}}
+    for(var j=0;j<BJ_PG.length;j++){if(BJ_PG[j].test(ln)){rm++;return;}}
+    out.push(ln);
+  });
+  return {text:out.join("\n"),removed:rm};
+}
+var BJ_RE={
+  r610:/제\s*610\s*조/,
+  rdate:/\d{1,2}\s*\.\s*\d{1,2}\s*\.\s*자\s*(?:보정|자료|권고)/,
+  rword:/미보정|미이행|누락\s*없이\s*이행|재보정|다시\s*보정|추가\s*보정|기\s*보정|종전\s*보정|이미\s*보정|보정권고를?\s*이행/,
+  std:/자료제출목록|추가질문사항/,
+  fee:/인지|송달료/,
+  arae:/^\s*(아\s*래|다\s*음)\s*[.:]?\s*$/,
+  sec:/^\s*(?:[▣◆■◇☞]|\[[^\]]{1,20}\])/,
+  num:/^\s*(\d{1,2})\s*[.)]\s*(?!\d{1,2}\s*[.)])(\S.*)$/,
+  sub:/^\s*(\d{1,2})\s*-\s*(\d{1,2})\s*[.)]\s*(\S.*)$/,
+  kor:/^\s*([가-힣])\s*[.)]\s*(\S.*)$/,
+  circ:/^\s*([①-⑳])\s*(\S.*)$/,
+  bul:/^\s*[○●·▪–]\s*(\S.*)$/,
+  caseNo:/(20\d{2}(?:개회|하단)\d{3,7})/,
+  court:/([가-힣]{2,4}(?:회생법원|지방법원))/,
+  date:/(20\d{2})\.(\d{1,2})\.(\d{1,2})/g,
+  rrn:/(\d{6})\s*[-‐–]\s*([1-4])\d{6}/g
+};
+var BJ_KOR="가나다라마바사아자차카타파하";
+var BJ_SYN=["대전","대구","부산","수원","서울"];
+/* 문서 종류 : 세션 K 결함 수정 → 하나만 고르지 않고 복수 배열로 돌려준다
+   (부산 5건 = 재보정 + 표준양식. 우선순위는 표시 순서에만 사용) */
+function bjDocKinds(txt,caseNo){
+  var n=bjNospace(txt);
+  if(String(caseNo||"").indexOf("하단")>=0||BJ_RE.r610.test(n))return ["체계밖"];
+  var kinds=[];
+  if(BJ_RE.rword.test(n)&&(BJ_RE.rdate.test(n)||n.indexOf("미보정")>=0||n.indexOf("미이행")>=0)){
+    kinds.push(BJ_RE.rdate.test(n)?"재보정(날짜특정)":"재보정(날짜없음)");
+  }
+  if(BJ_RE.std.test(n))kinds.push("표준양식");
+  if(!kinds.length&&n.length<700&&BJ_RE.fee.test(n))kinds.push("빠른경로");
+  if(!kinds.length)kinds.push("일반");
+  return kinds;
+}
+function bjBodyOf(txt,kinds){
+  var lines=txt.split("\n"),start=0,i;
+  for(i=0;i<lines.length;i++){if(BJ_RE.arae.test(lines[i]))start=i+1;}
+  lines=lines.slice(start);
+  if(kinds.indexOf("표준양식")>=0){
+    var cut=lines.length;
+    for(i=0;i<lines.length;i++){if(BJ_RE.std.test(lines[i])){cut=i;break;}}
+    lines=lines.slice(0,cut);
+  }
+  return lines;
+}
+/* 항목 쪼개기 : 1단계(번호) 채택 (세션 K, 잎까지 내려가면 43%로 나빠짐) */
+function bjSplitItems(lines){
+  var top=[],expect=1,curTop=null,kexp=0;
+  function pushTop(){if(curTop&&bjNospace(curTop).length>8)top.push(curTop);curTop=null;}
+  lines.forEach(function(ln){
+    if(BJ_RE.sec.test(ln)){expect=1;kexp=0;return;}
+    var m=ln.match(BJ_RE.num);
+    if(m&&(parseInt(m[1],10)===expect||parseInt(m[1],10)===1)){
+      pushTop();curTop=m[2];expect=parseInt(m[1],10)+1;kexp=0;return;
+    }
+    var ms=ln.match(BJ_RE.sub)||ln.match(BJ_RE.kor)||ln.match(BJ_RE.circ);
+    if(ms){
+      var mk=ln.match(BJ_RE.kor);
+      if(mk){
+        var ch=mk[1];
+        if(BJ_KOR.indexOf(ch)<0||BJ_KOR.indexOf(ch)!==kexp){
+          if(curTop!==null)curTop+=" "+ln.trim();
+          return;
+        }
+        kexp++;
+      }
+      if(curTop!==null)curTop+=" "+ln.trim();
+      return;
+    }
+    if(ln.trim()&&curTop!==null)curTop+=" "+ln.trim();
+  });
+  pushTop();
+  if(top.length)return {items:top,how:"번호"};
+  var bl=[],cur=null;
+  lines.forEach(function(ln){
+    var m=ln.match(BJ_RE.bul);
+    if(m){if(cur)bl.push(cur);cur=m[1];}
+    else if(cur!==null&&ln.trim())cur+=" "+ln.trim();
+  });
+  if(cur)bl.push(cur);
+  bl=bl.filter(function(b){return bjNospace(b).length>15;});
+  if(bl.length)return {items:bl,how:"불릿"};
+  var body=lines.map(function(l){return l.trim();}).filter(Boolean).join(" ");
+  return {items:bjNospace(body)?[body]:[],how:"통째로"};
+}
+/* 기한 문구 (97건 실측: 송달일+N일 95건 · 날짜지정 2건) */
+var BJ_DRULES=[
+  ["송달일+N일",/(?:송달(?:받은|된)?\s*(?:날|일)|받은\s*날)\s*(?:로?부터)?\s*(\d{1,2})\s*일/],
+  ["N일 이내",/(\d{1,2})\s*일\s*(?:이내|안에|내에|내로)/],
+  ["날짜까지",/(20\d{2}\s*\.\s*\d{1,2}\s*\.\s*\d{1,2}\s*\.?)\s*까지/],
+  ["N주 이내",/(\d{1,2})\s*주\s*이내/]
+];
+function bjDeadline(n){
+  for(var i=0;i<BJ_DRULES.length;i++){
+    var m=n.match(BJ_DRULES[i][1]);
+    if(m)return {rule:BJ_DRULES[i][0],text:m[0],val:m[1]};
+  }
+  return null;
+}
+function bjAutofill(txt){
+  var n=bjNospace(txt);
+  var mc=n.match(BJ_RE.caseNo),mo=n.match(BJ_RE.court);
+  var dates=[],m;BJ_RE.date.lastIndex=0;
+  while((m=BJ_RE.date.exec(n))!==null){
+    dates.push(m[1]+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[3]).padStart(2,"0"));
+  }
+  return {case_no:mc?mc[1]:"",court:mo?mo[1]:"",dates:dates,dl:bjDeadline(n)};
+}
+function bjCourtSame(a,b){
+  if(!a||!b)return false;
+  if(a===b)return true;
+  var ca=a.replace("회생법원","").replace("지방법원",""),cb=b.replace("회생법원","").replace("지방법원","");
+  return ca===cb&&BJ_SYN.indexOf(ca)>=0;
+}
+function bjCourtNorm(c){ /* 지방법원 표기 → 회생법원 프로필·양식 검색용 동의어 */
+  if(!c)return c;
+  var base=c.replace("지방법원","").replace("회생법원","");
+  return BJ_SYN.indexOf(base)>=0?base+"회생법원":c;
+}
+function bjMaskRrn(t){return String(t||"").replace(BJ_RE.rrn,function(_,a,b){return a+"-"+b+"******";});}
+function bjDetectChecks(txt){ /* 부산 표준양식 : ☑ 줄만 (자동 체크 금지, 확인 제안용) */
+  return txt.split("\n").filter(function(l){return l.indexOf("☑")>=0||l.indexOf("✔")>=0||l.indexOf("✓")>=0;}).map(function(l){return l.trim();});
+}
+/* pdf.js 글자 → 줄 재구성 (pdftotext와 같은 읽기 순서를 지향) */
+function bjBuildLines(items){
+  var rows=[];
+  items.forEach(function(it){
+    if(!it.str||!it.str.trim())return;
+    var y=Math.round(it.transform[5]),x=it.transform[4];
+    var row=null;
+    for(var i=0;i<rows.length;i++){if(Math.abs(rows[i].y-y)<=3){row=rows[i];break;}}
+    if(!row){row={y:y,parts:[]};rows.push(row);}
+    row.parts.push({x:x,s:it.str});
+  });
+  rows.sort(function(a,b){return b.y-a.y;});
+  return rows.map(function(r){
+    r.parts.sort(function(a,b){return a.x-b.x;});
+    return r.parts.map(function(p){return p.s;}).join(" ");
+  });
+}
+/*==BJ_RULES_END==*/
+
+/* 판별사전 v2 (유형 40종 × 핵심 낱말, 점수 정렬 전용 · 화면 비표시) */
+var BJ_DICT={"dict":{"A01":[["근무사진",3],["근무 사진",3],["근무확인서",3],["근무실태",3],["고용주",2],["실수령",2],["근무지",1],["재직증명",1],["근무 경위",2],["사업주",1],["업무내용",1],["취업",1]],"A02":[["월평균수입",3],["월 평균수입",3],["월평균 수입",3],["소득산출",3],["월평균소득",3],["수입을 산정",3],["평균 금액을",1],["급여명세서",1],["원천징수영수증",1],["급여내역",1]],"A03":[["사업소득",3],["영업소득",3],["사업체 운영",3],["표준재무제표",2],["부가가치세",1],["매출",1],["지출",1]],"A04":[["예상퇴직금",3],["퇴직금",2],["퇴직연금",2],["퇴직급여",2],["청산가치",1]],"A05":[["통화내역",3],["발신기지국",3],["통화내역서",3]],"B01":[["계좌통합조회",3],["계좌내역서",2],["계좌상세내역",2],["payinfo",3],["페이인포",3],["거래내역서",1],["금융거래정보",1],["예금",1]],"B02":[["해약환급금",3],["보험가입조회",3],["보험조회",2],["해지보험",3],["보험증권",2],["보험협회",2],["보험계약",1]],"B03":[["증권사",3],["주식",2],["매매손익",3],["매매현황",3],["증권계좌",3],["잔고",1]],"B04":[["가상자산",3],["가상화폐",3],["전자지갑",3],["거래소",1],["코인",1]],"B05":[["지적전산",3],["감정평가",3],["공시지가",3],["부동산",2],["등기사항전부증명",1],["토지",1],["환가예상액",1]],"B06":[["자동차등록원부",3],["차량",2],["자동차",1],["시가증명",2],["중고",1],["매도",1]],"B07":[["재산처분",3],["처분 내역",3],["처분한 재산",3],["재산을 처분",3],["처분대금",3],["매매계약서",1],["처분",1]],"B08":[["압류적립금",3],["적립금 확인서",3]],"B09":[["임차보증금",3],["무상거주",3],["임대차계약",2],["주거상황",3],["점유권원",3],["보증금",1],["거주지",1],["전입",1]],"B10":[["세목별",3],["과세증명",2],["납세증명",2],["위택스",3],["무과세",3],["지방세",1]],"B11":[["사업자등록증명",3],["사업장",2],["폐업",2],["표준재무제표",2],["비품",2],["재고",2]],"B12":[["배우자의 재산",3],["배우자 재산",3],["배우자의 소득",3],["배우자 소득",3],["특유재산",3],["배우자의 직업",3],["배우자",1]],"B13":[["출입국",3],["출입국사실증명",3],["방문국가",3],["해외여행",3],["해외",1]],"B14":[["이상 입출금",3],["이상의 입출금",3],["출처와 사용처",3],["최종 사용처",2],["사용처",1],["도표",1],["형광펜",1],["거래내역",1],["입금",1],["출금",1],["만원 이상",1]],"C01":[["부채증명서",3],["원금 불일치",3],["채권현재액",2],["누락",1],["채권자목록",1],["체납액",1]],"C02":[["개인채권",3],["개인 채권자",3],["부채확인서",3],["지인",2],["친인척",2],["차용",1]],"C03":[["별제권",3],["담보권",3],["질권",3],["환가예정액",3],["담보설정",3]],"D01":[["카드 이용내역",2],["상세이용내역",2],["카드내역서",2],["카드사별",1]],"D02":[["돌려막기",3],["대환",3],["채무사용일람표",3],["카드론",2],["대출금",2],["대출 사유",3],["차용 사유",3],["대출",1],["사용처",1]],"D03":[["사기피해",3],["사건사고사실확인원",3],["고소장",2],["피해금",2]],"D04":[["현금서비스",3],["카드사별",2],["카드 사용",2],["카드사용",2],["이용내역",1],["사용처",1],["카드",1]],"E01":[["인지액",3],["인지대",3],["송달료",3],["예납",1],["영수증",1]],"E02":[["신용교육",3],["신용회복위원회",3],["수료증",3]],"E03":[["적립내역",3],["임치",3],["변제금 적립",3],["가용소득 적립",3],["개인회생계좌",3],["적립",1]],"E04":[["가용소득",2],["변제기간",2],["변제율",2],["변제예정액표",2],["회생위원 보수",3],["청산가치 보장",2],["변제계획안",1],["수정",1],["재작성",1]],"E05":[["자료제출목록",3],["추가질문사항",3],["표준양식",3],["실무준칙",2],["별지",1]],"E06":[["미보정",3],["보정되지",3],["미이행",3],["재보정",3],["보정하지 아니",3],["보정권고 중",2],["조속히",1]],"E07":[["부양가족",3],["피부양",3],["부양하는",3],["부양 여부",3],["생계비 산정",1]],"E08":[["소득신고",3],["신고의무",3],["이직",2],["수입 증가",2],["10항",1],["매년",1]],"E09":[["전세사기",3],["전세사기피해자",3]],"E10":[["보전처분",3],["강제집행",2]],"E11":[["수정명령",3],["이의신청서",3],["채권자변경",3],["변경신고",3],["제610조",3],["대위변제",1]],"E12":[["추가생계비",3],["기준중위소득",3],["생계비",2],["보험료 합계",3],["가용소득에 산입",3]],"E13":[["양육비",3],["양육비부담조서",3]],"E14":[["주소보정",3],["수취인불명",3],["이사불명",3],["주소불명",3],["송달불능",3]]},"suppress":{"B14":["B01"],"D04":["D01"],"D02":["D04"]}};
+var BJ_GROUPS=["소득","재산·계좌","빚·채권자","돈 쓴 곳","절차·서류"];
+function bjScoreTypes(text){
+  var n=bjNospace(text),score={};
+  Object.keys(BJ_DICT.dict).forEach(function(code){
+    var s=0;
+    BJ_DICT.dict[code].forEach(function(kw){
+      if(n.indexOf(bjNospace(kw[0]))>=0)s+=kw[1];
+    });
+    if(s>0)score[code]=s;
+  });
+  Object.keys(BJ_DICT.suppress||{}).forEach(function(code){
+    if(score[code])((BJ_DICT.suppress||{})[code]||[]).forEach(function(sup){delete score[sup];});
+  });
+  return score;
+}
+
+/* ---------- ① 등록+판독 : PDF 읽기 · 배치 목록 · 일괄 등록 ---------- */
+var bjBatch=[];
+function bjSafeKey(s){ /* 저장소 경로는 한글 불가(Invalid key) → 숫자·영문만 남김 */
+  var k=String(s||"").replace(/[^0-9A-Za-z._-]/g,"");
+  return k||"case";
+}
+async function bjExtractPdf(file){
+  if(!window.pdfjsLib)throw new Error("PDF 판독 모듈을 불러오지 못했어요. 새로고침 후 다시 시도하세요.");
+  pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  var buf=await file.arrayBuffer();
+  var pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  var all=[];
+  for(var p=1;p<=pdf.numPages;p++){
+    var page=await pdf.getPage(p);
+    var tc=await page.getTextContent();
+    all=all.concat(bjBuildLines(tc.items));
+    if(p<pdf.numPages)all.push("\f");   /* 쪽 경계 표시 (항목→원본 쪽 이동용) */
+  }
+  return all.join("\n");
+}
+function bjDrop(ev){ev.preventDefault();document.getElementById("bj-drop").classList.remove("over");bjAddFiles(ev.dataTransfer.files);}
+function bjPick(ev){bjAddFiles(ev.target.files);ev.target.value="";}
+async function bjAddFiles(fileList){
+  var files=Array.from(fileList||[]).filter(function(f){return /pdf$/i.test(f.name)||f.type==="application/pdf";});
+  if(!files.length){alert("PDF 파일만 넣을 수 있어요.");return;}
+  busy(true);
+  try{
+    for(var i=0;i<files.length;i++){          /* 한 개씩 순차 (모바일 메모리 보호) */
+      var f=files[i];
+      try{
+        var raw=await bjExtractPdf(f);
+        var cl=bjClean(raw);
+        var af=bjAutofill(cl.text);
+        var kinds=bjDocKinds(cl.text,af.case_no);
+        var noText=bjNospace(cl.text).length<30;
+        bjBatch.push({file:f,fname:f.name,text:cl.text,removed:cl.removed,scan:noText,
+          case_no:af.case_no,court:af.court,dates:af.dates,dl:af.dl,kinds:kinds,
+          order_date:af.dates[0]||"",arrived:af.dates[0]||fmt(new Date()),confirmed_at:"",
+          client_id:null,client_name:"",owner_id:(me&&!me.isMaster)?me.id:""});
+      }catch(e){alert(f.name+" 판독 실패: "+(e.message||e));}
+    }
+    await bjMatchClients();
+    bjRenderBatch();
+  }finally{busy(false);}
+}
+async function bjMatchClients(){
+  for(var i=0;i<bjBatch.length;i++){
+    var b=bjBatch[i];
+    if(b.client_id||!b.case_no)continue;
+    try{
+      var r=await sbc.from("clients").select("id,name,case_no").ilike("case_no","%"+b.case_no+"%").limit(1);
+      if(r.data&&r.data.length){b.client_id=r.data[0].id;b.client_name=r.data[0].name;}
+    }catch(e){}
+  }
+}
+function bjKindChip(k){
+  var cls=k==="체계밖"?"warn":(k==="표준양식"?"std":(k==="빠른경로"?"fast":""));
+  var label=k==="빠른경로"?"빠른경로(인지·송달료)":k;
+  return '<span class="bj-kind '+cls+'">'+esc(label)+'</span>';
+}
+function bjDlSummary(b){
+  if(!b.dl)return '<span class="bj-note" style="color:#B42318">기한 문구를 찾지 못했어요. PDF에서 직접 확인하세요.</span>';
+  if(b.dl.rule==="날짜까지")return '기한 문구: "'+esc(b.dl.text)+'"';
+  return '기한 문구: "'+esc(b.dl.text)+'" → <b>'+esc(b.dl.val)+'일</b>'+(parseInt(b.dl.val,10)<=5?' <span style="color:#8a5a00">⚠ 짧은 기한</span>':'');
+}
+/* 화면 A (M-2) : 왼쪽 파일 목록 + 오른쪽 한 건씩 큰 카드 */
+var bjBIdx=0;
+function bjBMiss(b){
+  var m=[];
+  if(!b.case_no)m.push("사건번호");
+  if(!b.client_name)m.push("당사자명");
+  if(!b.arrived)m.push("송달 도착일");
+  return m;
+}
+function bjBSel(i){bjBIdx=i;bjRenderBatch();}
+function bjBDrop(i){
+  bjBatch.splice(i,1);
+  if(bjBIdx>=bjBatch.length)bjBIdx=Math.max(0,bjBatch.length-1);
+  bjRenderBatch();
+}
+function bjRenderBatch(){
+  var box=document.getElementById("bj-batch");if(!box)return;
+  if(!bjBatch.length){box.innerHTML="";return;}
+  if(bjBIdx>=bjBatch.length)bjBIdx=bjBatch.length-1;
+  var i=bjBIdx,b=bjBatch[i],miss=bjBMiss(b);
+  var ready=bjBatch.filter(function(x){return !bjBMiss(x).length;}).length;
+  var list='<div class="bj-flist"><div class="fh">올린 파일 '+bjBatch.length+'건 · 준비됨 '+ready+'</div>'
+    +bjBatch.map(function(x,j){
+      var mj=bjBMiss(x);
+      return '<div class="fi'+(j===i?" on":"")+'" onclick="bjBSel('+j+')">'
+        +'<div class="fn">'+esc(x.case_no||x.fname)+'</div>'
+        +'<div class="st '+(mj.length?"bj-nok":"bj-ok")+'">'+(mj.length?("입력 필요 "+mj.length+"칸"):"준비됨")+'</div></div>';
+    }).join("")+'</div>';
+  var wz='<div class="bj-wz">'
+    +'<div class="bj-dots">'+bjBatch.map(function(x,j){return '<i class="'+(j===i?"on":"")+'"></i>';}).join("")+'</div>'
+    +'<div class="bj-wzt">'+esc(b.fname)+'</div>'
+    +'<div class="bj-wzs">'+bjBatch.length+'건 중 '+(i+1)+'번째 · '+b.kinds.map(bjKindChip).join(" ")
+      +(b.client_id?' <span class="pill">허브: '+esc(b.client_name)+'</span>':' <span class="bj-note">케이스허브 미연결</span>')+'</div>'
+    +(b.scan?'<div class="bj-alert red">사진(스캔본)이라 자동 판독이 안 됩니다. 아래 칸을 직접 채워 주세요.</div>':'')
+    +(b.kinds[0]==="체계밖"?'<div class="bj-alert red">일반 개인회생 보정이 아닙니다(파산·수정명령 계열). 등록은 되지만 판독·유형 선택은 직접 확인해야 합니다.</div>':'')
+    +(miss.length?'<div class="bj-alert red">'+esc(miss.join(", "))+'을(를) 채워야 등록됩니다.</div>':'')
+    +'<div class="grid" style="grid-template-columns:1fr 1fr;margin-top:12px">'
+    +'<div><label>사건번호 *</label><input value="'+esc(b.case_no)+'" onchange="bjBatch['+i+'].case_no=this.value.trim();bjMatchClients().then(bjRenderBatch)"></div>'
+    +'<div><label>당사자명 *</label><input value="'+esc(b.client_name)+'" onchange="bjBatch['+i+'].client_name=this.value.trim();bjRenderBatch()" placeholder="케이스허브 미연결 시 직접 입력"></div>'
+    +'<div><label>관할 법원</label><input value="'+esc(b.court)+'" onchange="bjBatch['+i+'].court=this.value.trim()"></div>'
+    +'<div><label>담당 직원</label><select onchange="bjBatch['+i+'].owner_id=this.value">'
+      +(me.isMaster?'<option value="">미지정</option>':'')
+      +staff.map(function(s){return '<option value="'+esc(s.id)+'"'+(s.id===b.owner_id?' selected':'')+'>'+esc(s.name||s.id)+'</option>';}).join("")+'</select></div>'
+    +'<div><label>송달 도착일 *</label><input type="date" value="'+esc(b.arrived)+'" onchange="bjBatch['+i+'].arrived=this.value;bjRenderBatch()"></div>'
+    +'<div><label>실제 송달확인일 (기한 계산 기준)</label><div style="display:flex;gap:6px"><input type="date" value="'+esc(b.confirmed_at)+'" onchange="bjBatch['+i+'].confirmed_at=this.value">'
+      +'<button class="btn ghost mini" onclick="bjBatch['+i+'].confirmed_at=fmt(new Date());bjRenderBatch()">오늘</button></div>'
+      +'<div class="bj-ref" style="margin-top:5px">서류상 날짜 '+esc(b.dates.slice(0,2).join(", ")||"없음")+' (참고용, 기한 계산에 쓰지 않음)</div></div>'
+    +'<div><label>명령일자 (서류상, 재보정 소환용)</label><input type="date" value="'+esc(b.order_date)+'" onchange="bjBatch['+i+'].order_date=this.value"></div>'
+    +'<div><label>기한 (PDF에서 읽음)</label><div style="padding-top:8px">'+bjDlSummary(b)+'</div></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:18px;flex-wrap:wrap">'
+    +'<button class="btn ghost" onclick="bjBDrop('+i+')">이 파일 빼기</button>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    +(i<bjBatch.length-1
+      ?'<button class="btn ghost" onclick="bjBSel('+(i+1)+')">건너뛰기</button><button class="btn primary bj-big" onclick="bjBSel('+(i+1)+')">다음 파일</button>'
+      :'<span class="bj-note">마지막 파일입니다. 아래에서 등록하세요.</span>')
+    +'</div></div></div>';
+  box.innerHTML='<div class="bj-sp2">'+list+'<div>'+wz
+    +'<div class="bj-fix"><button class="btn primary bj-big" id="bj-regall" onclick="bjRegisterAll()">'+bjBatch.length+'건 등록하고 판독 시작</button>'
+    +'<span class="bj-note">'+(ready===bjBatch.length
+        ?'모두 준비됐습니다. 한 개씩 순서대로 등록됩니다.'
+        :('입력 필요 '+(bjBatch.length-ready)+'건이 남아 있습니다.'))+'</span></div>'
+    +'</div></div>';
+}
+function bjTermFrom(b){
+  if(b.dl&&b.dl.rule!=="날짜까지"){var d=parseInt(b.dl.val,10);if(d>=1&&d<=60)return d;}
+  return 7;
+}
+async function bjRegisterAll(){
+  var btn=document.getElementById("bj-regall");if(btn)btn.disabled=true;   /* 더블클릭 잠금 */
+  var okDocs=[],bjUpWarned=false;
+  busy(true);
+  try{
+    for(var i=0;i<bjBatch.length;i++){
+      var b=bjBatch[i];
+      if(!b.case_no||!b.client_name||!b.arrived){alert((i+1)+"번째("+b.fname+"): 사건번호·당사자명·도착일이 필요해요.");continue;}
+      try{
+        /* 1) PDF 원본 보관 (비공개 버킷 bojeong/orders) */
+        var path="orders/"+bjSafeKey(b.case_no)+"/"+Date.now()+".pdf",up=null;
+        try{up=await sbc.storage.from("bojeong").upload(path,b.file,{upsert:false,contentType:"application/pdf"});}catch(e){up={error:e};}
+        var pdfPath=(up&&!up.error)?path:null;
+        if(!pdfPath&&!bjUpWarned){
+          bjUpWarned=true;
+          alert("PDF 원본 보관에 실패했어요: "+((up&&up.error&&(up.error.message||up.error))||"알 수 없음")
+            +"\n\n등록은 계속되지만 [원본 미리보기]가 안 떠요.\nSQL L1(orders 저장 정책) 실행 여부를 확인한 뒤, [다른 PDF로 다시 판독]으로 재등록하면 미리보기가 살아나요.");
+        }
+        /* 2) 송달 기록 (songdal.deliveries) */
+        var term=bjTermFrom(b);
+        var nlog=[{t:fmt(new Date()),m:"보정 PDF 등록+판독 ("+me.name+")"}];
+        var row={client_id:b.client_id||null,case_no:b.case_no,party_name:b.client_name,owner_id:b.owner_id||null,
+          court:b.court||null,doctype:"보정명령",arrived_at:b.arrived,term_days:term,status:"진행중",
+          confirmed:!!b.confirmed_at,confirmed_at:b.confirmed_at||null,checklist:defaultDocs(),log:nlog,
+          memo:"보정 판독 자동 등록 · "+b.fname,submit_status:"미제출"};
+        var ins=await sd().from("deliveries").insert(row).select("id");
+        if(ins.error)throw ins.error;
+        if(!ins.data||!ins.data.length)throw new Error("송달 기록이 저장되지 않았어요(0건). 로그인 계정 권한(role)을 확인하세요.");
+        var deliveryId=ins.data[0].id;
+        /* 3) 보정문서 (public.bj_documents, delivery_id로 연결) */
+        var cd=null;
+        if(b.confirmed_at&&b.dl){
+          if(b.dl.rule==="날짜까지"){var mm=b.dl.val.replace(/\s/g,"").match(/(20\d{2})\.(\d{1,2})\.(\d{1,2})/);if(mm)cd=mm[1]+"-"+String(mm[2]).padStart(2,"0")+"-"+String(mm[3]).padStart(2,"0");}
+          else cd=fmt(rollFwd(addDays(b.confirmed_at,parseInt(b.dl.val,10))));
+        }
+        var doc={delivery_id:deliveryId,case_no:b.case_no,court:b.court||null,doc_type:b.kinds.join(","),
+          served_at:b.confirmed_at||null,order_date:b.order_date||null,court_deadline:cd,
+          deadline_source:cd?"문서":null,pdf_path:pdfPath,raw_text:bjMaskRrn(b.text),
+          parse_mode:b.scan?"직접입력":null,status:"판독중",assignee:me.name||null};
+        var di=await sbc.from("bj_documents").insert(doc).select("id");
+        if(di.error)throw di.error;
+        if(!di.data||!di.data.length)throw new Error("보정문서가 저장되지 않았어요(0건). SQL L1 실행 여부와 권한을 확인하세요.");
+        okDocs.push(di.data[0].id);
+        b._done=true;
+      }catch(e){alert(b.fname+" 등록 실패: "+(e.message||e));}
+    }
+    bjBatch=bjBatch.filter(function(b){return !b._done;});
+    bjRenderBatch();
+    await refreshAll();
+    if(okDocs.length){
+      alert(okDocs.length+"건을 등록했어요. 첫 문서의 판독을 시작해요.");
+      hideForm();bjOpen(okDocs[0]);
+    }
+  }finally{busy(false);if(btn)btn.disabled=false;}
+}
+
+/* ---------- ② 판독 화면 : 배너 확인 · 기한 대조 · 항목 교정 · 원문 전문 ---------- */
+var bjD=null,bjDel=null,bjIt=[],bjStd=[],bjMode="read",bjIdx=0,bjKindOk=false,bjKb=null,bjPendingDelivery=null,
+    bjView="text",bjPdfUrl=null,bjSel=0,bjOne=false,bjPage=1;
+var bjCli=null,bjChk=[],bjReqs=[],bjRound=null,bjSendRound=1,bjSendTab="kakao",bjSender="",bjSplitOverride=null,bjDocsCache=[];
+/* 화면 상태 (M-2 디자인) : 판독 3단계 · 서류확정 접기 · 카톡 1차/2차 탭 */
+var bjStep=1,bjAcc=1,bjMsgTab="k1";
+var BJ_MOBILE=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+async function bjLoadKb(){
+  if(bjKb)return;
+  var r=await Promise.all([
+    sbc.from("kb_types").select("*").order("sort_order"),
+    sbc.from("kb_sop_cards").select("type_code,court,required_docs"),
+    sbc.from("kb_court_profiles").select("court,dept,top_types"),
+    sbc.from("kb_doc_dict").select("name,issue_how,guide_link,search_tags"),
+    sbc.from("bj_settings").select("key,value")
+  ]);
+  var cnt={};
+  (r[1].data||[]).forEach(function(s){
+    if(!s.type_code)return;
+    var n=String(s.required_docs||"").split("\n").map(function(x){return x.trim();}).filter(function(x){return x&&x.indexOf("■")!==0;}).length;
+    cnt[s.type_code]=Math.max(cnt[s.type_code]||0,n);
+  });
+  var set={};
+  (r[4].data||[]).forEach(function(s){set[s.key]=s.value;});
+  bjKb={types:r[0].data||[],sops:r[1].data||[],sopCount:cnt,courts:r[2].data||[],dict:r[3].data||[],settings:set};
+}
+async function bjOpen(docId){
+  busy(true);
+  try{
+    await bjLoadKb();
+    var d=await sbc.from("bj_documents").select("*").eq("id",docId).single();
+    if(d.error||!d.data)throw (d.error||new Error("문서를 찾을 수 없어요"));
+    bjD=d.data;
+    bjDel=null;
+    if(bjD.delivery_id){
+      var dl=await sd().from("deliveries").select("*").eq("id",bjD.delivery_id).single();
+      if(dl.data)bjDel=rowToCase(dl.data);
+    }
+    var it=await sbc.from("bj_items").select("*").eq("doc_id",docId).order("seq");
+    var saved=it.data||[];
+    if(saved.length){bjIt=saved.map(function(r){return {id:r.id,seq:r.seq,item_text:r.item_text,type_codes:r.type_codes||"",unresolved:!!r.unresolved,memo:r.memo||"",item_status:r.item_status||"대기",round_no:r.round_no||null,submitted_at:r.submitted_at||null,unresolved_reason:r.unresolved_reason||""};});}
+    else{
+      var kinds=(bjD.doc_type||"일반").split(",");
+      var sp=bjSplitItems(bjBodyOf(bjD.raw_text||"",kinds));
+      bjIt=sp.items.map(function(t,i){return {seq:i+1,item_text:t,type_codes:"",unresolved:false,memo:"",item_status:"대기",round_no:null};});
+      bjD._how=sp.how;
+    }
+    bjStd=[];bjKindOk=false;bjIdx=0;bjSel=0;bjOne=false;bjPage=1;bjPdfUrl=null;
+    bjStep=1;bjAcc=1;bjMsgTab="k1";   /* M-2 화면 상태 초기화 */
+    if(bjD.pdf_path){
+      try{
+        var su=await sbc.storage.from("bojeong").createSignedUrl(bjD.pdf_path,3600);
+        bjPdfUrl=(su.data&&su.data.signedUrl)||null;
+      }catch(e){bjPdfUrl=null;}
+    }
+    bjView=(bjD.pdf_path&&!BJ_MOBILE)?"pdf":"text";
+    bjMode=(bjD.status==="유형선택중")?"type":((bjD.status==="진행중"||bjD.status==="완료")?"docs":"read");
+    bjRound=null;bjSplitOverride=null;bjSender=(me&&me.name)||"";
+    await bjLoadCtx();
+    var _rmax=0;bjReqs.forEach(function(r){if(r.round_no>_rmax)_rmax=r.round_no;});
+    bjSendRound=_rmax||1;
+    if((bjD.doc_type||"").indexOf("표준양식")>=0)await bjLoadStd();
+    showView("bj");
+  }catch(e){alert("판독 화면을 열지 못했어요: "+(e.message||e));}
+  finally{busy(false);}
+}
+async function bjLoadStd(){
+  var court=bjCourtNorm(bjD.court||"");
+  var r=await sbc.from("kb_std_forms").select("*").eq("court",court).order("item_no");
+  var rows=r.data||[];
+  if(!rows.length){bjStd=[];return;}
+  var latest=rows.map(function(x){return x.form_version;}).sort().pop();
+  bjStd=rows.filter(function(x){return x.form_version===latest;}).map(function(x){return {row:x,checked:false};});
+}
+function bjKindEdit(){
+  var all=["일반","재보정(날짜특정)","재보정(날짜없음)","표준양식","빠른경로","체계밖"];
+  var cur=(bjD.doc_type||"").split(",");
+  var html=all.map(function(k){
+    return '<label style="display:inline-flex;align-items:center;gap:5px;margin-right:12px;font-size:13px"><input type="checkbox" '+(cur.indexOf(k)>=0?"checked":"")+' onchange="bjKindToggle(\''+k+'\',this.checked)">'+esc(k)+'</label>';
+  }).join("");
+  document.getElementById("bj-kindedit").innerHTML=html;
+  document.getElementById("bj-kindedit").classList.remove("hide");
+}
+async function bjKindToggle(k,on){
+  var cur=(bjD.doc_type||"").split(",").filter(Boolean);
+  if(on&&cur.indexOf(k)<0)cur.push(k);
+  if(!on)cur=cur.filter(function(x){return x!==k;});
+  if(!cur.length)cur=["일반"];
+  bjD.doc_type=cur.join(",");
+  if(cur.indexOf("표준양식")>=0&&!bjStd.length)await bjLoadStd();
+  bjRender();bjKindEdit();
+}
+function bjSetServed(val){
+  if(!val)return;
+  bjD.served_at=val;
+  bjRender();
+}
+function bjCalcDue(){
+  if(!bjD.served_at)return null;
+  var term=bjDel?bjDel.termDays:7;
+  return rollFwd(addDays(bjD.served_at,term));
+}
+function bjDocDue(){
+  var n=bjNospace(bjD.raw_text||""),dl=bjDeadline(n);
+  if(!dl)return {dl:null,date:null};
+  if(dl.rule==="날짜까지"){
+    var m=dl.val.replace(/\s/g,"").match(/(20\d{2})\.(\d{1,2})\.(\d{1,2})/);
+    return {dl:dl,date:m?(m[1]+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[3]).padStart(2,"0")):null,days:null};
+  }
+  var days=parseInt(dl.val,10);
+  return {dl:dl,days:days,date:bjD.served_at?fmt(rollFwd(addDays(bjD.served_at,days))):null};
+}
+async function bjApplyDocTerm(){
+  var dd=bjDocDue();
+  if(dd.days&&bjDel){
+    try{
+      var r=await sd().from("deliveries").update({term_days:dd.days}).eq("id",bjD.delivery_id).select("id");
+      if(r.error)throw r.error;
+      bjDel.termDays=dd.days;bjDel.termType=termTypeOf(dd.days);
+    }catch(e){alert("기한 반영 실패: "+(e.message||e));}
+  }
+  bjRender();
+}
+function bjFindIdx(t){
+  var raw=bjD.raw_text||"";t=String(t||"").trim();
+  for(var n=24;n>=6;n-=3){
+    var probe=t.slice(0,n).trim();
+    if(!probe)continue;
+    var idx=raw.indexOf(probe);
+    if(idx<0){ /* 공백 차이 흡수: 낱말 사이를 유연하게 */
+      try{
+        var rx=new RegExp(probe.replace(/[.*+?^${}()|[\]\\]/g,"\\$&").replace(/\s+/g,"[\\s\\n]*"));
+        var m=raw.match(rx);
+        if(m)idx=m.index;
+      }catch(e){}
+    }
+    if(idx>=0)return idx;
+  }
+  return -1;
+}
+function bjLocate(i){
+  var box=document.getElementById("bj-rawbox");if(!box)return;
+  var raw=bjD.raw_text||"",t=(bjIt[i]&&bjIt[i].item_text||"").trim();
+  var idx=bjFindIdx(t);
+  if(idx<0){alert("뽑은 글자에서 이 문장의 시작 위치를 찾지 못했어요. (줄바꿈 차이) 원본 미리보기로 확인해 주세요.");return;}
+  var L=Math.max(24,Math.min(t.length,160));
+  box.innerHTML=esc(raw.slice(0,idx))+"<mark id='bj-mark'>"+esc(raw.slice(idx,idx+L))+"</mark>"+esc(raw.slice(idx+L));
+  var mk=document.getElementById("bj-mark");
+  if(mk)mk.scrollIntoView({block:"center",behavior:"smooth"});
+}
+function bjItemPage(i){
+  var idx=bjFindIdx(bjIt[i]?bjIt[i].item_text:"");
+  if(idx<0)return 1;
+  return ((bjD.raw_text||"").slice(0,idx).match(/\f/g)||[]).length+1;
+}
+function bjGoPage(p){
+  bjPage=p||1;
+  var f=document.getElementById("bj-frame");
+  if(f&&bjPdfUrl)f.src=bjPdfUrl+"#toolbar=1&page="+bjPage;
+}
+function bjSelItem(i){
+  if(bjIt[i]&&bjIt[i]._edit)return;
+  bjSel=i;bjRender();bjGoItem(i);
+}
+function bjGoItem(i){
+  if(bjView==="pdf")bjGoPage(bjItemPage(i));
+  else bjLocate(i);
+}
+async function bjMakePdfUrl(rerender){
+  if(!bjD||!bjD.pdf_path)return;
+  try{
+    var r=await sbc.storage.from("bojeong").createSignedUrl(bjD.pdf_path,3600);
+    bjPdfUrl=(r.data&&r.data.signedUrl)||null;
+  }catch(e){bjPdfUrl=null;}
+  if(rerender)bjRender();
+}
+async function bjOpenPdf(){
+  if(!bjD.pdf_path)return;
+  busy(true);
+  try{
+    var r=await sbc.storage.from("bojeong").createSignedUrl(bjD.pdf_path,600);
+    if(r.error)throw r.error;
+    window.open(r.data.signedUrl,"_blank");
+  }catch(e){alert("PDF 열기 실패: "+(e.message||e)+" (SQL L1의 orders 정책 실행 여부 확인)");}
+  finally{busy(false);}
+}
+async function bjDeleteDoc(alsoRestart){
+  if(!bjD)return;
+  var msg=alsoRestart
+    ?"지금 판독 기록(항목 포함)을 지우고, 새 PDF를 골라 다시 판독할까요?"
+    :"이 판독 기록(항목 포함)과 보관된 PDF를 지울까요?\n송달 기록(사건 목록)은 남아요. 송달 기록까지 지우려면 사건 목록의 [삭제]를 쓰세요.";
+  if(!confirm(msg))return;
+  busy(true);
+  try{
+    if(bjD.pdf_path){try{await sbc.storage.from("bojeong").remove([bjD.pdf_path]);}catch(e){}}
+    var r=await sbc.from("bj_documents").delete().eq("id",bjD.id).select("id");
+    if(r.error)throw r.error;
+    if(!r.data||!r.data.length)throw new Error("삭제된 기록이 0건이에요. 권한(role)을 확인하세요.");
+    var did=bjD.delivery_id;
+    bjD=null;bjIt=[];bjStd=[];bjOne=false;
+    showView("list");
+    if(alsoRestart&&did){
+      bjPendingDelivery=did;
+      document.getElementById("bj-file2").click();
+    }
+  }catch(e){alert("판독 삭제 실패: "+(e.message||e));}
+  finally{busy(false);}
+}
+/* ---------- 한 번에 하나씩 확인 모드 ---------- */
+function bjOneOpen(){if(!bjIt.length)return;bjOne=true;bjSel=Math.min(bjSel,bjIt.length-1);bjRender();}
+function bjOneClose(){bjOne=false;bjRender();}
+function bjOnePrev(){if(bjSel>0){bjSel--;bjRender();}}
+function bjOneNext(){
+  if(bjIt[bjSel])bjIt[bjSel]._ok=true;
+  if(bjSel<bjIt.length-1){bjSel++;bjRender();}
+  else{bjOne=false;bjRender();alert("항목 "+bjIt.length+"개 확인 끝. 이제 [판독 확정 → 유형 선택]을 누르세요.");}
+}
+function bjOneHtml(){
+  var it=bjIt[bjSel];if(!it)return "";
+  var prev=bjSel>0?("… "+esc(bjIt[bjSel-1].item_text.slice(-42))):"(문서 시작)";
+  var next=bjSel<bjIt.length-1?(esc(bjIt[bjSel+1].item_text.slice(0,42))+" …"):"(문서 끝)";
+  return '<div class="bj-one"><div class="bj-ocard">'
+    +'<div class="oprog"><b>항목 '+(bjSel+1)+' / '+bjIt.length+'</b><div class="obar"><i style="width:'+Math.round((bjSel+1)/bjIt.length*100)+'%"></i></div></div>'
+    +'<div style="font-size:12px;font-weight:800;color:var(--brand)">이 문장이 한 덩어리가 맞나요?</div>'
+    +'<div class="osent">'+esc(it.item_text)+'</div>'
+    +'<div class="octx">'+prev+'<br><b>'+it.seq+'. '+esc(it.item_text)+'</b><br>'+next+'</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">'
+    +'<button class="btn primary" onclick="bjOneNext()">'+(bjSel<bjIt.length-1?"맞아요, 다음":"맞아요, 확인 끝")+'</button>'
+    +(bjSel>0?'<button class="btn ghost" onclick="bjMerge(bjSel);bjSel=Math.max(0,bjSel-1);bjRender()">▲ 앞과 한 덩어리</button>':'')
+    +'<button class="btn ghost" onclick="bjOne=false;bjEditOpen(bjSel)">나누기·고치기</button>'
+    +'<button class="btn ghost" onclick="if(confirm(\'항목을 지울까요?\')){bjIt.splice(bjSel,1);bjIt.forEach(function(x,j){x.seq=j+1});if(bjSel>=bjIt.length)bjSel=Math.max(0,bjIt.length-1);if(!bjIt.length)bjOne=false;bjRender()}">지우기</button>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px">'
+    +'<span style="cursor:pointer;color:var(--brand);font-weight:700" onclick="bjOnePrev()">← 이전</span>'
+    +'<span style="cursor:pointer;color:var(--muted)" onclick="bjOneClose()">목록으로 (진행 상황 유지)</span></div>'
+    +'</div></div>';
+}
+function bjResplitFull(){
+  if(!confirm("머리말을 포함한 전체 원문을 다시 쪼갤까요? 지금 항목 목록이 바뀌어요."))return;
+  var sp=bjSplitItems((bjD.raw_text||"").split("\n"));
+  bjIt=sp.items.map(function(t,i){return {seq:i+1,item_text:t,type_codes:"",unresolved:false,memo:""};});
+  bjD._how=sp.how+"(전체범위)";
+  bjRender();
+}
+function bjMerge(i){
+  if(i<=0)return;
+  bjIt[i-1].item_text+=" "+bjIt[i].item_text;
+  bjIt.splice(i,1);
+  bjIt.forEach(function(x,idx){x.seq=idx+1;});
+  bjRender();
+}
+function bjEditOpen(i){bjIt[i]._edit=true;bjRender();}
+function bjEditSave(i){
+  var ta=document.getElementById("bj-ta-"+i);if(!ta)return;
+  var parts=ta.value.split(/\n+/).map(function(s){return s.trim();}).filter(Boolean);
+  if(!parts.length){alert("내용이 비어 있어요.");return;}
+  var tail=bjIt.slice(i+1);
+  var head=bjIt.slice(0,i);
+  var mid=parts.map(function(t){return {seq:0,item_text:t,type_codes:bjIt[i].type_codes||"",unresolved:false,memo:bjIt[i].memo||""};});
+  bjIt=head.concat(mid,tail);
+  bjIt.forEach(function(x,idx){x.seq=idx+1;delete x._edit;});
+  bjRender();
+}
+function bjStdPropose(){
+  var found=bjDetectChecks(bjD.raw_text||"");
+  if(!found.length)return null;
+  var hits=[];
+  bjStd.forEach(function(s,i){
+    var key=bjNospace(s.row.name).slice(0,6);
+    if(key&&found.some(function(l){return bjNospace(l).indexOf(key)>=0;}))hits.push(i);
+  });
+  return {found:found,hits:hits};
+}
+function bjStdApply(idxCsv){
+  idxCsv.split(",").filter(Boolean).forEach(function(i){bjStd[+i].checked=true;});
+  bjRender();
+}
+async function bjConfirmRead(){
+  if(bjIt.some(function(x){return x.round_no;})){alert("이미 회차가 진행된 문서예요. 항목을 다시 만들면 회차 기록이 깨져서 막아뒀어요. [③ 서류 확정] 화면에서 이어서 하세요.");return;}
+  if(!bjKindOk){alert("문서 종류 배너의 [맞음]을 먼저 눌러 확인해 주세요.");return;}
+  if(!bjD.served_at){if(!confirm("실제 송달확인일이 아직 없어요. 기한 계산 없이 계속할까요?"))return;}
+  var items=bjIt.slice();
+  bjStd.forEach(function(s){
+    if(s.checked)items.push({item_text:"[양식] "+s.row.section+" · "+s.row.name,type_codes:"",unresolved:false,memo:s.row.doc_keys||""});
+  });
+  if(!items.length){alert("항목이 없어요. [나누기]로 항목을 만들거나 양식 체크리스트를 선택하세요.");return;}
+  items.forEach(function(x,i){x.seq=i+1;});
+  busy(true);
+  try{
+    var del=await sbc.from("bj_items").delete().eq("doc_id",bjD.id);
+    if(del.error)throw del.error;
+    var rows=items.map(function(x){return {doc_id:bjD.id,seq:x.seq,item_text:x.item_text,type_codes:x.type_codes||null,unresolved:!!x.unresolved,memo:x.memo||null};});
+    var ins=await sbc.from("bj_items").insert(rows).select("id,seq");
+    if(ins.error)throw ins.error;
+    if(!ins.data||ins.data.length!==rows.length)throw new Error("항목 저장 건수가 맞지 않아요 ("+(ins.data?ins.data.length:0)+"/"+rows.length+"). 권한을 확인하세요.");
+    var dd=bjDocDue(),calc=bjCalcDue();
+    var cd=bjD.court_deadline;
+    if(dd.date)cd=dd.date;else if(calc)cd=fmt(calc);
+    var up=await sbc.from("bj_documents").update({
+      doc_type:bjD.doc_type,served_at:bjD.served_at||null,court_deadline:cd,
+      deadline_source:dd.date?"문서":(calc?"계산":bjD.deadline_source),
+      parse_mode:bjD._how||bjD.parse_mode,status:"유형선택중",updated_at:new Date().toISOString()
+    }).eq("id",bjD.id).select("id");
+    if(up.error)throw up.error;
+    if(!up.data||!up.data.length)throw new Error("문서 저장 0건. 권한을 확인하세요.");
+    if(bjDel&&bjD.served_at&&(!bjDel.confirmed||bjDel.confirmedDate!==bjD.served_at)){
+      await sd().from("deliveries").update({confirmed:true,confirmed_at:bjD.served_at}).eq("id",bjD.delivery_id);
+    }
+    bjIt=items;
+    var again=await sbc.from("bj_items").select("*").eq("doc_id",bjD.id).order("seq");
+    bjIt=(again.data||[]).map(function(r){return {id:r.id,seq:r.seq,item_text:r.item_text,type_codes:r.type_codes||"",unresolved:!!r.unresolved,memo:r.memo||"",item_status:r.item_status||"대기",round_no:r.round_no||null,submitted_at:r.submitted_at||null,unresolved_reason:r.unresolved_reason||""};});
+    bjD.status="유형선택중";bjMode="type";bjIdx=0;
+    bjRender();
+  }catch(e){alert("판독 확정 실패: "+(e.message||e));}
+  finally{busy(false);}
+}
+
+/* ---------- ③ 유형 선택 : 갈래 5개 · 예시문장 비교 · 판별사전 정렬 ---------- */
+var bjTab=null;
+function bjCourtRank(){
+  var court=bjCourtNorm(bjD.court||""),rank={};
+  (bjKb.courts||[]).forEach(function(c){
+    if(c.court!==court||c.dept)return;
+    var m=String(c.top_types||"").match(/[A-E]\d{2}/g)||[];
+    m.forEach(function(code,i){if(rank[code]===undefined)rank[code]=i;});
+  });
+  return rank;
+}
+function bjSortedTypes(itemText,group){
+  var score=bjScoreTypes(itemText),rank=bjCourtRank();
+  var list=bjKb.types.filter(function(t){return !group||t.group5===group;});
+  list.sort(function(a,b){
+    var sa=score[a.code]||0,sb=score[b.code]||0;
+    if(sa!==sb)return sb-sa;
+    var ra=rank[a.code]!==undefined?rank[a.code]:99,rb=rank[b.code]!==undefined?rank[b.code]:99;
+    if(ra!==rb)return ra-rb;
+    return (a.sort_order||0)-(b.sort_order||0);
+  });
+  return list;
+}
+function bjBestGroup(itemText){
+  var score=bjScoreTypes(itemText),best=null,bs=0;
+  bjKb.types.forEach(function(t){
+    var s=score[t.code]||0;
+    if(s>bs&&t.group5){bs=s;best=t.group5;}
+  });
+  return best||BJ_GROUPS[0];
+}
+function bjToggleType(code){
+  var it=bjIt[bjIdx];
+  var cur=(it.type_codes||"").split(",").filter(Boolean);
+  var i=cur.indexOf(code);
+  if(i>=0)cur.splice(i,1);else cur.push(code);
+  it.type_codes=cur.join(",");
+  if(cur.length)it.unresolved=false;
+  bjRender();
+}
+function bjUnknown(){
+  var it=bjIt[bjIdx];
+  it.unresolved=!it.unresolved;
+  if(it.unresolved)it.type_codes="";
+  bjRender();
+}
+async function bjAsk(){
+  var it=bjIt[bjIdx];
+  busy(true);
+  try{
+    var q="[보정판독] "+bjD.case_no+" 항목"+it.seq+": "+it.item_text.slice(0,300);
+    var r=await sbc.from("kb_questions").insert({question:q,case_no:bjD.case_no,urgent:false,asked_by:me.name||"직원",status:"대기"}).select("id");
+    if(r.error)throw r.error;
+    it.unresolved=true;it.memo=(it.memo?it.memo+" · ":"")+"질문함 등록";
+    await bjSaveItem(false);
+    alert("질문함에 올렸어요. 답이 달리면 지식베이스 질문함에서 볼 수 있어요.");
+    bjRender();
+  }catch(e){alert("질문함 등록 실패: "+(e.message||e));}
+  finally{busy(false);}
+}
+async function bjSaveItem(msg){
+  var it=bjIt[bjIdx];
+  if(!it.id)return;
+  var r=await sbc.from("bj_items").update({type_codes:it.type_codes||null,unresolved:!!it.unresolved,memo:it.memo||null}).eq("id",it.id).select("id");
+  if(r.error||!r.data||!r.data.length){alert("저장 실패: "+((r.error&&r.error.message)||"0건 저장. 권한 확인"));return false;}
+  if(msg)alert("중간 저장했어요. 나중에 사건 상세의 [보정 판독]으로 이어서 할 수 있어요.");
+  return true;
+}
+async function bjNav(dir){
+  await bjSaveItem(false);
+  bjIdx=Math.max(0,Math.min(bjIt.length-1,bjIdx+dir));
+  bjTab=null;bjRender();
+}
+async function bjFinishTypes(){
+  await bjSaveItem(false);
+  var un=bjIt.filter(function(x){return x.unresolved;}).length;
+  var none=bjIt.filter(function(x){return !x.unresolved&&!(x.type_codes||"").length;}).length;
+  if(un||none){
+    var m="유형 선택을 마쳤어요.";
+    if(un)m+="\n· [모르겠음] 빨간 항목 "+un+"개: 서류 확정 때 사유를 적어야 해요";
+    if(none)m+="\n· 유형 미지정 항목 "+none+"개: 이번 회차 서류 목록에 안 들어가요";
+    alert(m);
+  }
+  bjMode="docs";
+  await bjLoadCtx();
+  if(!bjReqs.length&&bjIt.some(function(x){return x.item_status==="대기";}))bjStartRound();
+  else{bjRound=null;bjRender();}
+}
+/* ---------- 판독/유형 화면 그리기 ---------- */
+function bjRender(){
+  var w=document.getElementById("bj-wrap");
+  if(!w||!bjD)return;
+  var kinds=(bjD.doc_type||"일반").split(",").filter(Boolean);
+  var head='<div class="h2row"><h2 style="margin:0">🔍 보정 판독 · '+esc(bjD.case_no)+(bjDel?' · '+esc(bjDel.name):'')+'</h2>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+    +(bjD.delivery_id?'<button class="btn ghost mini" onclick="bjDeleteDoc(true)">다른 PDF로 다시 판독</button>':'')
+    +'<button class="btn danger mini" onclick="bjDeleteDoc(false)">판독 삭제</button>'
+    +'<button class="btn ghost mini" onclick="showView(\'list\')">닫기</button></div></div>'
+    +'<div class="bj-step"><span class="'+(bjMode==="read"?"on":"")+'">① 확인·항목 교정</span><span class="'+(bjMode==="type"?"on":"")+'">② 유형 선택</span><span class="'+(bjMode==="docs"?"on":"")+'">③ 서류 확정</span><span class="'+(bjMode==="send"?"on":"")+'">④ 안내 발송</span></div>';
+  if(bjMode==="read"){w.innerHTML=head+bjReadHtml(kinds);}
+  else if(bjMode==="type"){w.innerHTML=head+bjTypeHtml();}
+  else if(bjMode==="docs"){w.innerHTML=head+bjDocsHtml();}
+  else{w.innerHTML=head+bjSendHtml();}
+}
+/* 화면 B (M-2) : 3단계 (문서 종류 → 기한 → 항목 교정) */
+function bjStepGo(n){bjStep=n;bjRender();}
+function bjKindConfirm(){bjKindOk=true;bjStep=2;bjRender();}
+function bjReadHtml(kinds){
+  var dd=bjDocDue(),calc=bjCalcDue();
+  var h='<div class="bj-step">'
+    +'<span class="'+(bjStep===1?"on":"")+'">1 문서 종류</span>'
+    +'<span class="'+(bjStep===2?"on":"")+'">2 기한</span>'
+    +'<span class="'+(bjStep===3?"on":"")+'">3 항목 교정</span></div>';
+  /* 끝난 단계는 한 줄 요약으로 접힘 */
+  if(bjStep>1){
+    h+='<div class="bj-summ"><b>1. 문서 종류</b> '+kinds.map(bjKindChip).join(" ")+' '+(bjKindOk?'확인 완료':'미확인')
+      +'<span class="spacer" style="flex:1"></span><span class="bj-link" onclick="bjStepGo(1)">다시 보기</span></div>';
+  }
+  if(bjStep>2){
+    var dstr=dd.date||(calc?fmt(calc):null);
+    h+='<div class="bj-summ"><b>2. 기한</b> 송달확인 '+esc(bjD.served_at||"없음")+' · 법원 제출기한 '+esc(dstr||"계산 안 됨")
+      +'<span class="spacer" style="flex:1"></span><span class="bj-link" onclick="bjStepGo(2)">다시 보기</span></div>';
+  }
+  /* ---- 1단계 : 문서 종류 ---- */
+  if(bjStep===1){
+    h+='<div class="sec" style="padding:18px">'
+      +'<div style="font-weight:800;font-size:16px;margin-bottom:10px">이 문서가 어떤 종류인지 확인하세요</div>'
+      +'<div style="font-size:15px;line-height:2">'+kinds.map(bjKindChip).join(" ")+' 로 읽었습니다.</div>';
+    if(kinds.indexOf("체계밖")>=0)h+='<div class="bj-alert red">일반 개인회생 보정이 아닙니다(파산·개시 후 수정명령 계열). 유형 목록이 맞지 않을 수 있으니 담당 변호사와 직접 확인하세요.</div>';
+    if(kinds.some(function(k){return k.indexOf("재보정")>=0;}))h+='<div class="bj-alert amber">재보정 문서입니다. 이전 회차 기록은 사건 상세에서 확인하세요.</div>';
+    if((bjD.doc_type||"").indexOf("빠른경로")>=0)h+='<div class="bj-alert green">인지·송달료 납부 문서입니다. 유형 화면에서 E01이 맨 위에 뜹니다. 납부는 1일 처리 원칙입니다.</div>';
+    h+='<div id="bj-kindedit" class="hide" style="margin-top:10px"></div>'
+      +'<div class="bj-fix"><button class="btn primary bj-big" onclick="bjKindConfirm()">맞습니다, 다음</button>'
+      +'<span class="bj-link" onclick="bjKindEdit()">다른 종류로 고치기</span>'
+      +'<span class="spacer" style="flex:1"></span><span class="bj-note">종류를 확인해야 판독을 확정할 수 있습니다.</span></div>'
+      +'</div>';
+    return h;
+  }
+  /* ---- 2단계 : 기한 ---- */
+  if(bjStep===2){
+    h+='<div class="sec" style="padding:18px">'
+      +'<div style="font-weight:800;font-size:16px;margin-bottom:4px">기한을 확인하세요</div>'
+      +'<div class="bj-note" style="margin-bottom:10px">송달확인일이 모든 날짜 계산의 뿌리입니다.</div>'
+      +'<div class="kv"><span class="k">실제 송달확인일</span><span><input type="date" style="width:auto;padding:8px 10px" value="'+esc(bjD.served_at||"")+'" onchange="bjSetServed(this.value)"> <span class="bj-note">서류상 날짜와 다를 수 있습니다</span></span></div>'
+      +'<div class="kv"><span class="k">PDF 기한 문구</span><span>'+(dd.dl?('"'+esc(dd.dl.text)+'"'+(dd.days?' → '+dd.days+'일':'')):'<span style="color:#B42318">찾지 못했습니다. PDF에서 직접 확인하세요.</span>')+'</span></div>'
+      +'<div class="kv"><span class="k">앱 계산 기한</span><span>'+(calc?'<b>'+fmt(calc)+'</b> (송달확인일 + '+(bjDel?bjDel.termDays:7)+'일, 주말·공휴일 연장)':'송달확인일을 넣으면 계산됩니다')+'</span></div>';
+    if(dd.days&&bjDel&&dd.days!==bjDel.termDays){
+      h+='<div class="bj-alert red">문서의 기한('+dd.days+'일)과 등록된 처리기한('+bjDel.termDays+'일)이 다릅니다. '
+        +'<button class="btn primary mini" onclick="bjApplyDocTerm()">문서 기한 '+dd.days+'일 적용</button> 또는 사건 상세에서 고치세요.</div>';
+    }else if(dd.dl&&calc){
+      h+='<div class="bj-alert green">문서 기한과 계산 기한이 일치합니다'+(dd.date?' · 법원 제출기한 '+esc(dd.date):'')+'</div>';
+    }
+    if(dd.days&&dd.days<=5)h+='<div class="bj-alert amber">법원 기한이 '+dd.days+'일로 짧습니다. 서류 확정 단계에서 여유일을 줄이세요.</div>';
+    h+='<div class="bj-fix"><button class="btn primary bj-big" onclick="bjStepGo(3)">기한 확인, 다음</button>'
+      +'<span class="bj-link" onclick="bjStepGo(1)">이전</span></div>'
+      +'</div>';
+    return h;
+  }
+  /* ---- 3단계 : 항목 교정 ---- */
+  var _cov=(function(){var bd=bjNospace(bjD.raw_text||"").length;var ic=bjIt.reduce(function(s,x){return s+bjNospace(x.item_text).length;},0);return bd?Math.min(100,Math.round(ic/bd*100)):0;})();
+  var _ok=bjIt.filter(function(x){return x._ok;}).length;
+  h+='<div class="bj-cols"><div>';
+  h+='<div class="bj-vtabs">'
+    +'<button class="'+(bjView==="pdf"?"on":"")+'" onclick="bjView=\'pdf\';bjRender()">원본 미리보기</button>'
+    +'<button class="'+(bjView==="text"?"on":"")+'" onclick="bjView=\'text\';bjRender()">뽑은 글자</button>'
+    +(bjD.pdf_path?'<button onclick="bjOpenPdf()">새 창으로 크게</button>':'')
+    +'</div>';
+  if(bjView==="pdf"){
+    if(!bjD.pdf_path){
+      h+='<div class="bj-alert amber">이 문서는 PDF 원본이 저장돼 있지 않아요. [뽑은 글자]로 확인해 주세요.</div>';
+    }else if(!bjPdfUrl){
+      h+='<div class="bj-alert amber">원본 미리보기 주소를 만들지 못했어요. <button class="btn ghost mini" onclick="bjMakePdfUrl(true)">다시 시도</button> <span class="bj-note">(SQL L1의 orders 정책 실행 여부 확인)</span></div>';
+    }else if(BJ_MOBILE){
+      h+='<div class="bj-alert amber">휴대폰에서는 화면 안 미리보기가 안 되는 기종이 많아요. 새 창으로 열어 확인하세요.</div>'
+        +'<button class="btn primary" onclick="bjOpenPdf()">원본 PDF 새 창으로 열기</button>';
+    }else{
+      h+='<iframe class="bj-frame" id="bj-frame" src="'+bjPdfUrl+'#toolbar=1&page='+(bjPage||1)+'"></iframe>'
+        +'<div class="bj-note" style="margin-top:6px">다시 그린 화면이 아니라 PDF 원본 그대로예요. 최종 판단은 이 원본 기준.</div>';
+    }
+  }else{
+    h+='<div class="bj-note" style="margin:2px 0 6px">워터마크·페이지번호만 뺀 전체 글이에요 · 카드를 누르면 여기서 노랗게 표시돼요 · <span class="pill">원문 글자의 '+_cov+'%가 항목에 담김</span></div>'
+      +'<div class="bj-raw" id="bj-rawbox">'+esc(bjD.raw_text||"")+'</div>';
+  }
+  h+='</div>';
+  h+='<div><div style="font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">보정 항목 '+bjIt.length+'개 <span class="pill">확인 '+_ok+' / '+bjIt.length+'</span>'
+    +'<button class="btn ghost mini" onclick="bjOneOpen()">한 번에 하나씩 확인</button>'
+    +'<span class="bj-note">카드를 누르면 원본의 해당 위치로 이동해요</span></div>';
+  h+=bjIt.map(function(it,i){
+    var now=(i===bjSel);
+    var body;
+    if(it._edit){
+      body='<textarea id="bj-ta-'+i+'" onclick="event.stopPropagation()">'+esc(it.item_text)+'</textarea>'
+        +'<div class="bj-note">나눌 위치에 엔터로 줄을 바꾸면 여러 항목으로 나눠져요. 뽑은 글자가 틀렸으면 여기서 고치면 돼요.</div>'
+        +'<div class="ops"><button class="btn primary mini" onclick="event.stopPropagation();bjEditSave('+i+')">저장</button>'
+        +'<button class="btn ghost mini" onclick="event.stopPropagation();delete bjIt['+i+']._edit;bjRender()">취소</button></div>';
+    }else{
+      body='<div class="chead"><span class="no">'+it.seq+'</span><span class="cstat'+(it._ok?' ok':'')+'">'+(it._ok?'확인 끝':(now?'확인 중':'대기'))+'</span></div>'
+        +'<span class="txt">'+esc(it.item_text)+'</span>'
+        +(now?'<div class="ops">'
+          +'<button class="btn ghost mini" onclick="event.stopPropagation();bjGoItem('+i+')">'+(bjView==="pdf"?"원본에서 위치 보기":"뽑은 글자에서 위치 보기")+'</button>'
+          +(i>0?'<button class="btn ghost mini" onclick="event.stopPropagation();bjMerge('+i+')">▲ 위와 합치기</button>':'')
+          +'<button class="btn ghost mini" onclick="event.stopPropagation();bjEditOpen('+i+')">나누기·글자 고치기</button>'
+          +'<button class="btn danger mini" onclick="event.stopPropagation();if(confirm(\'항목을 지울까요?\')){bjIt.splice('+i+',1);bjIt.forEach(function(x,j){x.seq=j+1});bjRender()}">지우기</button>'
+          +'</div>':'');
+    }
+    return '<div class="bj-item'+(now?" now":"")+((!now&&!it._edit)?" clamp":"")+'" id="bj-card-'+i+'" onclick="bjSelItem('+i+')">'+body+'</div>';
+  }).join("")||'<div class="empty">쪼갠 항목이 없어요. 표준양식 체크리스트를 쓰거나 [항목 직접 추가]를 누르세요.</div>';
+  h+='<button class="btn ghost mini" style="margin-top:4px" onclick="bjIt.push({seq:bjIt.length+1,item_text:\'\',type_codes:\'\',unresolved:false,memo:\'\',_edit:true});bjRender()">＋ 항목 직접 추가</button> <button class="btn ghost mini" style="margin-top:4px" onclick="bjResplitFull()">↻ 전체 범위로 다시 쪼개기</button>'
+    +'<div class="bj-note" style="margin-top:6px">항목 문장은 뽑은 글자예요 · 최종 판단은 원본 기준</div>';
+  h+='</div></div>';
+  if(bjOne)h+=bjOneHtml();
+  /* 표준양식 체크리스트 */
+  if((bjD.doc_type||"").indexOf("표준양식")>=0){
+    var prop=bjStdPropose();
+    h+='<div class="sec" style="margin-top:12px;padding:14px"><div style="font-weight:700;margin-bottom:4px">표준양식 체크리스트 ('+esc(bjCourtNorm(bjD.court||""))+')</div>'
+      +'<div class="bj-note" style="margin-bottom:8px">법원이 문서에 체크한 항목을 아래에서 그대로 체크하세요. 체크한 항목이 보정 항목으로 추가돼요.</div>';
+    if(prop&&prop.hits.length){
+      h+='<div class="bj-alert amber">문서에서 체크 표시(☑) '+prop.found.length+'줄을 찾았고, 그중 '+prop.hits.length+'개 항목이 아래 목록과 맞아 보여요. 맞나요? '
+        +'<button class="btn primary mini" onclick="bjStdApply(\''+prop.hits.join(",")+'\')">네, 반영</button> <span class="bj-note">반영 후에도 직접 확인·수정하세요 (자동 확정 아님)</span></div>';
+    }
+    if(!bjStd.length)h+='<div class="bj-alert red">이 법원의 표준양식 데이터가 없어요 (kb_std_forms). SQL J4 실행 여부를 확인하거나, 항목을 직접 추가하세요.</div>';
+    var sec="";
+    h+=bjStd.map(function(s,i){
+      var head2=s.row.section!==sec?('<div style="font-weight:700;font-size:12.5px;color:var(--brand);margin:10px 0 2px">'+esc(s.row.section)+'</div>'):"";
+      sec=s.row.section;
+      return head2+'<label class="bj-stditem"><input type="checkbox" '+(s.checked?"checked":"")+' onchange="bjStd['+i+'].checked=this.checked"><span><b>'+s.row.item_no+'.</b> '+esc(s.row.name)+'</span></label>';
+    }).join("");
+    h+='</div>';
+  }
+  h+='<div class="bj-fix">'
+    +'<button class="btn primary bj-big" onclick="bjConfirmRead()">판독 확정하고 유형 선택으로</button>'
+    +'<span class="bj-link" onclick="bjStepGo(2)">이전 (기한)</span>'
+    +'<span class="spacer" style="flex:1"></span>'
+    +'<span class="bj-note">항목이 저장됩니다. 다시 열어도 이어서 할 수 있습니다.</span></div>';
+  return h;
+}
+/* 화면 C (M-2) : 왼쪽 법원 문장 고정 · 오른쪽 유형 예시 문장 나란히 비교 */
+function bjTypeHtml(){
+  if(!bjIt.length)return '<div class="empty">항목이 없어요.</div>';
+  var it=bjIt[bjIdx];
+  var tab=bjTab||bjBestGroup(it.item_text);
+  var sel=(it.type_codes||"").split(",").filter(Boolean);
+  var list=bjSortedTypes(it.item_text,tab);
+  var h='<div class="oprog" style="margin-bottom:10px"><b style="font-size:15px">항목 '+(bjIdx+1)+' / '+bjIt.length+'</b>'
+    +'<div class="obar" style="max-width:240px"><i style="width:'+Math.round((bjIdx+1)/bjIt.length*100)+'%"></i></div></div>';
+  h+='<div class="bj-match"><div class="ml">'
+    +'<div class="bj-note" style="margin-bottom:8px">법원이 쓴 문장</div>'
+    +'<div style="font-size:16px;line-height:1.85;font-weight:700">'+(it.unresolved?'<span class="bj-kind warn">모르겠음</span> ':'')+esc(it.item_text)+'</div>'
+    +'<div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="bj-note">선택</span> '
+      +(sel.length?sel.map(function(c){return '<span class="pill">'+esc(c)+'</span>';}).join(" "):'<span class="bj-note">없음</span>')+'</div>'
+    +'<div class="bj-note" style="margin-top:14px;line-height:1.7">오른쪽 예시 문장 중 가장 비슷한 것을 고르세요. 한 문장에 여러 요구가 섞였으면 여러 개 고르면 됩니다.</div>'
+    +'</div><div class="mr">'
+    +'<div class="bj-tsmall">'+BJ_GROUPS.map(function(g){
+        return '<button class="'+(g===tab?"on":"")+'" onclick="bjTab=\''+g+'\';bjRender()">'+esc(g)+'</button>';
+      }).join("")+'</div>'
+    +(list.map(function(t){
+        var on=sel.indexOf(t.code)>=0,nd=bjKb.sopCount[t.code];
+        return '<div class="bj-mrow'+(on?" sel":"")+'" onclick="bjToggleType(\''+t.code+'\')">'
+          +'<b>'+esc(t.code)+' '+esc(t.name)+'</b>'+(on?' <span class="chip ok">선택됨</span>':'')
+          +'<div class="bj-note">'+(t.example_sentence?'"'+esc(t.example_sentence)+'"':'예시 문장 없음')+(nd?' · 필요서류 '+nd+'개':'')+'</div>'
+          +'</div>';
+      }).join("")||'<div class="empty" style="padding:20px 0">이 갈래에 유형이 없어요.</div>')
+    +'</div></div>';
+  h+='<div class="bj-fix">'
+    +(bjIdx<bjIt.length-1
+      ?'<button class="btn primary bj-big" onclick="bjNav(1)">저장하고 다음 항목</button>'
+      :'<button class="btn primary bj-big" onclick="bjFinishTypes()">유형 선택 완료하고 서류 확정으로</button>')
+    +(bjIdx>0?'<span class="bj-link" onclick="bjNav(-1)">이전</span>':'')
+    +'<span class="bj-link" onclick="bjUnknown()">'+(it.unresolved?"모르겠음 해제":"모르겠음")+'</span>'
+    +'<span class="bj-link" onclick="bjAsk()">질문함에 올리기</span>'
+    +'<span class="bj-link" onclick="bjSaveItem(true)">중간 저장</span>'
+    +((bjD.status==="진행중"||bjD.status==="완료")?'<span class="bj-link" onclick="bjSaveItem(false).then(function(){bjMode=\'docs\';bjRound=null;bjRender()})">서류 확정 화면</span>':'')
+    +'<span class="spacer" style="flex:1"></span>'
+    +'<span class="bj-note">'+(it.unresolved?'빨간 항목입니다. 서류 확정 때 사유를 적어야 합니다.':'선택한 유형이 서류 목록을 만듭니다.')+'</span>'
+    +'</div>';
+  return h;
+}
+/* ================================================================
+   확정·전달 (세션 M) : ④ 서류 목록 확정 → 회차 확정(중복 방어) →
+   ⑤ 카톡/전화 (최종 문구 저장 · 보냈음 · 통화 완료 원버튼)
+   ================================================================ */
+function bjNameKey(s){return String(s||"").replace(/\s+/g,"");} /* 취합앱 sbNorm과 같은 규칙 */
+function fmtKor(d){
+  var x=parseD(d);if(!x)return "";
+  var wd=["일","월","화","수","목","금","토"][x.getDay()];
+  return x.getFullYear()+"년 "+(x.getMonth()+1)+"월 "+x.getDate()+"일 ("+wd+")";
+}
+/* 의뢰인·기존 체크리스트·회차 기록 불러오기 */
+async function bjLoadCtx(){
+  bjCli=null;bjChk=[];bjReqs=[];
+  var cid=bjDel?bjDel.client_id:null;
+  try{
+    if(cid){
+      var c=await sbc.from("clients").select("id,name,phone,case_no").eq("id",cid).single();
+      bjCli=c.data||null;
+    }else if(bjD&&bjD.case_no){
+      var f=await sbc.from("clients").select("id,name,phone,case_no").ilike("case_no","%"+bjD.case_no+"%").limit(1);
+      if(f.data&&f.data.length)bjCli=f.data[0];
+    }
+  }catch(e){}
+  if(bjCli){
+    try{
+      var k=await sbc.from("checklist_items").select("id,doc_key,doc_name,status").eq("client_id",bjCli.id);
+      bjChk=k.data||[];
+    }catch(e){bjChk=[];}
+  }
+  try{
+    var r=await sbc.from("bj_requests").select("*").eq("doc_id",bjD.id).order("round_no").order("created_at");
+    bjReqs=r.data||[];
+  }catch(e){bjReqs=[];}
+}
+/* 여유일 자동 제안 (bj_settings buffer_days_rule, 혜림 확정: 1~2개 2일 / 3~4개 3일 / 5~6개 5일 / 7개 이상 7일) */
+function bjBufferSuggest(nDocs){
+  var rule=null;
+  try{rule=bjKb.settings.buffer_days_rule;}catch(e){}
+  if(!Array.isArray(rule)||!rule.length)rule=[{max_docs:2,days:2},{max_docs:4,days:3},{max_docs:6,days:5},{max_docs:999,days:7}];
+  for(var i=0;i<rule.length;i++){if(nDocs<=rule[i].max_docs)return rule[i].days;}
+  return 7;
+}
+/* 안내 마감 = 법원 기한 - 여유일. 주말·공휴일이면 앞 평일로 당김 */
+function bjClientDeadline(cd,buf){
+  var x=parseD(cd);if(!x)return null;
+  x.setDate(x.getDate()-(buf||0));
+  var n=0;while(isHoliday(x)&&n<30){x.setDate(x.getDate()-1);n++;}
+  return fmt(x);
+}
+/* SOP 카드에서 유형별 필요서류 꺼내기 ("이름 | 발급처·방법" 줄 형식) */
+function bjSopDocs(code){
+  var court=bjCourtNorm(bjD.court||"");
+  var out=[];
+  ((bjKb&&bjKb.sops)||[]).forEach(function(s){
+    if(s.type_code!==code)return;
+    if(s.court&&s.court.trim()&&bjCourtNorm(s.court.trim())!==court)return;
+    String(s.required_docs||"").split("\n").forEach(function(ln){
+      ln=ln.trim();
+      if(!ln||ln.indexOf("■")===0)return;
+      var p=ln.split("|");
+      var name=(p[0]||"").trim(),how=(p[1]||"").trim();
+      if(!name)return;
+      out.push({name:name,how:how,src:code});
+    });
+  });
+  return out;
+}
+/* 서류사전에서 발급방법·가이드 링크 보강 */
+function bjDictFind(name){
+  var key=bjNameKey(name);if(!key)return null;
+  var hit=null;
+  ((bjKb&&bjKb.dict)||[]).forEach(function(d){
+    if(hit)return;
+    var dk=bjNameKey(d.name);if(!dk)return;
+    if(key===dk||(dk.length>=4&&key.indexOf(dk)>=0)||(key.length>=4&&dk.indexOf(key)>=0))hit=d;
+  });
+  return hit;
+}
+/* 이번 회차 서류 목록 = 선택 항목 유형들의 SOP 서류 합집합(중복 제거) - 뺀 것 + 직접 추가 */
+function bjRoundDocs(){
+  var seen={},list=[];
+  bjRound.itemIds.forEach(function(id){
+    var it=null;bjIt.forEach(function(x){if(x.id===id)it=x;});
+    if(!it)return;
+    (it.type_codes||"").split(",").filter(Boolean).forEach(function(code){
+      bjSopDocs(code).forEach(function(d){
+        var k=bjNameKey(d.name);
+        if(seen[k]){if(seen[k].src.indexOf(code)<0)seen[k].src+=","+code;return;}
+        var o={name:d.name,how:d.how,src:code};
+        seen[k]=o;list.push(o);
+      });
+    });
+  });
+  list=list.filter(function(d){return !bjRound.removed[bjNameKey(d.name)];});
+  bjRound.added.forEach(function(a){
+    var k=bjNameKey(a.name);
+    if(!seen[k]&&!bjRound.removed[k])list.push({name:a.name,how:a.how||"",src:"직접추가"});
+  });
+  list.forEach(function(d){
+    var dict=bjDictFind(d.name);
+    if(dict){if(dict.issue_how&&!d.how)d.how=dict.issue_how;d.guide=dict.guide_link||"";}
+    var k=bjNameKey(d.name),ex=null;
+    bjChk.forEach(function(r){if(!ex&&bjNameKey(r.doc_name)===k)ex=r;});
+    d.dup=ex?{status:ex.status||"미요청"}:null;
+  });
+  return list;
+}
+/* 안내문에 들어갈 서류 = 이미 '받음/해당없음'인 것 제외 */
+function bjMsgFilter(docs){
+  return docs.filter(function(d){return !d.dup||["미요청","요청중","보완필요"].indexOf(d.dup.status)>=0;});
+}
+function bjNextRound(){
+  var mx=0;
+  bjIt.forEach(function(x){if(x.round_no&&x.round_no>mx)mx=x.round_no;});
+  bjReqs.forEach(function(r){if(r.round_no>mx)mx=r.round_no;});
+  return mx+1;
+}
+function bjStartRound(){
+  var no=bjNextRound();
+  var ids=bjIt.filter(function(x){return x.item_status==="대기"&&!x.unresolved&&(x.type_codes||"").length;}).map(function(x){return x.id;});
+  bjRound={no:no,itemIds:ids,removed:{},added:[],buffer:null,reason:"",court_deadline:bjD.court_deadline||""};
+  bjAcc=1;   /* M-2: 접기 화면은 1번 구획부터 */
+  bjRender();
+}
+function bjEditRound(no){
+  var ids=bjIt.filter(function(x){return x.round_no===no;}).map(function(x){return x.id;});
+  bjRound={no:no,itemIds:ids,removed:{},added:[],buffer:null,reason:"",court_deadline:bjD.court_deadline||""};
+  var k1=null;bjReqs.forEach(function(r){if(r.round_no===no&&r.message_kind==="카톡1차")k1=r;});
+  var stored=(k1&&Array.isArray(k1.docs))?k1.docs:[];
+  var comp=bjRoundDocs();
+  var stoK={};stored.forEach(function(d){stoK[bjNameKey(d.name)]=1;});
+  var compK={};comp.forEach(function(d){compK[bjNameKey(d.name)]=1;});
+  comp.forEach(function(d){var k=bjNameKey(d.name);if(!stoK[k]&&!d.dup)bjRound.removed[k]=1;});
+  stored.forEach(function(d){var k=bjNameKey(d.name);if(!compK[k])bjRound.added.push({name:d.name,how:d.how||""});});
+  if(bjD.court_deadline&&bjD.client_deadline){
+    bjRound.buffer=Math.max(0,Math.round((parseD(bjD.court_deadline)-parseD(bjD.client_deadline))/86400000));
+  }
+  bjAcc=1;   /* M-2: 접기 화면은 1번 구획부터 */
+  bjRender();
+}
+function bjRoundToggleItem(id,on){
+  var i=bjRound.itemIds.indexOf(id);
+  if(on&&i<0)bjRound.itemIds.push(id);
+  if(!on&&i>=0)bjRound.itemIds.splice(i,1);
+  bjRender();
+}
+function bjRoundRmDoc(i){
+  var d=bjDocsCache[i];if(!d)return;
+  var k=bjNameKey(d.name),ai=-1;
+  bjRound.added.forEach(function(a,j){if(bjNameKey(a.name)===k)ai=j;});
+  if(ai>=0)bjRound.added.splice(ai,1);else bjRound.removed[k]=1;
+  bjRender();
+}
+function bjRoundAddDoc(){
+  var n=v("bj-add-name"),h=v("bj-add-how");
+  if(!n){alert("서류 이름을 입력하세요.");return;}
+  delete bjRound.removed[bjNameKey(n)];
+  bjRound.added.push({name:n,how:h});
+  bjRender();
+}
+/* 회차 기록 upsert : 회차당 1회 보장. 있으면 갱신, 없으면 insert.
+   동시 확정으로 유니크 인덱스(uq_bj_requests_round_kind)에 걸리면 다시 읽어 갱신 */
+async function bjUpsertReq(round,kind,fields){
+  var ex=null;
+  bjReqs.forEach(function(r){if(r.round_no===round&&r.message_kind===kind)ex=r;});
+  if(ex){
+    var r=await sbc.from("bj_requests").update(fields).eq("id",ex.id).select("id");
+    if(r.error)throw r.error;
+    if(!r.data||!r.data.length)throw new Error("회차 기록 저장 0건. 권한(role)을 확인하세요.");
+    Object.keys(fields).forEach(function(k){ex[k]=fields[k];});
+    return ex;
+  }
+  var row={doc_id:bjD.id,client_id:bjCli?bjCli.id:null,round_no:round,message_kind:kind};
+  Object.keys(fields).forEach(function(k){row[k]=fields[k];});
+  var ins=await sbc.from("bj_requests").insert(row).select("*");
+  if(ins.error){
+    if(ins.error.code==="23505"||String(ins.error.message||"").indexOf("duplicate")>=0){
+      await bjLoadCtx();
+      return bjUpsertReq(round,kind,fields);
+    }
+    throw ins.error;
+  }
+  if(!ins.data||!ins.data.length)throw new Error("회차 기록 저장 0건. 권한(role)을 확인하세요.");
+  bjReqs.push(ins.data[0]);
+  return ins.data[0];
+}
+/* ⑤ 회차 확정 : 더블클릭 잠금 + upsert + 건수 검증 + 케이스허브 보정중 */
+async function bjConfirmRound(btn){
+  if(btn)btn.disabled=true;
+  try{
+    bjRound.reason=(document.getElementById("bj-reason")||{value:bjRound.reason||""}).value||"";
+    var docs=bjRoundDocs(),msgDocs=bjMsgFilter(docs);
+    if(!bjRound.itemIds.length){alert("이번 회차에 진행할 항목을 선택하세요.");return;}
+    var cd=bjRound.court_deadline||bjD.court_deadline;
+    if(!cd){alert("법원 제출기한을 입력하세요. 안내 마감 계산의 뿌리예요.");return;}
+    var buf=(bjRound.buffer!=null)?bjRound.buffer:bjBufferSuggest(msgDocs.length);
+    var cliDead=bjClientDeadline(cd,buf);
+    if(!cliDead||parseD(cliDead)<=today0()){alert("의뢰인 안내 마감("+(cliDead||"계산 불가")+")이 오늘이거나 지났어요. 여유일을 줄이거나 기한을 확인하세요.");return;}
+    var redUn=bjIt.filter(function(x){return x.unresolved&&x.item_status==="대기";});
+    if(redUn.length&&!bjRound.reason.trim()){alert("[모르겠음] 빨간 항목이 "+redUn.length+"개 남아 있어요. 이 항목의 서류는 목록에 없어요.\n빨간 경고 칸에 사유를 한 줄 적어야 확정할 수 있어요 (예: 질문함에 올렸음).");return;}
+    if(!msgDocs.length&&!confirm("의뢰인에게 요청할 서류가 0개예요 (인지·송달료 등). 그래도 회차를 확정할까요?"))return;
+    busy(true);
+    /* 1) 항목 상태 → 요청중 (건수 검증) */
+    var selIds=bjRound.itemIds.slice();
+    var r1=await sbc.from("bj_items").update({item_status:"요청중",round_no:bjRound.no}).in("id",selIds).select("id");
+    if(r1.error)throw r1.error;
+    if(!r1.data||r1.data.length!==selIds.length)throw new Error("항목 상태 저장이 "+((r1.data||[]).length)+"/"+selIds.length+"건이에요. 권한(role)을 확인하세요.");
+    var dropIds=bjIt.filter(function(x){return x.round_no===bjRound.no&&selIds.indexOf(x.id)<0;}).map(function(x){return x.id;});
+    if(dropIds.length){
+      var r1b=await sbc.from("bj_items").update({item_status:"대기",round_no:null}).in("id",dropIds).select("id");
+      if(r1b.error)throw r1b.error;
+    }
+    if(redUn.length){
+      var rr=await sbc.from("bj_items").update({unresolved_reason:bjRound.reason.trim()}).in("id",redUn.map(function(x){return x.id;})).select("id");
+      if(rr.error)throw rr.error;
+    }
+    /* 2) 취합앱 체크리스트 등록 (저장 직전 재대조 → 이미 있으면 건너뜀 = 중복 방어) */
+    var inserted=0,skipped=0;
+    if(bjCli){
+      var fresh=await sbc.from("checklist_items").select("id,doc_key,doc_name,status").eq("client_id",bjCli.id);
+      if(fresh.error)throw fresh.error;
+      bjChk=fresh.data||[];
+      var rows=[];
+      msgDocs.forEach(function(d,i){
+        var k=bjNameKey(d.name),has=false;
+        bjChk.forEach(function(r){if(bjNameKey(r.doc_name)===k)has=true;});
+        if(has){skipped++;return;}
+        rows.push({client_id:bjCli.id,doc_key:"bj_"+String(bjD.id).slice(0,8)+"_"+bjRound.no+"_"+(i+1),doc_name:d.name,bundle:"기타",status:"요청중",memo:"보정 "+bjRound.no+"회차 요청"});
+      });
+      if(rows.length){
+        var r2=await sbc.from("checklist_items").insert(rows).select("id");
+        if(r2.error)throw r2.error;
+        inserted=(r2.data||[]).length;
+        if(!inserted)throw new Error("취합앱 체크리스트에 0건 저장됐어요. 로그인 계정 권한(role=master/staff)을 확인하세요.");
+        if(inserted!==rows.length)throw new Error("체크리스트 저장이 "+inserted+"/"+rows.length+"건이에요. 권한을 확인하세요.");
+      }
+    }
+    /* 3) 회차 기록 (카톡1차 행에 항목·서류 목록 보관) */
+    var docsJson=msgDocs.map(function(d){return {name:d.name,how:d.how||"",guide:d.guide||""};});
+    await bjUpsertReq(bjRound.no,"카톡1차",{item_ids:selIds,docs:docsJson});
+    /* 4) 문서 상태·기한 */
+    var up=await sbc.from("bj_documents").update({status:"진행중",court_deadline:cd,client_deadline:cliDead,
+      deadline_source:(bjRound.court_deadline&&bjRound.court_deadline!==bjD.court_deadline)?"수동":(bjD.deadline_source||"계산"),
+      updated_at:new Date().toISOString()}).eq("id",bjD.id).select("id");
+    if(up.error)throw up.error;
+    if(!up.data||!up.data.length)throw new Error("문서 저장 0건. 권한을 확인하세요.");
+    bjD.status="진행중";bjD.court_deadline=cd;bjD.client_deadline=cliDead;
+    /* 5) 케이스허브 '보정중' 표시 */
+    var hubOk=false,hubMsg="";
+    if(bjCli){
+      try{
+        var am=await sbc.from("clients").update({amending:true}).eq("id",bjCli.id).select("id");
+        hubOk=!(am.error)&&am.data&&am.data.length>0;
+        if(!hubOk)hubMsg=(am.error&&am.error.message)||"0건 저장";
+      }catch(e){hubMsg=e.message||String(e);}
+    }
+    bjIt.forEach(function(x){
+      if(selIds.indexOf(x.id)>=0){x.item_status="요청중";x.round_no=bjRound.no;}
+      else if(dropIds.indexOf(x.id)>=0){x.item_status="대기";x.round_no=null;}
+    });
+    var no=bjRound.no;
+    await bjLoadCtx();
+    alert("회차 "+no+" 확정!"
+      +(bjCli?("\n· 취합앱 체크리스트: 새로 "+inserted+"건"+(skipped?" (이미 요청 중 "+skipped+"건 건너뜀)":"")):"\n· 케이스허브 미연결이라 취합앱 등록은 건너뛰었어요.")
+      +(bjCli?("\n· 케이스허브 보정중 표시: "+(hubOk?"완료":"실패 ("+hubMsg+"). 케이스허브에서 직접 켜 주세요")):"")
+      +"\n\n이제 카톡 안내문을 보내요.");
+    bjSendRound=no;bjMode="send";bjSendTab="kakao";bjSplitOverride=null;bjRound=null;
+    bjRender();
+  }catch(e){alert("회차 확정 실패: "+(e.message||e));}
+  finally{busy(false);if(btn)btn.disabled=false;}
+}
+/* 회차의 보정서 제출 완료 → 항목 제출완료, 전부 끝나면 문서 완료 + 보정중 해제 */
+async function bjRoundSubmit(no){
+  var ids=bjIt.filter(function(x){return x.round_no===no&&x.item_status!=="제출완료";}).map(function(x){return x.id;});
+  if(!ids.length){alert("이 회차에 제출할 항목이 없어요.");return;}
+  if(!confirm("회차 "+no+"의 보정서를 법원에 냈나요?\n항목 "+ids.length+"개가 '제출완료'로 기록돼요."))return;
+  busy(true);
+  try{
+    var r=await sbc.from("bj_items").update({item_status:"제출완료",submitted_at:fmt(new Date())}).in("id",ids).select("id");
+    if(r.error)throw r.error;
+    if(!r.data||r.data.length!==ids.length)throw new Error("저장이 "+((r.data||[]).length)+"/"+ids.length+"건이에요. 권한을 확인하세요.");
+    bjIt.forEach(function(x){if(ids.indexOf(x.id)>=0){x.item_status="제출완료";x.submitted_at=fmt(new Date());}});
+    var remain=bjIt.some(function(x){return x.item_status!=="제출완료";});
+    if(!remain){
+      var up=await sbc.from("bj_documents").update({status:"완료",updated_at:new Date().toISOString()}).eq("id",bjD.id).select("id");
+      if(!up.error&&up.data&&up.data.length)bjD.status="완료";
+      if(bjCli){try{await sbc.from("clients").update({amending:false}).eq("id",bjCli.id);}catch(e){}}
+      alert("모든 항목 제출완료 → 문서를 '완료'로 바꾸고 케이스허브 '보정중'을 해제했어요.");
+    }
+    bjRender();
+  }catch(e){alert("제출 기록 실패: "+(e.message||e));}
+  finally{busy(false);}
+}
+/* ---------- ③ 서류 확정 화면 ---------- */
+function bjDocsHtml(){
+  if(bjRound)return bjRoundEditHtml();
+  return bjRoundsOverviewHtml();
+}
+/* 화면 D-1 (M-2) : 회차 현황판 (급건 보드 스타일) */
+function bjCourtLeft(){
+  if(!bjD.court_deadline)return null;
+  return Math.round((parseD(bjD.court_deadline)-today0())/86400000);
+}
+function bjRoundsOverviewHtml(){
+  var wait=bjIt.filter(function(x){return x.item_status==="대기";}).length;
+  var req=bjIt.filter(function(x){return x.item_status==="요청중"||x.item_status==="서류수집중";}).length;
+  var done=bjIt.filter(function(x){return x.item_status==="제출완료";}).length;
+  var rounds=[];
+  bjReqs.forEach(function(r){if(rounds.indexOf(r.round_no)<0)rounds.push(r.round_no);});
+  rounds.sort(function(a,b){return a-b;});
+  var left=bjCourtLeft();
+  var nm=(bjCli&&bjCli.name)||(bjDel&&bjDel.name)||"";
+  var urgent=(left!=null&&left<=7);
+  /* 맨 위 큰 카드 : 누구 사건인지 · 기한 · 지금 할 행동 */
+  var h='<div class="bj-board'+(urgent?"":" calm")+'">'
+    +'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
+    +'<b style="font-size:18px">'+esc(nm?nm+' · ':'')+esc(bjD.case_no)+'</b>'
+    +(left!=null
+      ?'<span class="bj-dday">법원기한 '+(left>=0?'D-'+left:'D+'+(-left))+' ('+esc(bjD.court_deadline)+')</span>'
+      :'<span class="chip wait">법원 제출기한 미입력</span>')
+    +(bjD.client_deadline?'<span class="chip bad">안내마감 '+esc(bjD.client_deadline)+'</span>':'')
+    +'<span class="spacer" style="flex:1"></span>'
+    +(wait?'<button class="btn primary bj-big" onclick="bjStartRound()">'+(rounds.length?"다음 회차 진행":"회차 1 만들기")+' (대기 '+wait+'개)</button>':'')
+    +'</div>'
+    +'<div class="bj-note" style="margin-top:8px">항목 '+bjIt.length+'개 · 진행 중 '+req+' · 제출완료 '+done+' · 대기 '+wait+'</div>'
+    +'</div>';
+  if(!bjCli)h+='<div class="bj-alert red">케이스허브에서 이 사건('+esc(bjD.case_no)+')의 의뢰인을 찾지 못했습니다. 취합앱 등록과 보정중 표시는 건너뜁니다. 케이스허브에 사건번호를 등록하면 자동으로 연결됩니다.</div>';
+  h+=rounds.map(function(no){
+    var k1=null,k2=null,ph=null;
+    bjReqs.forEach(function(r){if(r.round_no!==no)return;if(r.message_kind==="카톡1차")k1=r;if(r.message_kind==="카톡2차")k2=r;if(r.message_kind==="전화")ph=r;});
+    var items=bjIt.filter(function(x){return x.round_no===no;});
+    var docsN=(k1&&Array.isArray(k1.docs))?k1.docs.length:0;
+    function chip(row,label){if(!row)return"";return row.sent_at?'<span class="chip ok">'+label+' 보냈음</span>':'<span class="chip wait">'+label+' 미발송</span>';}
+    var allDone=items.length&&items.every(function(x){return x.item_status==="제출완료";});
+    return '<div class="bj-roundcard"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+      +'<b style="font-size:15px">회차 '+no+'</b><span class="bj-note">항목 '+items.length+'개 · 서류 '+docsN+'개</span>'
+      +chip(k1,"카톡1차")+chip(k2,"카톡2차")+(ph&&ph.sent_at?'<span class="chip ok">통화 완료</span>':'')
+      +'<span class="spacer" style="flex:1"></span>'
+      +'<button class="btn primary mini" onclick="bjSendRound='+no+';bjSplitOverride=null;bjMsgTab=\'k1\';bjMode=\'send\';bjRender()">안내문 열기</button>'
+      +'<button class="btn ghost mini" onclick="bjEditRound('+no+')">회차 수정</button>'
+      +(allDone?'<span class="chip ok">보정서 제출완료</span>':'<button class="btn ghost mini" onclick="bjRoundSubmit('+no+')">보정서 제출 완료</button>')
+      +'</div>'
+      +(items.length?'<div class="bj-note" style="margin-top:6px">'+items.map(function(x){return x.seq+". "+esc(x.item_text.slice(0,24))+(x.item_text.length>24?"…":"");}).join(" · ")+'</div>':'')
+      +'</div>';
+  }).join("");
+  if(!wait&&!rounds.length)h+='<div class="empty">진행할 항목이 없습니다. [② 유형 선택]에서 유형을 먼저 지정하세요.</div>';
+  h+='<div style="margin-top:12px"><span class="bj-link" onclick="bjMode=\'type\';bjRender()">유형 선택으로 돌아가기</span></div>';
+  return h;
+}
+/* 화면 D-2 (M-2) : 3구획 접기 (항목 / 서류 / 기한) */
+function bjAccGo(n){bjAcc=(bjAcc===n)?0:n;bjRender();}
+function bjRoundEditHtml(){
+  var docs=bjRoundDocs();bjDocsCache=docs;
+  var msgDocs=bjMsgFilter(docs);
+  var cd=bjRound.court_deadline||bjD.court_deadline||"";
+  var sug=bjBufferSuggest(msgDocs.length);
+  var buf=(bjRound.buffer!=null)?bjRound.buffer:sug;
+  var cli=cd?bjClientDeadline(cd,buf):null;
+  var courtLeft=cd?Math.round((parseD(cd)-today0())/86400000):null;
+  var warnLt=10;
+  try{warnLt=bjKb.settings.buffer_days_min_warning.court_deadline_days_lt||10;}catch(e){}
+  var redUn=bjIt.filter(function(x){return x.unresolved&&x.item_status==="대기";});
+  var noType=bjIt.filter(function(x){return !x.unresolved&&x.item_status==="대기"&&!(x.type_codes||"").length;});
+  var selectableAll=bjIt.filter(function(x){return (x.item_status==="대기"||x.round_no===bjRound.no)&&!x.unresolved&&(x.type_codes||"").length;}).length;
+  var dupOn=docs.filter(function(d){return d.dup;}).length;
+  var h='<div class="h2row"><h2 style="margin:0">회차 '+bjRound.no+' · 서류 목록 확정</h2>'
+    +'<button class="btn ghost mini" onclick="bjRound=null;bjRender()">회차 목록으로</button></div>';
+  if(!bjCli)h+='<div class="bj-alert red">케이스허브 미연결 사건입니다. 확정해도 취합앱 체크리스트에는 못 넣고 안내문만 만들어집니다.</div>';
+
+  /* 구획 1 : 항목 */
+  h+='<div class="bj-acc"><div class="ah" onclick="bjAccGo(1)">'
+    +'<span class="t">1. 이번 회차 항목</span>'
+    +'<span class="sm">'+selectableAll+'개 중 '+bjRound.itemIds.length+'개 선택</span>'
+    +'<span class="spacer" style="flex:1"></span>'
+    +'<span class="chip '+(bjRound.itemIds.length?'ok':'bad')+'">'+(bjRound.itemIds.length?'선택됨':'선택 필요')+'</span></div>';
+  if(bjAcc===1){
+    h+='<div class="ab">'
+      +'<div class="bj-note" style="margin:8px 0">빨리 되는 서류부터 먼저 내는 분할 보정이면 일부만 체크하세요. 체크를 뺀 항목은 대기로 남아 다음 회차로 이어집니다.</div>'
+      +bjIt.map(function(x){
+        var selectable=(x.item_status==="대기"||x.round_no===bjRound.no)&&!x.unresolved&&(x.type_codes||"").length;
+        var on=bjRound.itemIds.indexOf(x.id)>=0;
+        var cls="bj-itsel"+(x.unresolved?" red":(selectable?"":" locked"));
+        var badge=x.unresolved?'<span class="chip bad">모르겠음 · 서류 없음</span>'
+          :(!(x.type_codes||"").length&&x.item_status==="대기")?'<span class="chip wait">유형 미지정</span>'
+          :(x.item_status!=="대기"&&x.round_no!==bjRound.no)?'<span class="chip" style="background:var(--gray-bg);color:var(--muted)">'+(x.round_no||"?")+'회차 '+esc(x.item_status)+'</span>':"";
+        return '<label class="'+cls+'"><input type="checkbox" '+(on?"checked":"")+(selectable?"":" disabled")
+          +' onchange="bjRoundToggleItem(\''+x.id+'\',this.checked)"><span><b>'+x.seq+'.</b> '+esc(x.item_text.slice(0,95))+(x.item_text.length>95?"…":"")
+          +' '+badge+((x.type_codes||"").length?' <span class="bj-note">'+esc(x.type_codes)+'</span>':'')+'</span></label>';
+      }).join("")
+      +'</div>';
+  }
+  h+='</div>';
+
+  /* 구획 2 : 서류 */
+  h+='<div class="bj-acc"><div class="ah" onclick="bjAccGo(2)">'
+    +'<span class="t">2. 요청할 서류</span>'
+    +'<span class="sm">'+msgDocs.length+'개'+(dupOn?' (이미 요청 중 '+dupOn+'개 포함)':'')+'</span>'
+    +'<span class="spacer" style="flex:1"></span>'
+    +'<span class="chip '+(msgDocs.length?'ok':'wait')+'">'+(msgDocs.length?'준비됨':'서류 없음')+'</span></div>';
+  if(bjAcc===2){
+    h+='<div class="ab">'
+      +'<div class="bj-note" style="margin:8px 0">선택한 유형들의 필요서류를 합치고 중복은 하나로 묶었습니다. 의뢰인 체크리스트에 이미 있는 서류는 다시 넣지 않습니다.</div>'
+      +(docs.map(function(d,i){
+        var dupBadge="";
+        if(d.dup){
+          var st=d.dup.status||"미요청";
+          dupBadge=(["미요청","요청중","보완필요"].indexOf(st)>=0)
+            ?' <span class="chip wait">이미 요청 중('+esc(st)+') · 취합앱엔 안 넣고 안내문에만 들어갑니다</span>'
+            :' <span class="chip ok">이미 '+esc(st)+' · 안내문에서도 뺐습니다</span>';
+        }
+        return '<div class="bj-doc'+((d.dup&&["받음","해당없음"].indexOf(d.dup.status)>=0)?' dup':'')+'">'
+          +'<div style="flex:1"><div class="dname">'+esc(d.name)+dupBadge+'</div>'
+          +(d.how?'<div class="dhow">'+esc(d.how)+'</div>':'<div class="dhow" style="color:#B42318">발급방법 문구가 없습니다. 카톡에 발급처가 안 붙습니다 (서류사전 보강 필요)</div>')
+          +(d.guide?'<div class="dhow">가이드: '+esc(d.guide)+'</div>':'')
+          +'<div class="dsrc">근거 유형: '+esc(d.src)+'</div></div>'
+          +'<button class="btn ghost mini" onclick="bjRoundRmDoc('+i+')">빼기</button></div>';
+      }).join("")||'<div class="empty">선택한 항목에서 나온 서류가 없습니다. 항목을 체크하거나 아래에서 직접 추가하세요.</div>')
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'
+      +'<input id="bj-add-name" placeholder="서류 이름" style="flex:1;min-width:150px">'
+      +'<input id="bj-add-how" placeholder="발급처·방법 한 줄 (카톡에 그대로 들어갑니다)" style="flex:2;min-width:200px">'
+      +'<button class="btn ghost mini" onclick="bjRoundAddDoc()">직접 추가</button></div>'
+      +'</div>';
+  }
+  h+='</div>';
+
+  /* 구획 3 : 기한 */
+  h+='<div class="bj-acc"><div class="ah" onclick="bjAccGo(3)">'
+    +'<span class="t">3. 기한</span>'
+    +'<span class="sm">'+(cd?('법원 '+esc(cd)+(courtLeft!=null?' (D-'+courtLeft+')':'')):'법원 제출기한 미입력')
+      +(cli?' · 안내마감 '+fmtKor(cli):'')+'</span>'
+    +'<span class="spacer" style="flex:1"></span>'
+    +'<span class="chip '+(cd&&cli?'ok':'bad')+'">'+(cd&&cli?'준비됨':'입력 필요')+'</span></div>';
+  if(bjAcc===3){
+    h+='<div class="ab">'
+      +'<div class="bj-note" style="margin:8px 0">기한은 두 개입니다. 법원 기한은 우리 기준, 안내 마감은 의뢰인에게 알려줄 날짜입니다.</div>'
+      +'<div class="kv"><span class="k">법원 제출기한</span><span><input type="date" style="width:auto;padding:8px 10px" value="'+esc(cd)+'" onchange="bjRound.court_deadline=this.value;bjRender()"> <span class="bj-note">앱 화면에만 표시됩니다'+(courtLeft!=null?' · D-'+courtLeft:'')+'</span></span></div>'
+      +'<div class="kv"><span class="k">여유일</span><span><input type="number" min="0" max="20" style="width:80px;padding:8px 10px" value="'+buf+'" onchange="bjRound.buffer=Math.max(0,parseInt(this.value)||0);bjRender()"> <span class="bj-note">서류 '+msgDocs.length+'개 기준 자동 제안 '+sug+'일 · 서류를 받아 정리·검토할 시간</span></span></div>'
+      +'<div class="kv"><span class="k">의뢰인 안내 마감</span><span style="font-weight:800;color:var(--brand);font-size:16px">'+(cli?fmtKor(cli):"법원 제출기한을 먼저 넣으세요")+'</span></div>'
+      +'<div class="bj-note">카톡·전화에는 안내 마감 날짜만 들어갑니다.</div>';
+    if(!cd)h+='<div class="bj-alert red">법원 제출기한이 없습니다. 직접 넣어야 확정할 수 있습니다.</div>';
+    if(cd&&courtLeft!=null&&courtLeft<warnLt)h+='<div class="bj-alert amber">법원 기한이 '+courtLeft+'일밖에 남지 않았습니다. 여유일을 줄여 안내 마감을 확보하세요.</div>';
+    if(cli&&parseD(cli)<=today0())h+='<div class="bj-alert red">안내 마감이 오늘이거나 지났습니다. 여유일을 줄이세요.</div>';
+    h+='</div>';
+  }
+  h+='</div>';
+
+  /* 확정 전 경고 + 확정 버튼 */
+  if(redUn.length)h+='<div class="bj-alert red">유형 미확인(모르겠음) 항목 '+redUn.length+'개: '+redUn.map(function(x){return x.seq+"번";}).join(", ")+' · 이 항목의 서류는 목록에 없습니다.<br>그래도 확정하려면 사유 한 줄: <input id="bj-reason" placeholder="예: 질문함에 올렸음" style="margin-top:6px" value="'+esc(bjRound.reason||"")+'"></div>';
+  if(noType.length)h+='<div class="bj-alert amber">유형 미지정 항목 '+noType.length+'개('+noType.map(function(x){return x.seq+"번";}).join(", ")+')는 이번 회차에 들어가지 않습니다. 유형 선택에서 지정하면 다음 회차에 넣을 수 있습니다.</div>';
+  h+='<div class="bj-fix">'
+    +'<button class="btn primary bj-big" onclick="bjConfirmRound(this)">회차 '+bjRound.no+' 확정하고 안내문 만들기</button>'
+    +'<span class="spacer" style="flex:1"></span>'
+    +'<span class="bj-note">항목 '+bjRound.itemIds.length+'개 · 서류 '+msgDocs.length+'개'+(cli?' · 안내마감 '+esc(cli):'')+'<br>확정하면 취합앱 체크리스트 등록 + 케이스허브 보정중 표시 (회차당 1회, 다시 확정하면 갱신)</span></div>';
+  return h;
+}
+/* ---------- ④ 안내 발송 (카톡/전화) ---------- */
+function bjSendDocs(){
+  var k1=null,k2=null,ph=null;
+  bjReqs.forEach(function(r){if(r.round_no!==bjSendRound)return;if(r.message_kind==="카톡1차")k1=r;if(r.message_kind==="카톡2차")k2=r;if(r.message_kind==="전화")ph=r;});
+  var docs=(k1&&Array.isArray(k1.docs))?k1.docs:[];
+  var split=(bjSplitOverride!==null)?bjSplitOverride:(docs.length>=4||!!k2);
+  if(k2&&k2.sent_at)split=true;
+  return {all:docs,split:split,d1:split?docs.slice(0,3):docs,d2:split?docs.slice(3):[],k1:k1,k2:k2,ph:ph};
+}
+function bjKakaoText(docs,part,parts){
+  var nm=(bjCli&&bjCli.name)||(bjDel&&bjDel.name)||"의뢰인";
+  var cli=bjD.client_deadline;
+  var L=[];
+  L.push(nm+" 님, 법무법인 이준 서초 분사무소입니다.");
+  L.push("");
+  L.push("[사건] "+[bjD.court||"",bjD.case_no,"개인회생"].filter(Boolean).join(" "));
+  if(bjD.served_at)L.push("[보정명령 송달일] "+fmtKor(bjD.served_at));
+  L.push("[서류 마감일] "+fmtKor(cli));
+  L.push("");
+  if(parts>1&&part===2){
+    L.push("앞서 보내드린 보정 서류 안내에 이어서, 나머지 서류를 안내드립니다.");
+  }else{
+    L.push("법원에서 보정명령이 왔습니다.");
+    L.push("보정명령이란, 법원이 심사에 필요한 서류를 더 내라고 요구하는 명령입니다. 대부분의 개인회생 사건에서 한 번씩 거치는 절차이니 크게 걱정하지 않으셔도 됩니다.");
+  }
+  L.push("");
+  L.push("다만 기한 안에 서류를 내지 않으면 신청이 기각(각하)될 수 있습니다. 아래 서류를 "+fmtKor(cli)+"까지 꼭 보내주세요.");
+  L.push("");
+  var base=(parts>1&&part===2)?3:0;
+  docs.forEach(function(d,i){
+    L.push((base+i+1)+". "+d.name);
+    if(d.how)L.push(d.how);
+    if(d.guide)L.push("발급 방법 → "+d.guide);
+    L.push("");
+  });
+  L.push("서류는 이 카톡으로 사진을 찍어 보내주시면 됩니다.");
+  L.push("");
+  L.push("서류 발급이 어려우시면 편하게 전화 주세요. 제가 다시 안내드리겠습니다.");
+  L.push("담당 "+(bjSender||(me&&me.name)||""));
+  return L.join("\n");
+}
+function bjPhoneText(docs){
+  var nm=(bjCli&&bjCli.name)||(bjDel&&bjDel.name)||"의뢰인";
+  var cli=bjD.client_deadline;
+  var left=cli?Math.round((parseD(cli)-today0())/86400000):null;
+  var L=[];
+  L.push("[여는 말]");
+  L.push('"안녕하세요 '+nm+' 님, 법무법인 이준 서초 분사무소 '+(bjSender||(me&&me.name)||"담당자")+'입니다.');
+  L.push(nm+' 님 개인회생 사건으로 법원에서 보정명령이 나왔습니다. 그것 때문에 연락드렸습니다.');
+  L.push('지금 통화 괜찮으실까요?"');
+  L.push("");
+  L.push("[용어 설명 + 안심]");
+  L.push('"보정명령이라는 게, 법원이 심사하는 데 필요한 서류를 더 내라고 요구하는 명령입니다.');
+  L.push('크게 걱정하실 건 아니고요, 개인회생 사건 대부분이 한 번씩 거치는 절차입니다.');
+  L.push('다만 서류를 기한 안에 안 내면 신청이 기각될 수 있어서, 이건 꼭 지키셔야 합니다."');
+  L.push("");
+  L.push("[마감일 1차]");
+  L.push('"서류 마감이 '+fmtKor(cli)+'까지입니다.'+(left!=null?' 오늘부터 '+left+'일 남았습니다.':'')+'"');
+  L.push("");
+  docs.forEach(function(d,i){
+    L.push("[서류 "+(i+1)+"]");
+    var s='"';
+    if(i===0)s+='서류가 '+docs.length+'가지입니다. 하나씩 말씀드릴게요. ';
+    s+=(i+1)+'번째는 '+d.name+'입니다.';
+    L.push(s);
+    if(d.how)L.push(d.how);
+    L.push('→ 여기까지 이해되셨나요?"');
+    L.push("");
+  });
+  L.push("[보내는 방법]");
+  L.push('"서류 받으시면 이 카톡으로 사진 찍어 보내주시면 됩니다. 편하신 대로 하세요."');
+  L.push("");
+  L.push("[마감일 2차 + 불이익 고지]");
+  L.push('"다시 한번 말씀드리면, '+fmtKor(cli)+'까지입니다.');
+  L.push('이 기한을 넘기면 신청이 기각될 수 있으니 꼭 지켜주세요.');
+  L.push('떼시다가 막히면 언제든 전화 주세요. 제가 다시 안내드리겠습니다."');
+  L.push("");
+  L.push("[마무리 · 증거 남기기]");
+  L.push('"지금 말씀드린 내용을 카톡으로도 그대로 정리해서 보내드리겠습니다.');
+  L.push('받으시면 한 번 읽어봐 주세요. 감사합니다."');
+  return L.join("\n");
+}
+async function bjCopyText(t){
+  try{await navigator.clipboard.writeText(t);return true;}
+  catch(e){
+    var ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();
+    var ok=false;try{ok=document.execCommand("copy");}catch(e2){}
+    document.body.removeChild(ta);return ok;
+  }
+}
+/* [복사] = 복사하는 순간 그 문구가 최종 문구로 저장 (고치고 다시 복사하면 갱신) */
+async function bjCopyMsg(kind,taId){
+  var ta=document.getElementById(taId);if(!ta)return;
+  var txt=ta.value;
+  busy(true);
+  try{
+    await bjUpsertReq(bjSendRound,kind,{message_final:txt,sender_name:bjSender||(me&&me.name)||null});
+    var ok=await bjCopyText(txt);
+    alert(ok?"복사했어요. 이 문구가 최종 문구로 저장됐어요 (고치고 다시 복사하면 최신본으로 갱신).":"이 브라우저에서 자동 복사가 안 돼요. 문구는 저장됐으니 직접 긁어서 복사하세요.");
+  }catch(e){alert("최종 문구 저장 실패: "+(e.message||e));}
+  finally{busy(false);}
+}
+async function bjMarkSent(kind,taId){
+  var ta=taId?document.getElementById(taId):null;
+  if(!confirm("["+kind+"] 를 보냈다고 기록할까요?\n문구·담당자·시각이 함께 잠겨요."))return;
+  busy(true);
+  try{
+    var f={sent_at:new Date().toISOString(),sender_name:bjSender||(me&&me.name)||null,sent_by:me.id};
+    if(ta&&ta.value)f.message_final=ta.value;
+    await bjUpsertReq(bjSendRound,kind,f);
+    bjRender();
+  }catch(e){alert("발송 기록 실패: "+(e.message||e));}
+  finally{busy(false);}
+}
+async function bjUnsent(kind){
+  if(!confirm("발송 기록을 취소할까요? 발송 시각이 지워져요 (최종 문구는 남아요)."))return;
+  busy(true);
+  try{await bjUpsertReq(bjSendRound,kind,{sent_at:null});bjRender();}
+  catch(e){alert("취소 실패: "+(e.message||e));}
+  finally{busy(false);}
+}
+/* [통화 완료] 원버튼: 통화 기록 + 카톡 재발송문 복사 준비 */
+async function bjCallDone(btn){
+  if(btn)btn.disabled=true;
+  busy(true);
+  try{
+    var S=bjSendDocs();
+    var script=bjPhoneText(S.all);
+    await bjUpsertReq(bjSendRound,"전화",{message_final:script,sender_name:bjSender||(me&&me.name)||null,sent_by:me.id,sent_at:new Date().toISOString()});
+    var resend=(S.k1&&S.k1.message_final)||bjKakaoText(S.d1,1,S.split?2:1);
+    var ok=await bjCopyText(resend);
+    alert("통화 기록을 남겼어요."
+      +(ok?"\n카톡 재발송문이 복사돼 있어요. 의뢰인 카톡에 붙여넣어 보내고, [카톡 메시지] 탭에서 [보냈음]을 체크하세요.":"\n[카톡 메시지] 탭에서 문구를 복사해 꼭 재발송하세요.")
+      +"\n(통화는 증거가 안 남아요. 카톡이 증거예요.)");
+    bjRender();
+  }catch(e){alert("통화 기록 실패: "+(e.message||e));}
+  finally{busy(false);if(btn)btn.disabled=false;}
+}
+function bjRegen(kind,taId){
+  var S=bjSendDocs();
+  var t=(kind==="카톡1차")?bjKakaoText(S.d1,1,S.split?2:1):bjKakaoText(S.d2,2,2);
+  var ta=document.getElementById(taId);if(ta)ta.value=t;
+}
+async function bjCopyScript(){
+  var el=document.getElementById("bj-phone-script");if(!el)return;
+  var ok=await bjCopyText(el.textContent);
+  alert(ok?"스크립트를 복사했어요.":"복사가 안 되는 브라우저예요. 직접 긁어서 복사하세요.");
+}
+/* 화면 E (M-2) : 왼쪽 문구 편집 + 오른쪽 발송 현황 · 전화는 큰 스크립트 */
+function bjSentChip(row,label){
+  if(!row||!row.sent_at)return '<span class="chip wait">'+label+' 미발송</span>';
+  return '<span class="chip ok">'+label+' 보냈음</span>';
+}
+function bjSendSide(S,kind,row,taId){
+  var sent=row&&row.sent_at;
+  var h='<div class="bj-side"><div class="st">'+esc((bjCli&&bjCli.name)||(bjDel&&bjDel.name)||"")+' · 회차 '+bjSendRound+'</div>'
+    +'<div class="bj-note" style="margin-bottom:12px">안내마감 <b style="color:var(--brand)">'+esc(bjD.client_deadline||"미정")+'</b> · 서류 '+S.all.length+'개</div>';
+  if(sent){
+    h+='<div class="bj-alert green" style="margin:0 0 10px">'+esc(kind)+' 보냈음<br>'+esc(String(row.sent_at).slice(0,16).replace("T"," "))+' · '+esc(row.sender_name||"")+'</div>'
+      +'<button class="btn ghost full" onclick="bjUnsent(\''+kind+'\')">발송 기록 취소</button>';
+  }else{
+    h+='<button class="btn primary full bj-big" style="margin-bottom:8px" onclick="bjCopyMsg(\''+kind+'\',\''+taId+'\')">복사</button>'
+      +'<button class="btn ghost full" style="margin-bottom:8px" onclick="bjMarkSent(\''+kind+'\',\''+taId+'\')">보냈음으로 기록</button>'
+      +'<button class="btn ghost full mini" style="margin-bottom:12px" onclick="bjRegen(\''+kind+'\',\''+taId+'\')">문구 새로 만들기</button>'
+      +'<div class="bj-note" style="margin-bottom:12px;line-height:1.7">복사한 문구가 최종 문구로 저장됩니다. 문구를 고쳤으면 [복사]를 다시 누르세요.</div>';
+  }
+  h+='<div style="font-size:13px;line-height:2.2;border-top:1px solid var(--line);padding-top:10px">'
+    +'<div>'+bjSentChip(S.k1,"카톡1차")+'</div>'
+    +(S.split?'<div>'+bjSentChip(S.k2,"카톡2차")+'</div>':'')
+    +'<div>'+((S.ph&&S.ph.sent_at)?'<span class="chip ok">통화 완료</span>':'<span class="chip" style="background:var(--gray-bg);color:var(--muted)">전화 안 함</span>')+'</div>'
+    +'</div></div>';
+  return h;
+}
+function bjSendHtml(){
+  var S=bjSendDocs();
+  if(!S.k1)return '<div class="empty">이 회차의 확정 기록이 없어요. [③ 서류 확정]을 먼저 하세요.</div>'
+    +'<div style="margin-top:10px"><button class="btn ghost mini" onclick="bjMode=\'docs\';bjRound=null;bjRender()">서류 확정으로</button></div>';
+  var mt=(S.split&&bjMsgTab==="k2")?"k2":"k1";
+  var kind=(mt==="k2")?"카톡2차":"카톡1차";
+  var row=(mt==="k2")?S.k2:S.k1;
+  var taId=(mt==="k2")?"bj-ta-k2":"bj-ta-k1";
+  var gen=(mt==="k2")?bjKakaoText(S.d2,2,2):bjKakaoText(S.d1,1,S.split?2:1);
+  var txt=(row&&row.message_final)||gen;
+  var sent=row&&row.sent_at;
+  var h='<div class="sec" style="margin:10px 0;padding:14px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">'
+    +'<b style="font-size:17px">'+esc((bjCli&&bjCli.name)||(bjDel&&bjDel.name)||"")+'</b>'
+    +(bjCli&&bjCli.phone?'<span class="bj-note">'+esc(bjCli.phone)+'</span>':'')
+    +'<span class="chip wait">회차 '+bjSendRound+'</span>'
+    +(bjD.client_deadline?'<span class="chip bad">안내 마감 '+esc(bjD.client_deadline)+'</span>':'')
+    +(bjD.court_deadline?'<span class="chip" style="background:var(--gray-bg);color:var(--muted)">법원 기한 '+esc(bjD.court_deadline)+' (의뢰인에게는 안 보여줍니다)</span>':'')
+    +'<span class="spacer" style="flex:1"></span>'
+    +'<label style="display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)">보내는 사람 <select style="width:auto;padding:6px 8px" onchange="bjSender=this.value;bjRender()">'
+    +((bjSender&&!staff.some(function(s){return (s.name||"")===bjSender;}))?'<option selected>'+esc(bjSender)+'</option>':'')
+    +staff.map(function(s){return '<option '+((s.name||"")===bjSender?"selected":"")+'>'+esc(s.name||"")+'</option>';}).join("")
+    +'</select></label>'
+    +'</div>';
+  h+='<div class="bj-vtabs"><button class="'+(bjSendTab==="kakao"?"on":"")+'" onclick="bjSendTab=\'kakao\';bjRender()">카톡 메시지</button>'
+    +'<button class="'+(bjSendTab==="phone"?"on":"")+'" onclick="bjSendTab=\'phone\';bjRender()">전화 스크립트</button></div>';
+  if(bjSendTab==="kakao"){
+    if(S.all.length>=4){
+      var lock=S.k2&&S.k2.sent_at;
+      h+='<div class="bj-alert amber">서류가 '+S.all.length+'개라 카톡을 2개로 나눠 보내길 권합니다 (한 번에 많으면 안 읽습니다). '
+        +(lock?'<span class="bj-note">2차가 이미 발송돼 나누기가 고정됐습니다</span>'
+          :'<label style="display:inline-flex;gap:5px;align-items:center"><input type="checkbox" '+(S.split?"checked":"")+' onchange="bjSplitOverride=this.checked;bjMsgTab=\'k1\';bjRender()" style="width:16px;height:16px"> 2개로 나누기 (1차 3개 / 2차 나머지)</label>')
+        +'</div>';
+    }
+    if(S.split){
+      h+='<div class="bj-tsmall">'
+        +'<button class="'+(mt==="k1"?"on":"")+'" onclick="bjMsgTab=\'k1\';bjRender()">카톡 1차 (서류 '+S.d1.length+'개)</button>'
+        +'<button class="'+(mt==="k2"?"on":"")+'" onclick="bjMsgTab=\'k2\';bjRender()">카톡 2차 (서류 '+S.d2.length+'개)</button>'
+        +'</div>';
+    }
+    h+='<div class="bj-sp2r"><div>';
+    if(sent){
+      h+='<div class="bj-script">'+esc(row.message_final||"")+'</div>'
+        +'<div class="bj-note" style="margin-top:6px">발송 기록이 잠겼습니다. 보낸 문구·담당자·시각이 그대로 보관됩니다.</div>';
+    }else{
+      h+='<textarea id="'+taId+'" style="min-height:340px;font-size:13.5px;line-height:1.8">'+esc(txt)+'</textarea>';
+    }
+    h+='</div>'+bjSendSide(S,kind,row,taId)+'</div>';
+  }else{
+    h+='<div class="bj-note" style="margin-bottom:8px">화면에 띄워놓고 그대로 읽으며 통화하세요. 서류 하나가 끝날 때마다 "이해되셨나요?" · 마감일은 처음과 끝 두 번.</div>'
+      +'<div class="bj-script" id="bj-phone-script" style="font-size:15.5px;line-height:2.1">'+esc(bjPhoneText(S.all))+'</div>';
+    if(S.ph&&S.ph.sent_at)h+='<div class="bj-alert green" style="margin-top:8px">통화 완료 기록: '+esc(String(S.ph.sent_at).slice(0,16).replace("T"," "))+' · '+esc(S.ph.sender_name||"")+'</div>';
+    h+='<div class="bj-fix">'
+      +'<button class="btn primary bj-big" onclick="bjCallDone(this)">통화 완료 (기록 + 카톡 재발송문 복사)</button>'
+      +'<button class="btn ghost" onclick="bjCopyScript()">스크립트 복사</button>'
+      +'<span class="spacer" style="flex:1"></span>'
+      +'<span class="bj-note">통화는 증거가 남지 않습니다. 통화 뒤 카톡 재발송이 규칙입니다.</span></div>';
+  }
+  h+='<div style="margin-top:14px;display:flex;gap:8px">'
+    +'<button class="btn ghost" onclick="bjMode=\'docs\';bjRound=null;bjRender()">서류 확정으로</button>'
+    +'<button class="btn ghost" onclick="showView(\'list\')">닫기 (목록으로)</button></div>';
+  return h;
+}
+
+/* ---------- 사건 상세에서 판독 열기 / 별도 PDF 판독 ---------- */
+async function bjFromDelivery(id){
+  busy(true);
+  try{
+    var r=await sbc.from("bj_documents").select("id").eq("delivery_id",id).order("created_at",{ascending:false}).limit(1);
+    if(r.data&&r.data.length){busy(false);bjOpen(r.data[0].id);return;}
+  }catch(e){}
+  busy(false);
+  bjPendingDelivery=id;
+  document.getElementById("bj-file2").click();
+}
+async function bjPick2(ev){
+  var f=ev.target.files[0];ev.target.value="";
+  if(!f||!bjPendingDelivery)return;
+  var c=cases.find(function(x){return x.id===bjPendingDelivery;});
+  if(!c)return;
+  busy(true);
+  try{
+    var raw=await bjExtractPdf(f);
+    var cl=bjClean(raw);
+    var af=bjAutofill(cl.text);
+    var kinds=bjDocKinds(cl.text,c.caseno);
+    var path="orders/"+bjSafeKey(c.caseno)+"/"+Date.now()+".pdf",up=null;
+    try{up=await sbc.storage.from("bojeong").upload(path,f,{upsert:false,contentType:"application/pdf"});}catch(e){up={error:e};}
+    if(up&&up.error)alert("PDF 원본 보관에 실패했어요: "+(up.error.message||up.error)
+      +"\n\n판독은 계속되지만 [원본 미리보기]가 안 떠요. SQL L1(orders 저장 정책) 실행 여부를 확인하세요.");
+    var doc={delivery_id:c.id,case_no:c.caseno,court:c.court||af.court||null,doc_type:kinds.join(","),
+      served_at:c.confirmed?c.confirmedDate:null,order_date:af.dates[0]||null,
+      pdf_path:(up&&!up.error)?path:null,raw_text:bjMaskRrn(cl.text),status:"판독중",assignee:me.name||null};
+    var di=await sbc.from("bj_documents").insert(doc).select("id");
+    if(di.error)throw di.error;
+    if(!di.data||!di.data.length)throw new Error("보정문서 저장 0건. SQL L1과 권한을 확인하세요.");
+    bjPendingDelivery=null;
+    bjOpen(di.data[0].id);
+  }catch(e){alert("판독 시작 실패: "+(e.message||e));}
+  finally{busy(false);}
 }
 
 /* ---------- 시작 ---------- */

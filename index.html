@@ -657,45 +657,113 @@
   .rc-d.r{background:var(--red-bg);color:var(--red)}
   .rc-tag{display:inline-block;font-size:10px;font-weight:800;padding:1px 6px;border-radius:5px;background:var(--brand-soft);color:var(--brand);vertical-align:1px}
 
-  /* ---------- 기한 달력 (2026-08-18) ---------- */
-  .cal-title{font-weight:800;font-size:17px;min-width:120px;text-align:center}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-  .cal-hd{text-align:center;font-weight:800;font-size:12px;color:var(--muted);padding:6px 0}
-  .cal-hd.sun{color:var(--red)} .cal-hd.sat{color:var(--blue)}
-  .cal-cell{min-height:98px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px;cursor:pointer;overflow:hidden}
-  .cal-cell:hover{border-color:var(--line-d)}
-  .cal-cell.off{background:var(--gray-bg)}
-  .cal-cell.today{border:2px solid var(--brand)}
+  /* ---------- 기한 달력 · 혜림 시안 1 (2026-08-18) ---------- */
+  .cal-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:10px}
+  .cal-nav{display:flex;align-items:center;gap:6px}
+  .cal-mon{font-size:17px;font-weight:800;letter-spacing:-.02em;min-width:120px;text-align:center}
+  .cal-arr{width:30px;height:30px;border-radius:6px;border:1px solid var(--line-d);background:var(--card);font-size:15px;font-weight:700;color:var(--ink-2);display:grid;place-items:center}
+  .cal-arr:hover{border-color:var(--muted)}
+  .cal-ib{font-size:13px;font-weight:700;color:var(--ink-2);background:var(--card);border:1px solid var(--line-d);border-radius:6px;padding:5px 10px;white-space:nowrap}
+  .cal-ib:hover{border-color:var(--muted);color:var(--ink)}
+  .cal-filters{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:13.5px;color:var(--muted)}
+  .cal-filters select{font:inherit;font-size:13.5px;font-weight:700;border:1px solid var(--line-d);border-radius:6px;padding:5px 8px;background:var(--card);color:var(--ink-2);width:auto}
+  .cal-tck{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
+  .cal-tck input{width:15px;height:15px;margin:0;accent-color:var(--brand)}
+  .cal-tck input:disabled + *,.cal-tck input:disabled{opacity:.4}
+  /* 요약 줄 */
+  .cal-sum{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .cal-sumi{display:inline-flex;align-items:baseline;gap:6px;font-size:13.5px;font-weight:700;color:var(--ink-2);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 13px}
+  .cal-sumi b{font-size:15px;font-weight:800;color:var(--ink)}
+  button.cal-sumi{cursor:pointer}
+  .cal-sumi.late{color:#B3261E;border-color:#F0CDCA;background:#FCEEED}
+  .cal-sumi.late b{color:#B3261E}
+  .cal-sumi.notice{color:#fff;background:#B3261E;border-color:#B3261E}
+  .cal-sumi.notice b{color:#fff}
+  /* 달력 */
+  .cal-two{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:12px;align-items:start}
+  @media(max-width:1080px){ .cal-two{grid-template-columns:1fr} }
+  .cal-cal{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--line);background:#FBFAF8}
+  .cal-dow span{padding:7px 10px;font-size:12.5px;font-weight:800;color:var(--muted);text-align:left}
+  .cal-dow span:first-child{color:#B3261E}
+  .cal-dow span:last-child{color:#2A5CA8}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+  .cal-cell{min-height:104px;border-top:1px solid var(--line);border-left:1px solid var(--line);padding:6px 6px 7px;background:var(--card);cursor:pointer}
+  .cal-cell:nth-child(7n+1){border-left:0}
+  .cal-grid .cal-cell:nth-child(-n+7){border-top:0}
+  .cal-cell.out{background:#F6F4F1;cursor:default}
+  .cal-cell.out .cal-dnum{color:var(--muted);opacity:.55}
+  .cal-cell.past{background:#F4F2EF}
+  .cal-cell.today{background:var(--brand-soft)}
   .cal-cell.sel{outline:2px solid var(--brand);outline-offset:-2px}
-  .cal-cell.blank{background:transparent;border:0;cursor:default;min-height:0}
-  .cal-d{font-size:12px;font-weight:800;color:var(--ink-2);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
-  .cal-d .hol{font-size:10px;color:var(--red);font-weight:700}
-  /* 알약 = 「무슨 기한인가(배경색)」 + 「얼마나 급한가(왼쪽 굵은 막대)」 두 가지를 한 번에 */
-  .cal-pill{display:block;font-size:11px;font-weight:700;padding:2px 5px 2px 6px;border-radius:5px;margin-bottom:3px;
-            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5;
-            border-left:4px solid transparent;background:var(--gray-bg);color:var(--ink-2)}
-  .cal-pill b{font-weight:900;margin-right:2px}
-  /* 기한 종류별 색 */
-  .cal-pill.k-court {background:#FCF1F2;color:#9B1B33}   /* 법 : 법원 제출기한 */
-  .cal-pill.k-client{background:#FBF1DD;color:#8A5A00}   /* 안 : 의뢰인 안내 마감 */
-  .cal-pill.k-proc  {background:#E9F0F7;color:#2A5C8F}   /* 처 : 처리기한 */
-  .cal-pill.k-read  {background:#E3F1F1;color:#0E5A5E}   /* 열 : 열람 마감 */
-  .cal-pill.k-follow{background:#EFEBF7;color:#5B4B8A}   /* 추 : 추후제출 */
-  /* 얼마나 급한가 = 왼쪽 막대 */
-  .cal-pill.u-dr{border-left-color:#7A1427}
-  .cal-pill.u-r {border-left-color:#9B1B33}
-  .cal-pill.u-a {border-left-color:#C77700}
-  .cal-pill.u-g {border-left-color:#C8C2BA}
-  /* 기한이 지난 것은 종류색을 덮고 통째로 진한 자주 (제일 먼저 눈에 띄어야 한다) */
-  .cal-pill.over{background:#7A1427 !important;color:#fff !important;border-left-color:#fff}
-  .cal-swatch{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px}
-  .cal-bar{display:inline-block;width:5px;height:13px;border-radius:2px;vertical-align:-2px;margin-right:4px}
-  .cal-more{font-size:10px;color:var(--muted);font-weight:700}
-  .cal-lg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:10px 0;align-items:center}
-  .cal-lg i{border-radius:4px}
+  .cal-dnum{font-size:13px;font-weight:800;color:var(--ink-2);display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:50%}
+  .cal-cell.sun .cal-dnum,.cal-cell.hol .cal-dnum{color:#B3261E}
+  .cal-cell.sat .cal-dnum{color:#2A5CA8}
+  .cal-cell.today .cal-dnum{background:var(--brand);color:#fff}
+  .cal-holnm{font-size:10.5px;font-weight:700;color:#B3261E;margin-left:3px}
+  .cal-pills{display:flex;flex-direction:column;gap:3px;margin-top:4px}
+  .cal-pl{display:flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1.5px solid transparent;max-width:100%}
+  .cal-pl > span{overflow:hidden;text-overflow:ellipsis}
+  .cal-pl.court {background:#9B1B33;color:#fff}
+  .cal-pl.info  {background:var(--card);color:#B45309;border-color:#E8B879}
+  .cal-pl.deem  {background:var(--card);color:var(--muted);border:1.5px dashed var(--line-d)}
+  .cal-pl.meet  {background:#2B4570;color:#fff}
+  .cal-pl.grant {background:#20604A;color:#fff}
+  .cal-pl.proc  {background:var(--card);color:#5B4B8A;border-color:#CFC2E8}
+  .cal-pl.follow{background:var(--card);color:#0E5A5E;border-color:#B5D9D9}
+  .cal-pl.over  {background:#B3261E;color:#fff}
+  .cal-pl.old   {background:#F1EEEA;color:var(--muted);border-color:var(--line-d);text-decoration:line-through}
+  .cal-pl.moved {background:#2B4570;color:#fff;border-color:#B3261E;box-shadow:0 0 0 1.5px #B3261E}
+  .cal-dot{width:7px;height:7px;border-radius:50%;background:#B3261E;flex:none;margin-left:-3px}
+  .cal-ex{flex:none;font-weight:800}
+  .cal-push{font-size:10px;font-weight:800;opacity:.85;flex:none}
+  .cal-more{font-size:11.5px;font-weight:700;color:var(--muted);padding:1px 8px}
+  /* 범례 */
+  .cal-lgd{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12.5px;color:var(--ink-2);align-items:center}
+  .cal-lgd .cal-pl{font-size:11px}
+  /* 오른쪽 상세 패널 */
+  .cal-panel{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;position:sticky;top:12px}
+  .cal-panel > header{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--line);background:#FBFAF8}
+  .cal-panel > header h3{margin:0;font-size:14.5px;font-weight:800}
+  .cal-panel > header .cal-ib{margin-left:auto}
+  .cal-pb{padding:10px;display:flex;flex-direction:column;gap:7px;max-height:70vh;overflow:auto}
+  .cal-dcard{border:1px solid var(--line);border-radius:6px;padding:9px 11px}
+  .cal-dcard.over{border-color:#F0CDCA;background:#FCEEED}
+  .cal-l1{display:flex;flex-wrap:wrap;align-items:baseline;gap:5px 8px}
+  .cal-who{font-size:15px;font-weight:800}
+  .cal-case{font-size:13px;color:var(--ink-2)}
+  .cal-l2{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px;font-size:13px;color:var(--ink-2)}
+  .cal-l3{display:flex;align-items:center;gap:8px;margin-top:4px;font-size:12.5px;color:var(--muted)}
+  .cal-l3 a{margin-left:auto;font-size:13px;font-weight:700;color:var(--brand);cursor:pointer}
+  .cal-acct{font-size:11px;font-weight:800;border-radius:999px;padding:0 8px;white-space:nowrap;line-height:18px}
+  .cal-acct.bl{color:#2B4570;background:#EDF1F7;border:1px solid #D2DBEA}
+  .cal-acct.ij{color:#7A1427;background:var(--brand-soft);border:1px solid #E9CDD3}
+  .cal-acct.nb{color:var(--muted);background:#F1EEEA;border:1px solid var(--line-d)}
+  .cal-kind{font-size:11.5px;font-weight:800;border-radius:4px;padding:1px 7px;white-space:nowrap}
+  .cal-kind.court {color:#fff;background:#9B1B33}
+  .cal-kind.info  {color:#B45309;background:#FEF4E8;border:1px solid #E8B879}
+  .cal-kind.deem  {color:var(--muted);background:#F3F0EC;border:1px dashed var(--line-d)}
+  .cal-kind.meet  {color:#fff;background:#2B4570}
+  .cal-kind.grant {color:#fff;background:#20604A}
+  .cal-kind.proc  {color:#5B4B8A;background:#F1EDF8;border:1px solid #CFC2E8}
+  .cal-kind.follow{color:#0E5A5E;background:#E8F3F3;border:1px solid #B5D9D9}
+  .cal-kind.over  {color:#fff;background:#B3261E}
   @media(max-width:860px){
-    .cal-cell{min-height:74px;padding:4px}
-    .cal-pill{font-size:10px;padding:1px 4px}
+    .cal-cell{min-height:76px;padding:4px}
+    .cal-pl{font-size:10.5px;padding:1px 6px}
+    .cal-filters{margin-left:0}
+  }
+  /* 인쇄 : 달력만 A4 가로 한 장 */
+  @media print{
+    @page{size:A4 landscape;margin:10mm}
+    body.calprint{background:#fff}
+    body.calprint *{visibility:hidden}
+    body.calprint #cal-printarea,body.calprint #cal-printarea *{visibility:visible}
+    body.calprint #cal-printarea{position:absolute;left:0;top:0;width:100%}
+    body.calprint .cal-noprint{display:none !important}
+    body.calprint .cal-two{grid-template-columns:1fr}
+    body.calprint .cal-cell{min-height:64px}
+    body.calprint .cal-cal{box-shadow:none}
   }
 
   .bj-rawmini{max-height:300px;overflow:auto;background:#FBFAF7;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:13px;line-height:1.9;white-space:pre-wrap}
@@ -2893,41 +2961,50 @@ async function rcRegister(){
 }
 
 /* ================================================================
-   기한 달력 (cal)   2026-08-18 신설
-   한 화면에서 "언제까지 무엇을 해야 하는지"를 달력으로 본다.
-   ★기한은 한 종류가 아니다. 5가지를 한 곳에 모은다.
-     법 = 법원 제출기한      (bj_documents.court_deadline)
-     안 = 의뢰인 안내 마감   (bj_documents.client_deadline)
-     처 = 처리기한           (deliveries : 송달확인일 + 처리일수, 영업일로 밀림)
-     열 = 열람 마감(간주송달) (deliveries : 발송일 + 7일. 이 날이 지나면 안 열어도 송달된 것으로 본다)
-     추 = 추후제출 예정일    (deliveries.followup_date)
-   ★색은 전 화면 공통 3단계 : 지남=진빨강 / 3일내=빨강 / 4~7일=주황 / 8일↑=회색
-   ★데이터 만드는 곳(calItems)과 화면 그리는 곳(calRender)을 나눠 둔다.
-     나중에 디자인 시안이 오면 calRender만 갈아 끼우면 된다.
+   기한 달력 (cal)   2026-08-18 · 혜림 시안 1 (월 보기 + 오른쪽 상세 패널) 적용
+   ★기한은 한 종류가 아니다. 7종을 한 달력에 모은다.
+     법원 = 법원 제출기한   (bj_documents.court_deadline)  · 공휴일이면 다음 평일로 "밀림"
+     안내 = 의뢰인 안내 마감 (bj_documents.client_deadline) · 공휴일이면 앞 평일로 "당김"
+     간주 = 송달간주일      (deliveries : 발송일 + 7일. 아직 확인 안 한 건만)
+     집회 = 채권자집회 기일  (public.case_dates kind='집회')  ★SQL 필요
+     공고 = 인가결정 공고    (public.case_dates kind='공고')  ★SQL 필요
+     처리 = 처리기한        (deliveries : 송달확인일 + 처리일수)
+     추후 = 추후제출 예정    (deliveries.followup_date)
+   ★기일변경 : 옛 날짜는 취소선으로 남기고, 새 날짜는 빨간 테두리.
+     의뢰인에게 알리기 전까지 빨간 점이 붙고 요약 줄에서 따로 센다.
+   ★데이터(calItems)와 그리기(calRender)를 나눠 둔다. 시안이 바뀌면 calRender만 갈아 끼운다.
    ================================================================ */
-var calYM=null;            /* 보고 있는 달 {y,m} m은 1~12 */
-var calSel="";             /* 눌러 놓은 날짜 YYYY-MM-DD */
+var calYM=null;            /* 보고 있는 달 {y,m} */
+var calSel="";             /* 오른쪽 패널에 띄울 것. YYYY-MM-DD 또는 "__over__" / "__notice__" */
 var calOwner="";           /* 담당자 거르기 (profiles.id) */
-var calKind={court:true,client:true,proc:true,read:true,follow:true};
+var calFirm="";            /* 사무소 거르기 ("법률사무소 블루" 같은 이름) */
+var calCli=null;           /* client_id → {name, office_id} */
+var calCD=[];              /* public.case_dates 줄들 */
+var calCDReady=false;      /* case_dates 표가 있는가 */
+var calKind={court:true,client:true,read:true,meet:true,grant:true,proc:true,follow:true};
+
 var CAL_KIND=[
-  {k:"court", t:"법", label:"법원 제출기한",       bg:"#FCF1F2", fg:"#9B1B33"},
-  {k:"client",t:"안", label:"의뢰인 안내 마감",     bg:"#FBF1DD", fg:"#8A5A00"},
-  {k:"proc",  t:"처", label:"처리기한",            bg:"#E9F0F7", fg:"#2A5C8F"},
-  {k:"read",  t:"열", label:"열람 마감(간주송달)",  bg:"#E3F1F1", fg:"#0E5A5E"},
-  {k:"follow",t:"추", label:"추후제출 예정",        bg:"#EFEBF7", fg:"#5B4B8A"}
+  {k:"court", t:"법원", label:"법원 기한",     cls:"court", why:"보정서 제출 마지막 날"},
+  {k:"client",t:"안내", label:"안내 마감",     cls:"info",  why:"의뢰인 서류 받을 날"},
+  {k:"read",  t:"간주", label:"송달간주일",    cls:"deem",  why:"열지 않아도 송달된 것으로 보는 날"},
+  {k:"meet",  t:"집회", label:"채권자집회",    cls:"meet",  why:"의뢰인이 법원에 나가는 날"},
+  {k:"grant", t:"공고", label:"인가결정 공고",  cls:"grant", why:"인가결정이 공고되는 날"},
+  {k:"proc",  t:"처리", label:"처리기한",      cls:"proc",  why:"우리 사무실 처리 마감"},
+  {k:"follow",t:"추후", label:"추후제출",      cls:"follow",why:"나머지 서류 내기로 한 날"}
 ];
-/* 얼마나 급한가 = 왼쪽 막대 색 (전 화면 공통 3단계와 같은 기준) */
-var CAL_URG=[
-  {u:"dr", label:"기한 지남",  c:"#7A1427"},
-  {u:"r",  label:"3일 안",     c:"#9B1B33"},
-  {u:"a",  label:"4~7일",      c:"#C77700"},
-  {u:"g",  label:"8일 이상",   c:"#C8C2BA"}
-];
-function calKindOf(k){ return CAL_KIND.find(function(x){return x.k===k;})||{t:"?",label:k,bg:"#F5F3F0",fg:"#48443E"}; }
-/* 알약에 붙일 class : 종류색 + 급한정도 막대 (+ 지났으면 통째로 진하게) */
-function calPillCls(x){
-  var u=calCls(x.left);
-  return "cal-pill k-"+x.kind+" u-"+u+(u==="dr"?" over":"");
+/* 공휴일 이름 (달력 칸에 표시). 없으면 그냥 '공휴일' */
+var CAL_HOLNM={
+  "01-01":"신정","03-01":"삼일절","05-01":"근로자의날","05-05":"어린이날","06-06":"현충일",
+  "08-15":"광복절","10-03":"개천절","10-09":"한글날","12-25":"성탄절",
+  "2026-02-16":"설날","2026-02-17":"설날","2026-02-18":"설날",
+  "2026-03-02":"대체공휴일","2026-05-24":"부처님오신날","2026-05-25":"대체공휴일",
+  "2026-06-03":"지방선거","2026-07-17":"제헌절","2026-08-17":"대체공휴일",
+  "2026-09-24":"추석","2026-09-25":"추석","2026-09-26":"추석","2026-10-05":"대체공휴일",
+  "2027-02-06":"설날","2027-02-07":"설날","2027-02-08":"설날","2027-02-09":"대체공휴일",
+  "2027-09-14":"추석","2027-09-15":"추석","2027-09-16":"추석"
+};
+function calHolName(ds){
+  return CAL_HOLNM[ds]||CAL_HOLNM[ds.slice(5)]||"공휴일";
 }
 
 function calThisYM(){ var t=new Date(); return {y:t.getFullYear(), m:t.getMonth()+1}; }
@@ -2936,44 +3013,75 @@ function calMove(n){
   if(!calYM)calYM=calThisYM();
   var m=calYM.m+n, y=calYM.y;
   while(m<1){m+=12;y--;} while(m>12){m-=12;y++;}
-  calYM={y:y,m:m}; calSel=""; calRender();
+  calYM={y:y,m:m}; calRender();
 }
 function calToday(){ calYM=calThisYM(); calSel=fmt(new Date()); calRender(); }
-function calSet(k,v){ if(k==="owner")calOwner=v; calSel=""; calRender(); }
+function calSet(k,v){ if(k==="owner")calOwner=v; else if(k==="firm")calFirm=v; calRender(); }
 function calToggleKind(k,on){ calKind[k]=!!on; calRender(); }
 function calPick(d){ calSel=(calSel===d)?"":d; calRender(); }
+function calShow(k){ calSel=(calSel===k)?"":k; calRender(); }
 
-/* 화면에 들어올 때 : 보정 문서를 아직 안 읽었으면 읽는다 */
-async function calEnter(){
-  if(!calYM)calYM=calThisYM();
-  if(!bxLoaded){ await bxLoad(); }
-  calRender();
+/* 공휴일이면 앞 평일로 당긴다 (안내 마감용). rollFwd의 반대 */
+function calRollBwd(d){
+  var x=new Date(d); x.setHours(0,0,0,0);
+  var n=0; while(isHoliday(x)&&n<400){ x.setDate(x.getDate()-1); n++; }
+  return x;
 }
-
-function calLeftOf(d){
-  var p=parseD(d); if(!p)return null;
-  return Math.round((p-today0())/86400000);
-}
-function calCls(left){
-  if(left===null)return "g";
-  if(left<0)return "dr";      /* 지남 = 진빨강 */
-  if(left<=3)return "r";      /* 3일 안 = 빨강 */
-  if(left<=7)return "a";      /* 4~7일 = 주황 */
-  return "g";                 /* 8일 이상 = 회색 */
-}
+function calLeftOf(d){ var p=parseD(d); if(!p)return null; return Math.round((p-today0())/86400000); }
 function calLeftTxt(left){
   if(left===null)return "";
-  if(left<0)return "D+"+(-left);
-  if(left===0)return "D-day";
-  return "D-"+left;
+  if(left<0)return (-left)+"일 지남";
+  if(left===0)return "오늘";
+  return left+"일 남음";
 }
 function calStaffName(id){
   if(!id)return "";
   var s=(staff||[]).find(function(x){return x.id===id;});
   return (s&&s.name)||"";
 }
+function calAcct(oid){
+  var f=(typeof rcFirmOfOffice==="function")?rcFirmOfOffice(oid):"";
+  if(!f)return {cls:"", t:""};
+  if(f.indexOf("블루")>=0)return {cls:"bl", t:"블루", full:f};
+  if(f.indexOf("남부")>=0)return {cls:"nb", t:"남부", full:f};
+  return {cls:"ij", t:"이준", full:f};
+}
 
-/* ★데이터 : 모든 기한을 한 줄씩 뽑는다. 화면 그리기와 완전히 분리해 둔다 */
+/* ---------- 화면에 들어올 때 ---------- */
+async function calEnter(){
+  if(!calYM)calYM=calThisYM();
+  if(!calSel)calSel=fmt(new Date());
+  if(!bxLoaded)await bxLoad();
+  if(typeof rcLoadOffices==="function")await rcLoadOffices();
+  if(!calCli)await calLoadClients();
+  await calLoadCaseDates();
+  calRender();
+}
+/* 의뢰인 이름·소속 사무소 (1,000줄 넘게 페이징) */
+async function calLoadClients(){
+  calCli={};
+  try{
+    var from=0,STEP=1000;
+    for(var i=0;i<60;i++){
+      var r=await sbc.from("clients").select("id,name,office_id").range(from,from+STEP-1);
+      if(r.error)throw r.error;
+      var d=r.data||[];
+      d.forEach(function(c){ calCli[c.id]={name:c.name||"",office_id:c.office_id||null}; });
+      if(d.length<STEP)break;
+      from+=STEP;
+    }
+  }catch(e){ calCli={}; }
+}
+/* 집회·공고 기일. 표가 없으면 그 두 종류만 조용히 꺼진다 (앱은 안 죽는다) */
+async function calLoadCaseDates(){
+  try{
+    var r=await sbc.from("case_dates").select("*");
+    if(r.error)throw r.error;
+    calCD=r.data||[]; calCDReady=true;
+  }catch(e){ calCD=[]; calCDReady=false; }
+}
+
+/* ---------- ★데이터 : 모든 기한을 한 줄씩 ---------- */
 function calItems(){
   var out=[];
   function push(date,kind,o){
@@ -2984,63 +3092,100 @@ function calItems(){
     out.push({
       date:d, kind:kind, left:calLeftOf(d),
       name:o.name||"이름 없음", caseno:o.caseno||"", court:o.court||"",
-      doc:o.doc||"", ownerId:o.ownerId||"", round:o.round||null,
-      goType:o.goType||"", goId:o.goId||""
+      doc:o.doc||"", ownerId:o.ownerId||"", officeId:o.officeId||null, round:o.round||null,
+      push:o.push||"", old:!!o.old, moved:!!o.moved, notified:o.notified!==false,
+      newDate:o.newDate||"", goType:o.goType||"", goId:o.goId||""
     });
   }
+  function shortD(d){ var p=(d||"").split("-"); return p.length===3?(+p[1])+"."+(+p[2]):d; }
 
-  /* 1) 보정 문서 : 법원 제출기한 · 의뢰인 안내 마감 */
+  /* 1) 보정 문서 : 법원 기한(뒤로 밀림) · 안내 마감(앞으로 당김) */
   (bxRows||[]).forEach(function(r){
-    if(bxStage(r)==="완료")return;                 /* 끝난 건은 달력에 안 올린다 */
+    if(bxStage(r)==="완료")return;
     var c=(cases||[]).find(function(x){return x.id===r.delivery_id;});
+    var cl=(c&&c.client_id&&calCli&&calCli[c.client_id])||null;
     var base={
-      name:(c&&c.name)||r.client_name||r.case_no||"이름 없음",
+      name:(c&&c.name)||(cl&&cl.name)||r.client_name||r.case_no||"이름 없음",
       caseno:r.case_no||(c&&c.caseno)||"",
       court:r.court||(c&&c.court)||"",
       doc:r.doc_type||"보정",
       ownerId:r.owner_id||(c&&c.owner_id)||"",
+      officeId:(cl&&cl.office_id)||null,
       round:r.round_no||1,
       goType:"bj", goId:r.id
     };
-    push(r.court_deadline,"court",base);
-    push(r.client_deadline,"client",base);
+    if(r.court_deadline){
+      var raw=String(r.court_deadline).slice(0,10);
+      var eff=fmt(rollFwd(parseD(raw)));
+      push(eff,"court",Object.assign({},base,{push:eff!==raw?"밀림":""}));
+    }
+    if(r.client_deadline){
+      var raw2=String(r.client_deadline).slice(0,10);
+      var eff2=fmt(calRollBwd(parseD(raw2)));
+      push(eff2,"client",Object.assign({},base,{push:eff2!==raw2?"당김":""}));
+    }
   });
 
-  /* 2) 송달 사건 : 처리기한 · 열람 마감 · 추후제출 */
+  /* 2) 송달 사건 : 처리기한 · 송달간주일 · 추후제출 */
   (cases||[]).forEach(function(c){
     if(c.status==="처리완료")return;
+    var cl=(c.client_id&&calCli&&calCli[c.client_id])||null;
     var base={
-      name:c.name||"이름 없음", caseno:c.caseno||"", court:c.court||"",
-      doc:c.doctype||"송달문서", ownerId:c.owner_id||"",
+      name:c.name||(cl&&cl.name)||"이름 없음", caseno:c.caseno||"", court:c.court||"",
+      doc:c.doctype||"송달문서", ownerId:c.owner_id||"", officeId:(cl&&cl.office_id)||null,
       goType:"case", goId:c.id
     };
     var pd=procDueDate(c);
     if(pd)push(fmt(pd),"proc",base);
-    /* 아직 확인 안 한 건의 간주송달일. 이 날이 지나면 열지 않아도 송달된 것으로 본다 */
-    if(!c.confirmed&&c.date){
-      var deem=rollFwd(addDays(c.date,7));
-      push(fmt(deem),"read",base);
-    }
+    if(!c.confirmed&&c.date)push(fmt(rollFwd(addDays(c.date,7))),"read",base);
     if(c.submitStatus==="일부제출"&&c.followupDate)push(c.followupDate,"follow",base);
   });
 
-  /* 거르기 */
+  /* 3) 채권자집회 · 인가결정 공고 (+ 기일변경 자취) */
+  (calCD||[]).forEach(function(r){
+    var kind=(r.kind==="집회")?"meet":(r.kind==="공고")?"grant":"";
+    if(!kind)return;
+    var c=(cases||[]).find(function(x){
+      return rcNormCase(x.caseno)===rcNormCase(r.case_no)&&(!r.court||rcCourtKey(x.court)===rcCourtKey(r.court));
+    });
+    var cl=(r.client_id&&calCli&&calCli[r.client_id])||((c&&c.client_id&&calCli&&calCli[c.client_id])||null);
+    var base={
+      name:(cl&&cl.name)||(c&&c.name)||r.case_no||"이름 없음",
+      caseno:r.case_no||"", court:r.court||(c&&c.court)||"",
+      doc:(r.kind==="집회")?"채권자집회":"인가결정 공고",
+      ownerId:(c&&c.owner_id)||"", officeId:(cl&&cl.office_id)||null,
+      goType:c?"case":"", goId:c?c.id:""
+    };
+    if(r.prev_date){
+      /* 옛 날짜 : 취소선으로 남긴다. 지우면 "분명히 그날이었는데" 하고 헷갈린다 */
+      push(String(r.prev_date).slice(0,10),kind,
+        Object.assign({},base,{old:true,newDate:shortD(String(r.date_on||"").slice(0,10)),notified:true}));
+    }
+    push(String(r.date_on||"").slice(0,10),kind,
+      Object.assign({},base,{moved:!!r.prev_date,notified:r.notified!==false}));
+  });
+
   return out.filter(function(x){
     if(!calKind[x.kind])return false;
     if(calOwner&&x.ownerId!==calOwner)return false;
+    if(calFirm){
+      var a=calAcct(x.officeId);
+      if((a.full||"")!==calFirm)return false;
+    }
     return true;
   });
 }
 
-function calKindTag(k){
-  var f=CAL_KIND.find(function(x){return x.k===k;});
-  return f?f.t:"?";
-}
-function calKindLabel(k){
-  var f=CAL_KIND.find(function(x){return x.k===k;});
-  return f?f.label:k;
+function calKindOf(k){ return CAL_KIND.find(function(x){return x.k===k;})||{t:"?",label:k,cls:"",why:""}; }
+/* 알약 class : 종류색 + (지났으면 진빨강) + (옛 기일이면 취소선) + (기일 바뀐 새 날짜면 빨간 테두리) */
+function calPillCls(x){
+  if(x.old)return "cal-pl old";
+  if(x.moved)return "cal-pl moved";
+  if(x.left!==null&&x.left<0)return "cal-pl over";
+  return "cal-pl "+calKindOf(x.kind).cls;
 }
 
+/* ---------- 그리기 ---------- */
 function calRender(){
   var w=document.getElementById("cal-wrap");
   if(!w)return;
@@ -3048,141 +3193,162 @@ function calRender(){
 
   var L=calItems();
   var byDate={};
+  var ord=function(k){ return CAL_KIND.findIndex(function(x){return x.k===k;}); };
   L.forEach(function(x){ (byDate[x.date]=byDate[x.date]||[]).push(x); });
-  Object.keys(byDate).forEach(function(d){
-    byDate[d].sort(function(a,b){ return CAL_KIND.findIndex(function(k){return k.k===a.kind;})-CAL_KIND.findIndex(function(k){return k.k===b.kind;}); });
-  });
+  Object.keys(byDate).forEach(function(d){ byDate[d].sort(function(a,b){return ord(a.kind)-ord(b.kind);}); });
 
   var y=calYM.y, m=calYM.m;
-  var first=new Date(y,m-1,1);
   var lastDay=new Date(y,m,0).getDate();
-  var startPad=first.getDay();                    /* 0=일 */
+  var startPad=new Date(y,m-1,1).getDay();
+  var prevLast=new Date(y,m-1,0).getDate();
   var todayStr=fmt(new Date());
-
-  /* 이번 달 · 지난 기한 · 오늘 숫자 */
   var ymPrefix=calYMKey(calYM);
-  var nMonth=L.filter(function(x){return x.date.indexOf(ymPrefix)===0;}).length;
-  var nOver=L.filter(function(x){return x.left!==null&&x.left<0;}).length;
+
+  var inMonth=function(x){ return x.date.indexOf(ymPrefix)===0; };
+  var nCourt=L.filter(function(x){return inMonth(x)&&x.kind==="court";}).length;
+  var nClient=L.filter(function(x){return inMonth(x)&&x.kind==="client";}).length;
+  var nOver=L.filter(function(x){return !x.old&&x.left!==null&&x.left<0;}).length;
   var nToday=L.filter(function(x){return x.date===todayStr;}).length;
-  var nSoon=L.filter(function(x){return x.left!==null&&x.left>=0&&x.left<=3;}).length;
+  var nNotice=L.filter(function(x){return x.moved&&!x.notified;}).length;
 
-  var h='<div class="h2row"><h2 style="margin:0">기한 달력</h2>'
-    +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
-    +'<button class="btn ghost mini" onclick="calMove(-1)">◀ 지난달</button>'
-    +'<span class="cal-title">'+y+'년 '+m+'월</span>'
-    +'<button class="btn ghost mini" onclick="calMove(1)">다음달 ▶</button>'
-    +'<button class="btn ghost mini" onclick="calToday()">오늘</button>'
-    +'</div></div>';
-
-  /* 요약 */
-  h+='<div class="bj-alert'+(nOver?' red':'')+'" style="margin:8px 0">'
-    +'이번 달 기한 <b>'+nMonth+'건</b>'
-    +' · 오늘 <b>'+nToday+'건</b>'
-    +' · 3일 안 <b>'+nSoon+'건</b>'
-    +(nOver?' · <b>기한 지난 것 '+nOver+'건</b> (아래 목록을 먼저 처리하세요)':'')
+  /* ── 도구줄 ── */
+  var h='<div id="cal-printarea">';
+  h+='<div class="cal-bar">'
+    +'<span class="cal-nav">'
+      +'<button class="cal-arr" type="button" onclick="calMove(-1)">‹</button>'
+      +'<span class="cal-mon">'+y+'년 '+m+'월</span>'
+      +'<button class="cal-arr" type="button" onclick="calMove(1)">›</button>'
+      +'<button class="cal-ib" type="button" onclick="calToday()">오늘로</button>'
+    +'</span>'
+    +'<span class="cal-filters cal-noprint">'
+      +'담당자 <select onchange="calSet(\'owner\',this.value)"><option value="">전체</option>'
+      +(staff||[]).map(function(s){return '<option value="'+esc(s.id)+'"'+(calOwner===s.id?" selected":"")+'>'+esc(s.name||"이름 없음")+'</option>';}).join("")
+      +'</select>'
+      +' 사무소 <select onchange="calSet(\'firm\',this.value)"><option value="">전체</option>'
+      +["법무법인 이준 서초 분사무소","법률사무소 블루","법무법인 남부"].map(function(f){
+          return '<option value="'+esc(f)+'"'+(calFirm===f?" selected":"")+'>'+esc(f.replace("법무법인 ","").replace("법률사무소 ",""))+'</option>';}).join("")
+      +'</select>'
+      +CAL_KIND.map(function(k){
+          var off=(k.k==="meet"||k.k==="grant")&&!calCDReady;
+          return '<label class="cal-tck"'+(off?' title="집회·공고 표가 아직 없습니다"':'')+'>'
+            +'<input type="checkbox" '+(calKind[k.k]?"checked":"")+(off?" disabled":"")
+            +' onchange="calToggleKind(\''+k.k+'\',this.checked)">'+k.t+'</label>';
+        }).join("")
+      +'<button class="cal-ib" type="button" onclick="calPrint()">인쇄</button>'
+    +'</span>'
     +'</div>';
 
-  /* 거르기 줄 */
-  h+='<div class="rc-bar">'
-    +CAL_KIND.map(function(k){
-      return '<label class="rc-ck"><input type="checkbox" '+(calKind[k.k]?"checked":"")
-        +' onchange="calToggleKind(\''+k.k+'\',this.checked)">'
-        +'<span class="cal-swatch" style="background:'+k.bg+';border:1px solid '+k.fg+'"></span>'
-        +'<b style="color:'+k.fg+'">'+k.t+'</b> '+k.label+'</label>';
-    }).join("")
-    +'<span style="flex:1"></span>'
-    +'<label class="rc-ck">담당자 '
-    +'<select onchange="calSet(\'owner\',this.value)">'
-    +'<option value="">전체</option>'
-    +(staff||[]).map(function(s){return '<option value="'+esc(s.id)+'"'+(calOwner===s.id?" selected":"")+'>'+esc(s.name||"이름 없음")+'</option>';}).join("")
-    +'</select></label>'
+  /* ── 요약 줄 ── */
+  h+='<div class="cal-sum">'
+    +'<span class="cal-sumi">이번 달 법원 기한 <b>'+nCourt+'건</b></span>'
+    +'<span class="cal-sumi">안내 마감 <b>'+nClient+'건</b></span>'
+    +'<button class="cal-sumi'+(nOver?' late':'')+'" type="button" onclick="calShow(\'__over__\')">지난 것 <b>'+nOver+'건</b></button>'
+    +'<span class="cal-sumi">오늘 <b>'+nToday+'건</b></span>'
+    +(nNotice?'<button class="cal-sumi notice" type="button" onclick="calShow(\'__notice__\')">의뢰인에게 아직 안 알린 기일변경 <b>'+nNotice+'건</b></button>':'')
     +'</div>';
 
-  /* 달력 */
-  var WD=["일","월","화","수","목","금","토"];
-  h+='<div class="cal-grid">'
-    +WD.map(function(d,i){return '<div class="cal-hd'+(i===0?' sun':(i===6?' sat':''))+'">'+d+'</div>';}).join("");
-  for(var i=0;i<startPad;i++)h+='<div class="cal-cell blank"></div>';
+  if(!calCDReady)h+='<div class="bj-note cal-noprint" style="margin:-4px 0 8px">집회·공고는 저장할 표가 아직 없어 꺼져 있습니다. <b>SQL_송달앱_집회공고기일_표만들기_20260818.sql</b> 을 실행하면 켜집니다.</div>';
+
+  /* ── 달력 + 오른쪽 패널 ── */
+  h+='<div class="cal-two">';
+  h+='<div><div class="cal-cal">'
+    +'<div class="cal-dow">'+["일","월","화","수","목","금","토"].map(function(d){return '<span>'+d+'</span>';}).join("")+'</div>'
+    +'<div class="cal-grid">';
+  for(var i=startPad-1;i>=0;i--)h+='<div class="cal-cell out"><span class="cal-dnum">'+(prevLast-i)+'</span></div>';
   for(var day=1;day<=lastDay;day++){
     var ds=y+"-"+("0"+m).slice(-2)+"-"+("0"+day).slice(-2);
-    var dt=new Date(y,m-1,day);
-    var off=isHoliday(dt);
+    var dt=new Date(y,m-1,day), wd=dt.getDay();
+    /* 이름을 붙일 공휴일 = 공휴일 목록에 실제로 적힌 날. 토·일에 겹쳐도 이름은 보여 준다 */
+    var pubHol=(holidays||[]).indexOf(ds)>=0;
     var items=byDate[ds]||[];
-    var cls="cal-cell"+(off?" off":"")+(ds===todayStr?" today":"")+(ds===calSel?" sel":"");
+    var cls="cal-cell"+(wd===0?" sun":(wd===6?" sat":""))+(pubHol?" hol":"")
+      +(ds===todayStr?" today":(ds<todayStr?" past":""))+(ds===calSel?" sel":"");
     h+='<div class="'+cls+'" onclick="calPick(\''+ds+'\')">'
-      +'<div class="cal-d"><span'+(dt.getDay()===0?' style="color:var(--red)"':(dt.getDay()===6?' style="color:var(--blue)"':''))+'>'+day+'</span>'
-      +(off&&dt.getDay()!==0&&dt.getDay()!==6?'<span class="hol">공휴일</span>':'')+'</div>';
-    items.slice(0,3).forEach(function(x){
-      h+='<span class="'+calPillCls(x)+'" title="'+esc(calKindLabel(x.kind)+" · "+x.name+" · "+calLeftTxt(x.left))+'">'
-        +'<b>'+calKindTag(x.kind)+'</b> '+esc(x.name)+'</span>';
-    });
-    if(items.length>3)h+='<span class="cal-more">+'+(items.length-3)+'건 더</span>';
+      +'<span class="cal-dnum">'+day+'</span>'+(pubHol?'<span class="cal-holnm">'+esc(calHolName(ds))+'</span>':'');
+    if(items.length){
+      h+='<div class="cal-pills">';
+      items.slice(0,3).forEach(function(x){
+        var kd=calKindOf(x.kind);
+        h+='<span class="'+calPillCls(x)+'" title="'+esc(kd.label+" · "+x.name+" · "+calLeftTxt(x.left))+'">'
+          +(x.moved&&!x.notified?'<span class="cal-dot"></span>':'')
+          +((!x.old&&x.left!==null&&x.left<0)?'<span class="cal-ex">!</span>':'')
+          +'<span>'+kd.t+' '+esc(x.name)+(x.old?' → '+esc(x.newDate):'')+(x.moved?' 날짜 바뀜':'')+'</span>'
+          +(x.push?'<span class="cal-push">'+x.push+'</span>':'')
+          +'</span>';
+      });
+      if(items.length>3)h+='<span class="cal-more">+'+(items.length-3)+'건 더</span>';
+      h+='</div>';
+    }
     h+='</div>';
   }
+  var tail=(startPad+lastDay)%7;
+  if(tail)for(var t2=1;t2<=7-tail;t2++)h+='<div class="cal-cell out"><span class="cal-dnum">'+t2+'</span></div>';
+  h+='</div></div>';
+
+  /* 범례 */
+  h+='<div class="cal-lgd">'
+    +CAL_KIND.map(function(k){return '<span class="cal-pl '+k.cls+'"><span>'+k.label+'</span></span>';}).join("")
+    +'<span class="cal-pl over"><span class="cal-ex">!</span><span>지남</span></span>'
+    +'<span class="cal-pl moved"><span class="cal-dot"></span><span>기일 바뀜 · 점은 아직 안 알림</span></span>'
+    +'<span>밀림 = 토·일·공휴일이라 다음 평일로 밀림 · 당김 = 안내 마감은 앞 평일로 당김</span>'
+    +'</div>';
   h+='</div>';
 
-  h+='<div class="cal-lg"><b style="color:var(--ink-2)">색 = 무슨 기한인가</b>'
-    +CAL_KIND.map(function(k){
-      return '<span><span class="cal-swatch" style="background:'+k.bg+';border:1px solid '+k.fg+'"></span>'
-        +'<b style="color:'+k.fg+'">'+k.t+'</b> '+k.label+'</span>';
-    }).join("")
-    +'</div>';
-  h+='<div class="cal-lg"><b style="color:var(--ink-2)">왼쪽 막대 = 얼마나 급한가</b>'
-    +CAL_URG.map(function(u){
-      return '<span><span class="cal-bar" style="background:'+u.c+'"></span>'+u.label+'</span>';
-    }).join("")
-    +'<span><span class="cal-swatch" style="background:#7A1427"></span>기한이 지난 것은 통째로 진한 자주</span>'
-    +'</div>';
-  h+='<div class="bj-note" style="margin-bottom:10px">날짜를 누르면 그날 할 일이 아래에 나옵니다.</div>';
-
-  /* 아래 목록 : 날짜를 골랐으면 그날 것, 아니면 지난 기한 + 이번 주 */
-  var listTitle, listRows;
-  if(calSel){
-    listTitle=calSel+" 기한 "+((byDate[calSel]||[]).length)+"건";
-    listRows=(byDate[calSel]||[]).slice();
+  /* ── 오른쪽 패널 ── */
+  var pTitle, pRows;
+  if(calSel==="__over__"){
+    pTitle="기한이 지난 것"; pRows=L.filter(function(x){return !x.old&&x.left!==null&&x.left<0;});
+  }else if(calSel==="__notice__"){
+    pTitle="아직 안 알린 기일변경"; pRows=L.filter(function(x){return x.moved&&!x.notified;});
+  }else if(calSel){
+    var dd=parseD(calSel);
+    pTitle=calSel.slice(0,4)+"년 "+(+calSel.slice(5,7))+"월 "+(+calSel.slice(8,10))+"일 "+["일","월","화","수","목","금","토"][dd?dd.getDay():0]+"요일";
+    pRows=(byDate[calSel]||[]).slice();
   }else{
-    var over=L.filter(function(x){return x.left!==null&&x.left<0;});
-    var week=L.filter(function(x){return x.left!==null&&x.left>=0&&x.left<=7;});
-    listTitle="기한 지난 것 "+over.length+"건 + 앞으로 7일 "+week.length+"건";
-    listRows=over.concat(week);
+    pTitle="날짜를 눌러 주세요"; pRows=[];
   }
-  listRows.sort(function(a,b){
-    if(a.date!==b.date)return a.date<b.date?-1:1;
-    return CAL_KIND.findIndex(function(k){return k.k===a.kind;})-CAL_KIND.findIndex(function(k){return k.k===b.kind;});
-  });
+  pRows.sort(function(a,b){ if(a.date!==b.date)return a.date<b.date?-1:1; return ord(a.kind)-ord(b.kind); });
 
-  h+='<div class="h2row" style="margin-top:16px"><h2 style="margin:0;font-size:16px">'+esc(listTitle)+'</h2>'
-    +(calSel?'<button class="btn ghost mini" onclick="calSel=\'\';calRender()">전체 보기</button>':'')+'</div>';
-  h+='<div class="rc-tblwrap"><table class="rc-tbl"><thead><tr>'
-    +'<th style="width:104px">날짜</th><th style="width:74px">남은 날</th><th style="width:150px">기한 종류</th>'
-    +'<th style="width:150px">의뢰인</th><th>사건번호 · 법원</th><th>문서</th><th style="width:96px">담당자</th><th style="width:80px">할 일</th>'
-    +'</tr></thead><tbody>';
-  if(!listRows.length){
-    h+='<tr><td colspan="8"><div class="empty" style="padding:24px 0">해당하는 기한이 없습니다.</div></td></tr>';
+  h+='<aside class="cal-panel cal-noprint"><header><h3>'+esc(pTitle)+'</h3>'
+    +(calSel?'<button class="cal-ib" type="button" onclick="calSel=\'\';calRender()">닫기</button>':'')+'</header>'
+    +'<div class="cal-pb">';
+  if(!pRows.length){
+    h+='<div class="bj-note" style="padding:14px 4px;text-align:center">이 날에는 기한이 없습니다.</div>';
   }else{
-    h+=listRows.map(function(x){
-      var go=x.goType==="case"
-        ? '<button class="btn ghost mini" onclick="calGo(\'case\',\''+esc(x.goId)+'\')">열기</button>'
-        : '<button class="btn ghost mini" onclick="calGo(\'bj\',\''+esc(x.goId)+'\')">열기</button>';
-      return '<tr>'
-        +'<td class="mono">'+esc(x.date)+'</td>'
-        +'<td><span class="rc-d '+(x.left<0?"r":(x.left<=3?"a":"g"))+'">'+calLeftTxt(x.left)+'</span></td>'
-        +'<td><span class="'+calPillCls(x)+'" style="display:inline-block;margin:0"><b>'+calKindTag(x.kind)+'</b> '+esc(calKindLabel(x.kind))+'</span></td>'
-        +'<td>'+esc(x.name)+(x.round?' <span class="rc-tag">'+x.round+'회차</span>':'')+'</td>'
-        +'<td class="mono">'+esc(x.caseno)+(x.court?'<div class="bj-note">'+esc(x.court)+'</div>':'')+'</td>'
-        +'<td>'+esc(x.doc)+'</td>'
-        +'<td>'+esc(calStaffName(x.ownerId)||"-")+'</td>'
-        +'<td>'+go+'</td></tr>';
+    h+=pRows.map(function(x){
+      var kd=calKindOf(x.kind), a=calAcct(x.officeId);
+      var when=x.old?("옛 기일 · "+x.newDate+"로 바뀜"):(kd.why+" · "+calLeftTxt(x.left));
+      return '<div class="cal-dcard'+(x.left!==null&&x.left<0&&!x.old?" over":"")+'">'
+        +'<div class="cal-l1"><span class="cal-who">'+esc(x.name)+'</span>'
+          +'<span class="cal-case">'+esc((x.court?x.court+" ":"")+x.caseno)+'</span>'
+          +(a.t?'<span class="cal-acct '+a.cls+'">'+a.t+'</span>':'')
+          +(x.round?'<span class="cal-acct nb">'+x.round+'회차</span>':'')+'</div>'
+        +'<div class="cal-l2"><span class="cal-kind '+kd.cls+'">'+esc(kd.label)+'</span><span>'+esc(when)+'</span>'
+          +(x.push?'<span class="cal-kind deem">'+x.push+'</span>':'')
+          +(x.moved&&!x.notified?'<span class="cal-kind over">아직 안 알림</span>':'')+'</div>'
+        +'<div class="cal-l3"><span>'+(x.date!==calSel?esc(x.date)+' · ':'')+'담당 '+esc(calStaffName(x.ownerId)||"미지정")+'</span>'
+          +(x.goId?'<a href="javascript:void(0)" onclick="calGo(\''+x.goType+'\',\''+esc(x.goId)+'\')">사건 열기</a>':'')+'</div>'
+        +'</div>';
     }).join("");
   }
-  h+='</tbody></table></div>';
+  h+='</div></aside>';
+  h+='</div>';   /* cal-two */
+  h+='</div>';   /* cal-printarea */
 
-  h+='<div class="bj-note" style="margin-top:10px">'
-    +'<b>열람 마감</b>은 발송일 + 7일입니다. 이 날이 지나면 문서를 열지 않아도 송달된 것으로 보아 그때부터 기한이 흘러갑니다.<br>'
-    +'<b>처리기한</b>은 송달 확인일(또는 간주일) + 처리일수이며, 마지막 날이 주말·공휴일이면 다음 평일로 밀립니다.<br>'
-    +'끝난 건(처리완료·보정 완료)은 달력에 올리지 않습니다.</div>';
+  h+='<div class="bj-note cal-noprint" style="margin-top:10px">'
+    +'<b>송달간주일</b>은 발송일 + 7일입니다. 이 날이 지나면 문서를 열지 않아도 송달된 것으로 보아 그때부터 기한이 흘러갑니다.<br>'
+    +'<b>법원 기한</b>이 토·일·공휴일이면 다음 평일로 밀리고(밀림), <b>안내 마감</b>은 반대로 앞 평일로 당깁니다(당김).<br>'
+    +'끝난 건(처리완료 · 보정 완료)은 달력에 올리지 않습니다.</div>';
 
   w.innerHTML=h;
+}
+
+/* 인쇄 : 달력만 A4 가로 한 장 */
+function calPrint(){
+  document.body.classList.add("calprint");
+  var off=function(){ document.body.classList.remove("calprint"); window.removeEventListener("afterprint",off); };
+  window.addEventListener("afterprint",off);
+  setTimeout(function(){ window.print(); setTimeout(off,1500); },60);
 }
 
 /* 달력에서 원래 화면으로 보내기 */
@@ -3193,10 +3359,8 @@ function calGo(type,id){
       var el=document.getElementById("row-"+id)||document.querySelector(".detail");
       if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
     },120);
-  }else{
-    showView("bjbox");
-    bxOpen[id]=true;
-    bxRender();
+  }else if(type==="bj"){
+    showView("bjbox"); bxOpen[id]=true; bxRender();
     setTimeout(function(){
       var el=document.getElementById("bx-"+id);
       if(el)el.scrollIntoView({block:"center",behavior:"smooth"});

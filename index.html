@@ -680,8 +680,28 @@
   .cal-sumi.notice{color:#fff;background:#B3261E;border-color:#B3261E}
   .cal-sumi.notice b{color:#fff}
   /* 달력 */
-  .cal-two{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:12px;align-items:start}
+  /* 기본은 달력만 넓게. 날짜를 누르면 오른쪽 패널이 붙는다 */
+  .cal-two{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px;align-items:start}
+  .cal-two.one{grid-template-columns:1fr}
   @media(max-width:1080px){ .cal-two{grid-template-columns:1fr} }
+  /* 월 보기 · 주 보기 전환 */
+  .cal-seg{display:inline-flex;background:#ECE8E2;border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+  .cal-seg button{font:inherit;font-size:13.5px;font-weight:700;color:var(--ink-2);border:0;background:none;border-radius:6px;padding:6px 14px;cursor:pointer}
+  .cal-seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(25,24,22,.06)}
+  /* 주 보기 : 가로 7일 × 세로 기한 종류 */
+  .cal-week{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .cal-wrow{display:grid;grid-template-columns:118px repeat(7,1fr)}
+  .cal-wrow + .cal-wrow{border-top:1px solid var(--line)}
+  .cal-wrow.head{background:#FBFAF8;border-bottom:1px solid var(--line)}
+  .cal-wd{padding:8px;font-size:12.5px;font-weight:800;color:var(--muted);text-align:center;border-left:1px solid var(--line);cursor:pointer}
+  .cal-wd b{display:block;font-size:16px;color:var(--ink)}
+  .cal-wd.sun b{color:#B3261E} .cal-wd.sat b{color:#2A5CA8}
+  .cal-wd.today b{background:var(--brand);color:#fff;border-radius:50%;width:26px;height:26px;line-height:26px;margin:2px auto 0}
+  .cal-wlab{padding:10px;font-size:12.5px;font-weight:800;color:var(--ink-2);background:#FBFAF8;border-right:1px solid var(--line);display:flex;align-items:flex-start;gap:6px}
+  .cal-sw{width:10px;height:10px;border-radius:3px;flex:none;margin-top:3px}
+  .cal-wcell{border-left:1px solid var(--line);padding:6px;min-height:54px;display:flex;flex-direction:column;gap:3px;cursor:pointer}
+  .cal-wcell.today{background:var(--brand-soft)}
+  .cal-wcell.hol{background:#F4F2EF}   /* 공휴일은 회색. 오늘(연분홍)과 헷갈리지 않게 */
   .cal-cal{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
   .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--line);background:#FBFAF8}
   .cal-dow span{padding:7px 10px;font-size:12.5px;font-weight:800;color:var(--muted);text-align:left}
@@ -711,9 +731,10 @@
   .cal-pl.grant {background:#20604A;color:#fff}
   .cal-pl.proc  {background:var(--card);color:#5B4B8A;border-color:#CFC2E8}
   .cal-pl.follow{background:var(--card);color:#0E5A5E;border-color:#B5D9D9}
-  .cal-pl.over  {background:#B3261E;color:#fff}
-  .cal-pl.old   {background:#F1EEEA;color:var(--muted);border-color:var(--line-d);text-decoration:line-through}
-  .cal-pl.moved {background:#2B4570;color:#fff;border-color:#B3261E;box-shadow:0 0 0 1.5px #B3261E}
+  /* ★지난 것·기일 바뀐 것은 색을 덮지 않는다. 빨간 테두리로만 표시해 종류색을 살린다 */
+  .cal-pl.over  {border-color:#B3261E !important;box-shadow:0 0 0 1.5px #B3261E}
+  .cal-pl.moved {border-color:#B3261E !important;box-shadow:0 0 0 1.5px #B3261E}
+  .cal-pl.old   {background:#F1EEEA;color:var(--muted);border-color:var(--line-d);text-decoration:line-through;box-shadow:none}
   .cal-dot{width:7px;height:7px;border-radius:50%;background:#B3261E;flex:none;margin-left:-3px}
   .cal-ex{flex:none;font-weight:800}
   .cal-push{font-size:10px;font-weight:800;opacity:.85;flex:none}
@@ -2975,7 +2996,9 @@ async function rcRegister(){
    ★데이터(calItems)와 그리기(calRender)를 나눠 둔다. 시안이 바뀌면 calRender만 갈아 끼운다.
    ================================================================ */
 var calYM=null;            /* 보고 있는 달 {y,m} */
-var calSel="";             /* 오른쪽 패널에 띄울 것. YYYY-MM-DD 또는 "__over__" / "__notice__" */
+var calView="month";       /* "month" 월 보기 / "week" 주 보기 */
+var calWeek=null;          /* 주 보기에서 보고 있는 주의 일요일 (YYYY-MM-DD) */
+var calSel="";             /* ★기본은 빈 값 = 달력만 넓게. 날짜를 눌러야 오른쪽 패널이 열린다 */
 var calOwner="";           /* 담당자 거르기 (profiles.id) */
 var calFirm="";            /* 사무소 거르기 ("법률사무소 블루" 같은 이름) */
 var calCli=null;           /* client_id → {name, office_id} */
@@ -2984,13 +3007,13 @@ var calCDReady=false;      /* case_dates 표가 있는가 */
 var calKind={court:true,client:true,read:true,meet:true,grant:true,proc:true,follow:true};
 
 var CAL_KIND=[
-  {k:"court", t:"법원", label:"법원 기한",     cls:"court", why:"보정서 제출 마지막 날"},
-  {k:"client",t:"안내", label:"안내 마감",     cls:"info",  why:"의뢰인 서류 받을 날"},
-  {k:"read",  t:"간주", label:"송달간주일",    cls:"deem",  why:"열지 않아도 송달된 것으로 보는 날"},
-  {k:"meet",  t:"집회", label:"채권자집회",    cls:"meet",  why:"의뢰인이 법원에 나가는 날"},
-  {k:"grant", t:"공고", label:"인가결정 공고",  cls:"grant", why:"인가결정이 공고되는 날"},
-  {k:"proc",  t:"처리", label:"처리기한",      cls:"proc",  why:"우리 사무실 처리 마감"},
-  {k:"follow",t:"추후", label:"추후제출",      cls:"follow",why:"나머지 서류 내기로 한 날"}
+  {k:"court", t:"법원", label:"법원 기한",     cls:"court", sw:"#9B1B33", why:"보정서 제출 마지막 날"},
+  {k:"client",t:"안내", label:"안내 마감",     cls:"info",  sw:"#B45309", why:"의뢰인 서류 받을 날"},
+  {k:"read",  t:"간주", label:"송달간주일",    cls:"deem",  sw:"#8B857D", why:"열지 않아도 송달된 것으로 보는 날"},
+  {k:"meet",  t:"집회", label:"채권자집회",    cls:"meet",  sw:"#2B4570", why:"의뢰인이 법원에 나가는 날"},
+  {k:"grant", t:"공고", label:"인가결정 공고",  cls:"grant", sw:"#20604A", why:"인가결정이 공고되는 날"},
+  {k:"proc",  t:"처리", label:"처리기한",      cls:"proc",  sw:"#5B4B8A", why:"우리 사무실 처리 마감"},
+  {k:"follow",t:"추후", label:"추후제출",      cls:"follow",sw:"#0E5A5E", why:"나머지 서류 내기로 한 날"}
 ];
 /* 공휴일 이름 (달력 칸에 표시). 없으면 그냥 '공휴일' */
 var CAL_HOLNM={
@@ -3009,13 +3032,30 @@ function calHolName(ds){
 
 function calThisYM(){ var t=new Date(); return {y:t.getFullYear(), m:t.getMonth()+1}; }
 function calYMKey(o){ return o.y+"-"+("0"+o.m).slice(-2); }
+/* 오늘이 든 주의 일요일 */
+function calWeekOf(d){ var x=parseD(d)||new Date(); x=new Date(x); x.setHours(0,0,0,0); x.setDate(x.getDate()-x.getDay()); return fmt(x); }
 function calMove(n){
-  if(!calYM)calYM=calThisYM();
-  var m=calYM.m+n, y=calYM.y;
-  while(m<1){m+=12;y--;} while(m>12){m-=12;y++;}
-  calYM={y:y,m:m}; calRender();
+  if(calView==="week"){
+    if(!calWeek)calWeek=calWeekOf(fmt(new Date()));
+    calWeek=fmt(addDays(calWeek,7*n));
+    var f=parseD(calWeek); calYM={y:f.getFullYear(),m:f.getMonth()+1};
+  }else{
+    if(!calYM)calYM=calThisYM();
+    var m=calYM.m+n, y=calYM.y;
+    while(m<1){m+=12;y--;} while(m>12){m-=12;y++;}
+    calYM={y:y,m:m};
+  }
+  calRender();
 }
-function calToday(){ calYM=calThisYM(); calSel=fmt(new Date()); calRender(); }
+function calToday(){
+  calYM=calThisYM(); calWeek=calWeekOf(fmt(new Date())); calRender();
+}
+/* 월 보기 ↔ 주 보기 */
+function calSetView(v){
+  calView=v;
+  if(v==="week"&&!calWeek)calWeek=calWeekOf(calSel||fmt(new Date()));
+  calRender();
+}
 function calSet(k,v){ if(k==="owner")calOwner=v; else if(k==="firm")calFirm=v; calRender(); }
 function calToggleKind(k,on){ calKind[k]=!!on; calRender(); }
 function calPick(d){ calSel=(calSel===d)?"":d; calRender(); }
@@ -3050,27 +3090,52 @@ function calAcct(oid){
 /* ---------- 화면에 들어올 때 ---------- */
 async function calEnter(){
   if(!calYM)calYM=calThisYM();
-  if(!calSel)calSel=fmt(new Date());
+  if(!calWeek)calWeek=calWeekOf(fmt(new Date()));
+  /* ★패널은 기본으로 닫아 둔다. 날짜를 눌러야 열린다 */
   if(!bxLoaded)await bxLoad();
   if(typeof rcLoadOffices==="function")await rcLoadOffices();
   if(!calCli)await calLoadClients();
   await calLoadCaseDates();
   calRender();
 }
-/* 의뢰인 이름·소속 사무소 (1,000줄 넘게 페이징) */
+/* 의뢰인 이름·소속 사무소.
+   ★id로도 찾고, 「법원 + 사건번호」로도 찾는다.
+     보정 문서에 의뢰인이 연결돼 있지 않으면 이름 대신 사건번호가 나오기 때문이다. */
+var calCliByCase=null;
 async function calLoadClients(){
-  calCli={};
+  calCli={}; calCliByCase={};
   try{
+    var COLS="id,name,office_id,case_no,court";
     var from=0,STEP=1000;
     for(var i=0;i<60;i++){
-      var r=await sbc.from("clients").select("id,name,office_id").range(from,from+STEP-1);
+      var r=await sbc.from("clients").select(COLS).range(from,from+STEP-1);
+      if(r.error&&COLS!=="id,name"){ COLS="id,name"; r=await sbc.from("clients").select(COLS).range(from,from+STEP-1); }
       if(r.error)throw r.error;
       var d=r.data||[];
-      d.forEach(function(c){ calCli[c.id]={name:c.name||"",office_id:c.office_id||null}; });
+      d.forEach(function(c){
+        var v={name:c.name||"",office_id:c.office_id||null};
+        calCli[c.id]=v;
+        String(c.case_no||"").split(/[,\n\r\t;]+/).forEach(function(chunk){
+          chunk=String(chunk||"").trim(); if(!chunk)return;
+          var p=splitCourtCase(chunk);
+          var no=rcNormCase(p.caseNo);
+          if(!/^\d{4}[가-힣]+\d+$/.test(no))return;
+          var ck=rcCourtKey(p.court||c.court||"");
+          if(ck)calCliByCase[ck+"|"+no]=v;
+          if(!calCliByCase["?|"+no])calCliByCase["?|"+no]=v;
+        });
+      });
       if(d.length<STEP)break;
       from+=STEP;
     }
-  }catch(e){ calCli={}; }
+  }catch(e){ calCli={}; calCliByCase={}; }
+}
+/* 법원+사건번호로 의뢰인 찾기 (못 찾으면 사건번호만으로 한 번 더) */
+function calCliOf(court,caseno){
+  if(!calCliByCase)return null;
+  var no=rcNormCase(caseno||"");
+  if(!no)return null;
+  return calCliByCase[rcCourtKey(court||"")+"|"+no]||calCliByCase["?|"+no]||null;
 }
 /* 집회·공고 기일. 표가 없으면 그 두 종류만 조용히 꺼진다 (앱은 안 죽는다) */
 async function calLoadCaseDates(){
@@ -3103,7 +3168,7 @@ function calItems(){
   (bxRows||[]).forEach(function(r){
     if(bxStage(r)==="완료")return;
     var c=(cases||[]).find(function(x){return x.id===r.delivery_id;});
-    var cl=(c&&c.client_id&&calCli&&calCli[c.client_id])||null;
+    var cl=(c&&c.client_id&&calCli&&calCli[c.client_id])||calCliOf(r.court||(c&&c.court),r.case_no||(c&&c.caseno));
     var base={
       name:(c&&c.name)||(cl&&cl.name)||r.client_name||r.case_no||"이름 없음",
       caseno:r.case_no||(c&&c.caseno)||"",
@@ -3129,7 +3194,7 @@ function calItems(){
   /* 2) 송달 사건 : 처리기한 · 송달간주일 · 추후제출 */
   (cases||[]).forEach(function(c){
     if(c.status==="처리완료")return;
-    var cl=(c.client_id&&calCli&&calCli[c.client_id])||null;
+    var cl=(c.client_id&&calCli&&calCli[c.client_id])||calCliOf(c.court,c.caseno);
     var base={
       name:c.name||(cl&&cl.name)||"이름 없음", caseno:c.caseno||"", court:c.court||"",
       doc:c.doctype||"송달문서", ownerId:c.owner_id||"", officeId:(cl&&cl.office_id)||null,
@@ -3177,12 +3242,15 @@ function calItems(){
 }
 
 function calKindOf(k){ return CAL_KIND.find(function(x){return x.k===k;})||{t:"?",label:k,cls:"",why:""}; }
-/* 알약 class : 종류색 + (지났으면 진빨강) + (옛 기일이면 취소선) + (기일 바뀐 새 날짜면 빨간 테두리) */
+/* ★알약 class : 종류색은 언제나 유지한다.
+   지난 것·기일 바뀐 것은 색을 덮지 않고 「빨간 테두리」로만 표시한다.
+   (전에는 지나면 전부 진빨강이 되어 무슨 기한인지 색으로 구분이 안 됐다) */
 function calPillCls(x){
   if(x.old)return "cal-pl old";
-  if(x.moved)return "cal-pl moved";
-  if(x.left!==null&&x.left<0)return "cal-pl over";
-  return "cal-pl "+calKindOf(x.kind).cls;
+  var c="cal-pl "+calKindOf(x.kind).cls;
+  if(x.left!==null&&x.left<0)c+=" over";
+  if(x.moved)c+=" moved";
+  return c;
 }
 
 /* ---------- 그리기 ---------- */
@@ -3204,7 +3272,10 @@ function calRender(){
   var todayStr=fmt(new Date());
   var ymPrefix=calYMKey(calYM);
 
-  var inMonth=function(x){ return x.date.indexOf(ymPrefix)===0; };
+  var inMonth=function(x){
+    if(calView==="week"){ return calWeek && x.date>=calWeek && x.date<=fmt(addDays(calWeek,6)); }
+    return x.date.indexOf(ymPrefix)===0;
+  };
   var nCourt=L.filter(function(x){return inMonth(x)&&x.kind==="court";}).length;
   var nClient=L.filter(function(x){return inMonth(x)&&x.kind==="client";}).length;
   var nOver=L.filter(function(x){return !x.old&&x.left!==null&&x.left<0;}).length;
@@ -3213,12 +3284,27 @@ function calRender(){
 
   /* ── 도구줄 ── */
   var h='<div id="cal-printarea">';
+  /* 주 보기면 그 주의 7일을 미리 만들어 둔다 */
+  var wDays=[];
+  if(calView==="week"){
+    if(!calWeek)calWeek=calWeekOf(fmt(new Date()));
+    for(var wi=0;wi<7;wi++)wDays.push(fmt(addDays(calWeek,wi)));
+  }
+  var title = (calView==="week")
+    ? (function(){ var a=wDays[0],b=wDays[6];
+        return (+a.slice(5,7))+"월 "+(+a.slice(8,10))+"일 ~ "+(+b.slice(5,7))+"월 "+(+b.slice(8,10))+"일"; })()
+    : (y+"년 "+m+"월");
+
   h+='<div class="cal-bar">'
     +'<span class="cal-nav">'
       +'<button class="cal-arr" type="button" onclick="calMove(-1)">‹</button>'
-      +'<span class="cal-mon">'+y+'년 '+m+'월</span>'
+      +'<span class="cal-mon">'+esc(title)+'</span>'
       +'<button class="cal-arr" type="button" onclick="calMove(1)">›</button>'
       +'<button class="cal-ib" type="button" onclick="calToday()">오늘로</button>'
+    +'</span>'
+    +'<span class="cal-seg cal-noprint">'
+      +'<button type="button" class="'+(calView==="month"?"on":"")+'" onclick="calSetView(\'month\')">월 보기</button>'
+      +'<button type="button" class="'+(calView==="week"?"on":"")+'" onclick="calSetView(\'week\')">주 보기</button>'
     +'</span>'
     +'<span class="cal-filters cal-noprint">'
       +'담당자 <select onchange="calSet(\'owner\',this.value)"><option value="">전체</option>'
@@ -3240,7 +3326,7 @@ function calRender(){
 
   /* ── 요약 줄 ── */
   h+='<div class="cal-sum">'
-    +'<span class="cal-sumi">이번 달 법원 기한 <b>'+nCourt+'건</b></span>'
+    +'<span class="cal-sumi">'+(calView==="week"?"이번 주":"이번 달")+' 법원 기한 <b>'+nCourt+'건</b></span>'
     +'<span class="cal-sumi">안내 마감 <b>'+nClient+'건</b></span>'
     +'<button class="cal-sumi'+(nOver?' late':'')+'" type="button" onclick="calShow(\'__over__\')">지난 것 <b>'+nOver+'건</b></button>'
     +'<span class="cal-sumi">오늘 <b>'+nToday+'건</b></span>'
@@ -3250,8 +3336,38 @@ function calRender(){
   if(!calCDReady)h+='<div class="bj-note cal-noprint" style="margin:-4px 0 8px">집회·공고는 저장할 표가 아직 없어 꺼져 있습니다. <b>SQL_송달앱_집회공고기일_표만들기_20260818.sql</b> 을 실행하면 켜집니다.</div>';
 
   /* ── 달력 + 오른쪽 패널 ── */
-  h+='<div class="cal-two">';
-  h+='<div><div class="cal-cal">'
+  h+='<div class="cal-two'+(calSel?'':' one')+'">';
+  h+='<div>';
+  if(calView==="week"){
+    /* ── 주 보기 : 가로 7일 × 세로 기한 종류 (몰린 곳이 층으로 보인다) ── */
+    h+='<div class="cal-week"><div class="cal-wrow head"><div class="cal-wlab">기한 종류</div>';
+    wDays.forEach(function(ds){
+      var dt=parseD(ds), wd=dt.getDay(), ph=(holidays||[]).indexOf(ds)>=0;
+      h+='<div class="cal-wd'+(wd===0?" sun":(wd===6?" sat":""))+(ds===todayStr?" today":"")+'" onclick="calPick(\''+ds+'\')">'
+        +["일","월","화","수","목","금","토"][wd]+'<b>'+(+ds.slice(8,10))+'</b>'
+        +(ph?'<span class="cal-holnm">'+esc(calHolName(ds))+'</span>':'')+'</div>';
+    });
+    h+='</div>';
+    CAL_KIND.filter(function(k){return calKind[k.k];}).forEach(function(k){
+      h+='<div class="cal-wrow"><div class="cal-wlab"><span class="cal-sw" style="background:'+k.sw+'"></span>'+k.label+'</div>';
+      wDays.forEach(function(ds){
+        var dt=parseD(ds), ph=(holidays||[]).indexOf(ds)>=0;
+        var its=(byDate[ds]||[]).filter(function(x){return x.kind===k.k;});
+        h+='<div class="cal-wcell'+(ds===todayStr?" today":"")+(ph?" hol":"")+'" onclick="calPick(\''+ds+'\')">';
+        its.forEach(function(x){
+          h+='<span class="'+calPillCls(x)+'" title="'+esc(k.label+" · "+x.name+" · "+calLeftTxt(x.left))+'">'
+            +(x.moved&&!x.notified?'<span class="cal-dot"></span>':'')
+            +((!x.old&&x.left!==null&&x.left<0)?'<span class="cal-ex">!</span>':'')
+            +'<span>'+esc(x.name)+(x.old?' → '+esc(x.newDate):'')+'</span>'
+            +(x.push?'<span class="cal-push">'+x.push+'</span>':'')+'</span>';
+        });
+        h+='</div>';
+      });
+      h+='</div>';
+    });
+    h+='</div>';
+  }else{
+  h+='<div class="cal-cal">'
     +'<div class="cal-dow">'+["일","월","화","수","목","금","토"].map(function(d){return '<span>'+d+'</span>';}).join("")+'</div>'
     +'<div class="cal-grid">';
   for(var i=startPad-1;i>=0;i--)h+='<div class="cal-cell out"><span class="cal-dnum">'+(prevLast-i)+'</span></div>';
@@ -3284,12 +3400,14 @@ function calRender(){
   var tail=(startPad+lastDay)%7;
   if(tail)for(var t2=1;t2<=7-tail;t2++)h+='<div class="cal-cell out"><span class="cal-dnum">'+t2+'</span></div>';
   h+='</div></div>';
+  }
 
   /* 범례 */
   h+='<div class="cal-lgd">'
     +CAL_KIND.map(function(k){return '<span class="cal-pl '+k.cls+'"><span>'+k.label+'</span></span>';}).join("")
-    +'<span class="cal-pl over"><span class="cal-ex">!</span><span>지남</span></span>'
-    +'<span class="cal-pl moved"><span class="cal-dot"></span><span>기일 바뀜 · 점은 아직 안 알림</span></span>'
+    +'<span class="cal-pl court over"><span class="cal-ex">!</span><span>지남(빨간 테두리)</span></span>'
+    +'<span class="cal-pl meet moved"><span class="cal-dot"></span><span>기일 바뀜 · 점은 아직 안 알림</span></span>'
+    +'<span class="cal-pl old"><span>옛 기일</span></span>'
     +'<span>밀림 = 토·일·공휴일이라 다음 평일로 밀림 · 당김 = 안내 마감은 앞 평일로 당김</span>'
     +'</div>';
   h+='</div>';
@@ -3305,12 +3423,13 @@ function calRender(){
     pTitle=calSel.slice(0,4)+"년 "+(+calSel.slice(5,7))+"월 "+(+calSel.slice(8,10))+"일 "+["일","월","화","수","목","금","토"][dd?dd.getDay():0]+"요일";
     pRows=(byDate[calSel]||[]).slice();
   }else{
-    pTitle="날짜를 눌러 주세요"; pRows=[];
+    pTitle=""; pRows=[];
   }
   pRows.sort(function(a,b){ if(a.date!==b.date)return a.date<b.date?-1:1; return ord(a.kind)-ord(b.kind); });
 
+  if(calSel){
   h+='<aside class="cal-panel cal-noprint"><header><h3>'+esc(pTitle)+'</h3>'
-    +(calSel?'<button class="cal-ib" type="button" onclick="calSel=\'\';calRender()">닫기</button>':'')+'</header>'
+    +'<button class="cal-ib" type="button" onclick="calSel=\'\';calRender()">닫기</button></header>'
     +'<div class="cal-pb">';
   if(!pRows.length){
     h+='<div class="bj-note" style="padding:14px 4px;text-align:center">이 날에는 기한이 없습니다.</div>';
@@ -3332,6 +3451,7 @@ function calRender(){
     }).join("");
   }
   h+='</div></aside>';
+  }
   h+='</div>';   /* cal-two */
   h+='</div>';   /* cal-printarea */
 

@@ -1630,7 +1630,7 @@ async function refreshAll(){
   busy(true);
   try{
     const [dl,pf,hd]=await Promise.all([
-      sd().from("deliveries").select("*").order("created_at",{ascending:false}),
+      sbPageAll(function(a,b){return sd().from("deliveries").select("*").order("created_at",{ascending:false}).range(a,b);}),
       sbc.from("profiles").select("id,name,role,active").order("role"),
       sd().from("holidays").select("day")
     ]);
@@ -3140,7 +3140,7 @@ function calCliOf(court,caseno){
 /* 집회·공고 기일. 표가 없으면 그 두 종류만 조용히 꺼진다 (앱은 안 죽는다) */
 async function calLoadCaseDates(){
   try{
-    var r=await sbc.from("case_dates").select("*");
+    var r=await sbPageAll(function(a,b){return sbc.from("case_dates").select("*").range(a,b);});
     if(r.error)throw r.error;
     calCD=r.data||[]; calCDReady=true;
   }catch(e){ calCD=[]; calCDReady=false; }
@@ -3520,9 +3520,11 @@ async function bxLoad(force){
   if(bxLoaded&&!force)return;
   busy(true);
   try{
-    var d=await sbc.from("bj_documents").select("*").order("created_at",{ascending:false});
+    var d=await sbPageAll(function(a,b){return sbc.from("bj_documents").select("*").order("created_at",{ascending:false}).range(a,b);});
+    if(d.error)throw d.error;
     bxRows=(d.data||[]);
-    var s=await sbc.from("bj_submissions").select("*");
+    var s=await sbPageAll(function(a,b){return sbc.from("bj_submissions").select("*").range(a,b);});
+    if(s.error)throw s.error;
     bxSubs=(s.data||[]);
     bxLoaded=true;
   }catch(e){bxRows=[];bxSubs=[];}
@@ -4733,7 +4735,7 @@ var BJ_MOBILE=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 async function bjLoadKb(){
   if(bjKb)return;
   var r=await Promise.all([
-    sbc.from("kb_types").select("*").order("sort_order"),
+    sbPageAll(function(a,b){return sbc.from("kb_types").select("*").order("sort_order").range(a,b);}),
     sbc.from("kb_sop_cards").select("type_code,court,required_docs"),
     sbc.from("kb_court_profiles").select("court,dept,top_types"),
     sbc.from("kb_doc_dict").select("name,issue_how,guide_link,search_tags"),
@@ -5702,6 +5704,24 @@ async function bjSelAll(tbl,cols){
     from+=STEP;
   }
   return out;
+}
+/* ★2026-08-25 : 1,000줄 한계(절대규칙 12) 대응 — 범용 나눠받기.
+   기존 조회식과 똑같이 {data,error} 를 돌려주므로 부르는 쪽 코드는 그대로 둔다.
+   make(a,b) 는 부를 때마다 "새" 조회식을 만들어 돌려줘야 한다(조회식은 재사용 불가).
+   bjSelAll 은 sbc 전용이라 songdal 스키마(sd())·order() 를 못 쓴다. 이 함수가 그걸 받는다. */
+async function sbPageAll(make){
+  var out=[],from=0,STEP=1000;
+  try{
+    for(var i=0;i<200;i++){
+      var r=await make(from,from+STEP-1);
+      if(r.error)return {data:null,error:r.error};
+      var d=r.data||[];
+      out=out.concat(d);
+      if(d.length<STEP)break;
+      from+=STEP;
+    }
+  }catch(e){return {data:null,error:e};}
+  return {data:out,error:null};
 }
 function bjOptAxes(){return (bjKb&&bjKb.optAxes)||[];}
 function bjOptAxisByKey(k){var L=bjOptAxes();for(var i=0;i<L.length;i++)if(L[i].key===k)return L[i];return null;}
@@ -8969,7 +8989,7 @@ async function wdPickLoadBj(){
          그중 한 칸이라도 표에 없으면 조회 전체가 실패하는데, 그걸 조용히 "사건 없음"으로 처리해
          목록이 통째로 비어 보였다. 보정 문서함과 똑같이 통째로(select *) 받는다. */
     if(!out.length){
-      var r=await sbc.from("bj_documents").select("*").order("created_at",{ascending:false});
+      var r=await sbPageAll(function(a,b){return sbc.from("bj_documents").select("*").order("created_at",{ascending:false}).range(a,b);});
       if(r.error)throw r.error;
       out=(r.data||[]);
       try{ if(typeof bxRows!=="undefined"&&Array.isArray(bxRows)&&!bxRows.length)bxRows=out.slice(); }catch(e){}

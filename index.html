@@ -768,37 +768,80 @@
   .chk-tabs{display:flex;gap:6px}
   .chk-tab{border:1px solid var(--line-d);background:#fff;color:var(--ink-2);border-radius:999px;padding:6px 16px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit}
   .chk-tab.on{background:var(--brand);border-color:var(--brand);color:#fff}
-  .chk-sel{border:1px solid var(--line-d);background:#fff;border-radius:6px;padding:6px 8px;font-size:13px;font-family:inherit;color:var(--ink);max-width:150px}
+  .chk-sel{border:1px solid var(--line-d);background:#fff;border-radius:6px;padding:6px 8px;font-size:13px;font-family:inherit;color:var(--ink);max-width:160px}
   .chk-sel.wide{max-width:200px;padding:7px 10px}
   .chk-sec{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-bottom:16px;overflow:hidden}
   .chk-h{padding:14px 16px 12px;border-bottom:1px solid var(--line)}
   .chk-h h2{margin:0;font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px}
   .chk-h .cnt{background:var(--brand);color:#fff;border-radius:999px;font-size:12px;font-weight:800;padding:1px 9px;line-height:18px}
-  .chk-sub{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .chk-sub{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.55}
   .chk-empty{padding:22px 16px;color:var(--muted);font-size:13.5px}
-  .chk-row{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .chk-row{display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line)}
   .chk-row:last-child{border-bottom:0}
-  .chk-row.busy{opacity:.5}
+  .chk-row.busy{opacity:.45}
   .chk-row.link{cursor:pointer}
   .chk-row.link:hover{background:#FBFAF8}
-  .chk-left{flex:0 0 104px;font-size:13px;font-weight:800;line-height:1.35}
+  .chk-left{flex:0 0 100px;font-size:13px;font-weight:800;line-height:1.35}
   .chk-left .d{display:block;font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px}
   .chk-left.r{color:var(--red)} .chk-left.a{color:var(--amber)} .chk-left.g{color:var(--ink-2)}
   .chk-mid{flex:1 1 auto;min-width:0}
   .chk-nm{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:800;flex-wrap:wrap}
   .chk-stage{font-size:11px;font-weight:700;color:var(--muted);background:var(--gray-bg);border-radius:999px;padding:1px 8px;line-height:18px}
   .chk-cs{font-size:12.5px;color:var(--ink-2);margin-top:3px}
-  .chk-memo{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.5;word-break:break-all}
-  .chk-act{flex:0 0 auto;display:flex;align-items:center;gap:7px}
-  .chk-ok{padding:7px 13px;font-size:13px}
+  .chk-memo{font-size:12.5px;color:var(--ink-2);margin-top:5px;line-height:1.55;word-break:break-all}
+  .chk-memo b{color:var(--muted);font-weight:700;margin-right:4px}
+  .chk-gaps{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .chk-gaps .gl{font-size:11.5px;font-weight:800;color:var(--brand)}
+  .chk-gaps .gl.ok{color:var(--green)}
+  .gap{font-size:11.5px;font-weight:700;color:#7A1427;background:var(--brand-soft);border:1px solid #E9CDD3;border-radius:999px;padding:2px 9px}
+  .gap.ok{color:var(--green);background:var(--green-bg);border-color:#C9E3D3}
+  .gtog{font-size:11.5px;font-weight:700;color:var(--brand);cursor:pointer;text-decoration:underline;margin-left:2px}
+  .chk-why{margin-top:8px;background:var(--gray-bg);border-radius:8px;padding:10px 12px}
+  .chk-why .wl{display:flex;flex-direction:column;gap:2px;padding:6px 0;border-bottom:1px dashed var(--line-d)}
+  .chk-why .wl:last-child{border-bottom:0}
+  .chk-why .wl b{font-size:12.5px;color:var(--brand);font-weight:800}
+  .chk-why .w1{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+  .chk-why .w2{font-size:12.5px;color:var(--ink);font-weight:700;line-height:1.5}
+  .chk-fix{margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .chk-fix label{font-size:12px;font-weight:800;color:var(--ink-2);flex:0 0 auto}
+  .chk-fix input{flex:1 1 220px;border:1px solid var(--line-d);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit}
+  .chk-act{flex:0 0 218px;display:flex;flex-direction:column;align-items:stretch;gap:7px}
+  .chk-btns{display:flex;flex-direction:column;gap:6px}
+  .chk-ok{padding:7px 12px;font-size:12.5px;white-space:nowrap}
+  .chk-due{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--muted)}
+  .chk-due input{flex:1 1 auto;border:1px solid var(--line-d);border-radius:6px;padding:5px 7px;font-size:12px;font-family:inherit}
   .chk-go{font-size:12.5px;color:var(--brand);font-weight:700;white-space:nowrap}
   .chk-alert{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--red-bg);border:1px solid #E9CDD3;border-left:4px solid var(--brand);border-radius:var(--r);padding:13px 16px;margin-bottom:16px;font-size:14px;color:var(--ink)}
   .chk-alert .btn{background:var(--brand);color:#fff;margin-left:auto;padding:7px 14px;font-size:13.5px}
-  @media(max-width:760px){
+  /* ---------- 보정 판독 갈림길 · 붙여넣기 (2026-08-30) ---------- */
+  .bj-pick{padding:20px;max-width:860px}
+  .bp-t{font-size:18px;font-weight:800;margin-bottom:5px}
+  .bp-s{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+  .bp-cards{display:flex;gap:14px;flex-wrap:wrap}
+  .bp-card{flex:1 1 300px;border:1px solid var(--line-d);border-radius:12px;padding:18px;cursor:pointer;transition:.12s;background:#fff}
+  .bp-card:hover{border-color:var(--brand);background:#FFFDFD}
+  .bp-card.hot{border-color:var(--brand);background:var(--brand-soft)}
+  .bp-ic{font-size:26px;line-height:1}
+  .bp-h{font-size:16px;font-weight:800;margin-top:9px}
+  .bp-d{font-size:13px;color:var(--ink-2);line-height:1.6;margin-top:6px}
+  .bp-go{font-size:13px;font-weight:800;color:var(--brand);margin-top:12px}
+  .bp-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .bp-ta{width:100%;min-height:190px;border:1px solid var(--line-d);border-radius:8px;padding:12px;font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;margin-top:12px}
+  .bp-sum{display:flex;gap:12px;flex-wrap:wrap;margin:4px 0 14px}
+  .bp-si{flex:1 1 150px;background:var(--gray-bg);border-radius:10px;padding:12px 14px}
+  .bp-si b{display:block;font-size:19px;font-weight:800}
+  .bp-si span{font-size:12px;color:var(--muted)}
+  .bp-list{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .bp-li{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:13px;line-height:1.5}
+  .bp-li:last-child{border-bottom:0}
+  .bp-li .tx{flex:1 1 auto}
+  .bp-li .cd{flex:0 0 auto;font-size:11.5px;font-weight:800;color:#7A1427;background:var(--brand-soft);border-radius:999px;padding:1px 9px}
+  .bp-li .cd.no{color:var(--muted);background:var(--gray-bg)}
+  @media(max-width:900px){
     .chk-row{flex-wrap:wrap}
     .chk-left{flex:0 0 100%}
-    .chk-act{flex:0 0 100%;justify-content:flex-start}
-    .chk-sel{max-width:none;flex:1 1 auto}
+    .chk-act{flex:0 0 100%}
+    .chk-btns{flex-direction:row;flex-wrap:wrap}
   }
   .cal-kind{font-size:11.5px;font-weight:800;border-radius:4px;padding:1px 7px;white-space:nowrap}
   .cal-kind.court {color:#fff;background:#9B1B33}
@@ -4992,7 +5035,8 @@ async function bjOpen(docId){
       bjD._how=sp.how;
     }
     bjStd=[];bjKindOk=false;bjIdx=0;bjSel=0;bjOne=false;bjPage=1;bjPdfUrl=null;bjOptOpen={};bjTypeOpen={};bjPeek=false;
-    bjStep=1;bjAcc=1;bjMsgTab="k1";   /* M-2 화면 상태 초기화 */
+    bjStep=0;bjAcc=1;bjMsgTab="k1";   /* M-2 화면 상태 초기화 · 0=수동/자동 갈림길 (2026-08-30) */
+    bjPick="pick";bjAutoText="";bjAutoErr="";bjAutoSum=null;
     if(bjD.pdf_path){
       try{
         var su=await sbc.storage.from("bojeong").createSignedUrl(bjD.pdf_path,3600);
@@ -5554,6 +5598,8 @@ async function bjStepJump(k){
 function bjStepGo(n){bjStep=n;bjRender();}
 function bjKindConfirm(){bjKindOk=true;bjStep=2;bjRender();}
 function bjReadHtml(kinds){
+  /* 2026-08-30 : 판독을 시작할 때 손으로 할지 붙여넣기로 할지 먼저 고른다 */
+  if(bjStep===0&&typeof bjPickHtml==="function")return bjPickHtml();
   var dd=bjDocDue(),calc=bjCalcDue();
   /* ★2026-08-04: 위쪽 4단계 바와 모양이 같아 두 개가 겹쳐 보였다.
      안쪽 순서는 작은 점 표시로 낮춰서 계층을 나눈다. */
@@ -11692,17 +11738,19 @@ async function wdSubDel(subId){
 /* ===== 아침 점검 보드 : 여기부터 (2026-08-30) ===== */
 /* ==========================================================
    아침 점검 보드 (chk)   2026-08-30
-   혜림 요청 : 5 배분 · 6 점검표 · 8 알림 을 한 화면에서 끝낸다.
-   아침에 앱을 열면 여기부터 보고, 위에서 아래로 훑으면 그날 할 일이 끝나게.
+   혜림 요청 : 5 배분 · 6 점검표 · 8 알림
+   ★핵심 : 단순히 "확인함"이 아니라, 줄마다 무엇이 비었고 무엇을 채워야 하는지
+     눈에 보이게 하고, 그 자리에서 채우거나 해당 화면으로 보낸다.
    ========================================================== */
-var chkCli=[];            /* clients 전체(숨김 제외) */
-var chkFirm="";           /* 사무소 거르기 : "" 전체 / 서초 / 남부 / 블루 */
+var chkCli=[];            /* clients (숨김 제외) */
+var chkOff={};            /* office_id → 이름 */
+var chkFirm="";           /* 사무소 거르기 */
 var chkOwner="";          /* 담당자 거르기 */
 var chkLoaded=false;
-var chkSaving={};         /* 저장 중인 줄 표시 */
+var chkSaving={};
+var chkOpen={};           /* 줄 펼침 */
 
 function chkToday0(){ var d=new Date(); d.setHours(0,0,0,0); return d; }
-/* 음수면 지난 것, 0이면 오늘 */
 function chkLeft(dstr){
   if(!dstr)return null;
   var s=String(dstr).slice(0,10);
@@ -11718,27 +11766,36 @@ function chkLeftTxt(n){
   if(n===1)return "내일까지";
   return n+"일 남음";
 }
+function chkFmtD(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function chkFirmOf(c){
-  var f=(typeof rcFirmOfOffice==="function")?rcFirmOfOffice(c.office_id):"";
+  var f=chkOff[c.office_id]||"";
+  if(!f)f=(typeof rcFirmOfOffice==="function")?rcFirmOfOffice(c.office_id):"";
   if(!f)return "";
   if(f.indexOf("블루")>=0)return "블루";
   if(f.indexOf("남부")>=0)return "남부";
   return "서초";
 }
 function chkFirmCls(t){ return t==="블루"?"bl":(t==="남부"?"nb":"ij"); }
-function chkFmtD(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function chkNormCase(x){ return String(x||"").replace(/[^0-9가-힣]/g,""); }
 
 /* ---------- 자료 읽기 ---------- */
+async function chkLoadOffices(){
+  try{
+    var r=await sbc.from("offices").select("id,name");
+    if(!r.error)(r.data||[]).forEach(function(o){ chkOff[o.id]=o.name||""; });
+  }catch(e){}
+}
 async function chkLoad(force){
   if(chkLoaded&&!force)return;
   if(typeof busy==="function")busy(true);
+  await chkLoadOffices();
   try{
-    var COLS="id,name,office_id,case_no,stage,court_deadline,needs_review,review_note,assignee,sheet_memo,correcting,on_hold,archived";
+    var COLS="id,name,office_id,case_no,court,stage,court_deadline,deadline_kind,needs_review,review_note,assignee,sheet_memo,sheet_stage,correcting,on_hold,archived,rrn,rrn_front,phone,open_date,close_kind,close_confirmed";
     var rows=[],from=0,STEP=1000;
     for(var i=0;i<60;i++){
       var r=await sbc.from("clients").select(COLS).range(from,from+STEP-1);
-      if(r.error&&i===0){ /* 새 칸이 아직 없는 DB면 있는 것만 읽는다 */
-        COLS="id,name,office_id,case_no,stage,court_deadline,assignee,archived";
+      if(r.error&&i===0){
+        COLS="id,name,office_id,case_no,stage,court_deadline,assignee,archived,phone";
         r=await sbc.from("clients").select(COLS).range(from,from+STEP-1);
       }
       if(r.error)throw r.error;
@@ -11754,6 +11811,45 @@ async function chkLoad(force){
   try{ await bxLoad(false); }catch(e){}
 }
 
+/* ---------- ★무엇이 비었나 ---------- */
+function chkDocsOf(c){
+  var key=chkNormCase(c.case_no);
+  if(!key)return [];
+  return (typeof bxRows!=="undefined"&&bxRows?bxRows:[]).filter(function(r){
+    var k=chkNormCase(r.case_no);
+    return k&&key.indexOf(k)>=0;
+  });
+}
+function chkSubsOf(c){
+  var docs=chkDocsOf(c);
+  if(!docs.length)return [];
+  var ids={}; docs.forEach(function(d){ ids[d.id]=1; });
+  return (typeof bxSubs!=="undefined"&&bxSubs?bxSubs:[]).filter(function(s){ return ids[s.doc_id]; });
+}
+/* 한 줄에 대해 "부족한 것" 목록을 만든다. 각 항목은 무엇을 해야 하는지까지 적는다 */
+function chkGaps(c){
+  var g=[];
+  var docs=chkDocsOf(c);
+  var subs=chkSubsOf(c);
+  if(!String(c.case_no||"").trim())
+    g.push({t:"사건번호",  why:"사건번호가 비어 있어 전자소송 송달과 이어지지 않습니다", how:"아래 칸에 법원과 사건번호를 넣어 주세요", fix:"case"});
+  if(!docs.length)
+    g.push({t:"보정 문서", why:"보정명령 PDF가 등록되지 않아 무슨 보정인지 앱이 모릅니다", how:"전자소송에서 받은 PDF를 보정 문서함에 올리세요", fix:"bjbox"});
+  else if(!subs.length)
+    g.push({t:"보정서 제출", why:"보정 문서는 있는데 보정서를 낸 기록이 없습니다", how:"제출했다면 아래 [제출 끝냄]을, 아직이면 보정 문서함에서 작성하세요", fix:"bjbox"});
+  if(!String(c.assignee||"").trim())
+    g.push({t:"담당자",    why:"누가 맡는지 정해져 있지 않습니다", how:"오른쪽에서 담당자를 고르세요", fix:"owner"});
+  if(!c.rrn&&!c.rrn_front)
+    g.push({t:"주민번호",  why:"주민번호가 없어 서류 작성과 대조가 안 됩니다", how:"취합앱이나 케이스허브에서 채워 주세요", fix:""});
+  if(!String(c.phone||"").trim())
+    g.push({t:"연락처",    why:"연락처가 없어 카톡·전화 안내를 못 보냅니다", how:"의뢰인 연락처를 채워 주세요", fix:""});
+  if(!String(c.sheet_memo||"").trim()&&!docs.length)
+    g.push({t:"할 일 메모", why:"무엇을 보정해야 하는지 적힌 것이 아무것도 없습니다", how:"전자소송에서 보정명령을 다시 확인해 주세요", fix:"bjbox"});
+  if(c.close_confirmed===false)
+    g.push({t:"종결 사유",  why:"시트에 취하·기각·폐지가 뭉쳐 적혀 있어 어느 쪽인지 모릅니다", how:"어느 쪽인지 확인해 주세요", fix:""});
+  return g;
+}
+
 /* ---------- 구획 나누기 ---------- */
 function chkPass(c){
   if(chkFirm&&chkFirmOf(c)!==chkFirm)return false;
@@ -11766,7 +11862,7 @@ function chkBuckets(){
     if(!chkPass(c))return;
     var n=chkLeft(c.court_deadline);
     var done=(c.stage==="종결"||c.stage==="기각"||c.stage==="면책허가결정");
-    if(c.needs_review===true&&!done) todo.push(c);          /* ★확인하라고 표시해 둔 것 */
+    if(c.needs_review===true&&!done) todo.push(c);
     else if(n!==null&&n<0&&!c.on_hold&&!done) over.push(c);
     else if(n!==null&&n>=0&&n<=7&&!c.on_hold&&!done) soon.push(c);
     if(!String(c.assignee||"").trim()&&n!==null&&n<=14&&!c.on_hold&&!done) noown.push(c);
@@ -11778,40 +11874,77 @@ function chkBuckets(){
   }).sort(function(a,b){ return String(b.created_at||"").localeCompare(String(a.created_at||"")); });
   return {todo:todo,over:over,soon:soon,noown:noown,neu:neu};
 }
-/* 알림 숫자 : 사이드바 배지와 대시보드 띠가 같이 쓴다 */
 function chkAlertCount(){
   var f=chkFirm,o=chkOwner; chkFirm="";chkOwner="";
   var b=chkBuckets(); chkFirm=f;chkOwner=o;
   return b.todo.length+b.over.length;
 }
 
-/* ---------- 저장 : 담당자 지정 (5번 배분) ---------- */
-async function chkSetOwner(id,name){
+/* ---------- 저장 ---------- */
+async function chkSave(id,patch,msg){
   var c=chkCli.find(function(x){return x.id===id;});
-  if(!c)return;
+  if(!c)return false;
   chkSaving[id]=true; chkRender();
+  var ok=false;
   try{
-    var r=await sbc.from("clients").update({assignee:(name||null),updated_at:new Date().toISOString()}).eq("id",id);
+    patch.updated_at=new Date().toISOString();
+    var r=await sbc.from("clients").update(patch).eq("id",id);
     if(r.error)throw r.error;
-    c.assignee=name||null;
-    if(typeof toast==="function")toast(c.name+" 담당자를 "+(name||"미지정")+"(으)로 두었습니다");
-  }catch(e){ alert("담당자 저장에 실패했습니다. 잠시 뒤 다시 해주세요."); }
-  finally{ delete chkSaving[id]; chkRender(); }
+    Object.keys(patch).forEach(function(k){ c[k]=patch[k]; });
+    ok=true;
+    if(msg&&typeof toast==="function")toast(msg);
+  }catch(e){ alert("저장에 실패했습니다. 잠시 뒤 다시 해주세요."); }
+  finally{ chkSaving[id]=false; delete chkSaving[id]; chkRender(); if(typeof navBadges==="function")navBadges(); }
+  return ok;
 }
-/* ---------- 저장 : 확인함 (6번 점검표) ---------- */
-async function chkDone(id){
+function chkWho(){ return (typeof me!=="undefined"&&me&&me.name)?me.name:""; }
+function chkStamp(){ return chkFmtD(new Date())+" "+chkWho(); }
+
+/* 담당자 지정 (5번 배분) */
+function chkSetOwner(id,name){
+  var c=chkCli.find(function(x){return x.id===id;});
+  chkSave(id,{assignee:name||null},(c?c.name:"")+" 담당자 "+(name||"미지정"));
+}
+/* 사건번호 채우기 */
+function chkSetCase(id,v){
+  v=String(v||"").trim();
+  if(!v)return;
+  chkSave(id,{case_no:v},"사건번호를 넣었습니다");
+}
+/* 연락처 채우기 */
+function chkSetPhone(id,v){
+  v=String(v||"").trim();
+  if(!v)return;
+  chkSave(id,{phone:v},"연락처를 넣었습니다");
+}
+/* 기한 바꾸기 (연장받았을 때) */
+function chkSetDue(id,v){
+  v=String(v||"").trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return;
+  chkSave(id,{court_deadline:v,deadline_kind:"보정기한",needs_review:false,
+              review_note:chkStamp()+" 기한을 "+v+"로 바꿈"},"기한을 "+v+"로 바꿨습니다");
+}
+/* 보정을 다 냈을 때 : 기한을 비우고 무엇을 했는지 기록으로 남긴다 */
+async function chkSubmitted(id){
   var c=chkCli.find(function(x){return x.id===id;});
   if(!c)return;
-  chkSaving[id]=true; chkRender();
-  var who=(typeof me!=="undefined"&&me&&me.name)?me.name:"";
-  var note=chkFmtD(new Date())+" "+who+" 확인함";
-  try{
-    var r=await sbc.from("clients").update({needs_review:false,review_note:note,updated_at:new Date().toISOString()}).eq("id",id);
-    if(r.error)throw r.error;
-    c.needs_review=false; c.review_note=note;
-    if(typeof toast==="function")toast(c.name+" 확인 표시했습니다");
-  }catch(e){ alert("확인 표시 저장에 실패했습니다."); }
-  finally{ delete chkSaving[id]; chkRender(); if(typeof navBadges==="function")navBadges(); }
+  if(!confirm(c.name+" 님 보정을 다 제출한 것으로 정리할까요?\n\n· 보정 기한이 비워집니다\n· 보정중 표시가 꺼집니다\n· 메모에 "+chkStamp()+" 제출 완료 라고 남습니다"))return;
+  await chkSave(id,{court_deadline:null,deadline_kind:null,correcting:false,needs_review:false,
+    review_note:chkStamp()+" 보정 제출 완료",
+    sheet_memo:String(c.sheet_memo||"").trim()?(String(c.sheet_memo).trim()+" / "+chkStamp()+" 보정 제출 완료"):(chkStamp()+" 보정 제출 완료")
+  },c.name+" 제출 완료로 정리했습니다");
+}
+/* 이번 건은 우리가 할 게 없을 때 */
+async function chkNotOurs(id){
+  var c=chkCli.find(function(x){return x.id===id;});
+  if(!c)return;
+  var why=prompt(c.name+" 님을 목록에서 내리는 이유를 적어주세요.\n(예: 개시결정 · 보정없음 / 당사자 수임료 미납 / 이미 처리함)","");
+  if(why===null)return;
+  why=String(why).trim()||"확인 완료";
+  await chkSave(id,{court_deadline:null,deadline_kind:null,needs_review:false,
+    review_note:chkStamp()+" "+why,
+    sheet_memo:String(c.sheet_memo||"").trim()?(String(c.sheet_memo).trim()+" / "+chkStamp()+" "+why):(chkStamp()+" "+why)
+  },"목록에서 내렸습니다");
 }
 
 /* ---------- 화면 ---------- */
@@ -11829,23 +11962,55 @@ function chkRow(c,mode){
   var n=chkLeft(c.court_deadline);
   var cls=(n===null)?"":(n<0?"r":(n<=1?"a":"g"));
   var ft=chkFirmOf(c);
+  var gaps=chkGaps(c);
   var memo=String(c.sheet_memo||"").replace(/\s*\/\s*날짜메모:[\s\S]*$/,"").trim();
-  var note=memo||"(할 일 메모 없음)";
+  var docs=chkDocsOf(c);
   var busyNow=!!chkSaving[c.id];
-  return ''
-   +'<div class="chk-row'+(busyNow?" busy":"")+'">'
-   +  '<div class="chk-left '+cls+'">'+esc(chkLeftTxt(n))+'<span class="d">'+esc(String(c.court_deadline||"").slice(0,10))+'</span></div>'
-   +  '<div class="chk-mid">'
-   +    '<div class="chk-nm">'+esc(c.name||"이름 없음")+'<span class="cal-acct '+chkFirmCls(ft)+'">'+esc(ft||"?")+'</span>'
-   +      '<span class="chk-stage">'+esc(c.stage||"")+'</span></div>'
-   +    '<div class="chk-cs">'+esc(c.case_no||"사건번호 없음")+'</div>'
-   +    '<div class="chk-memo">'+esc(note)+'</div>'
-   +  '</div>'
-   +  '<div class="chk-act">'
-   +    '<select class="chk-sel" '+(busyNow?"disabled":"")+' onchange="chkSetOwner(\''+c.id+'\',this.value)">'+chkOwnerOptions(c.assignee)+'</select>'
-   +    (mode==="over"?'<button class="btn ghost chk-ok" '+(busyNow?"disabled":"")+' onclick="chkDone(\''+c.id+'\')">확인함</button>':'')
-   +  '</div>'
-   +'</div>';
+  var open=!!chkOpen[c.id];
+  var id=c.id;
+  var h='<div class="chk-row'+(busyNow?" busy":"")+'">'
+   + '<div class="chk-left '+cls+'">'+esc(chkLeftTxt(n))+'<span class="d">'+esc(String(c.court_deadline||"").slice(0,10)||"—")+'</span></div>'
+   + '<div class="chk-mid">'
+   +   '<div class="chk-nm">'+esc(c.name||"이름 없음")
+   +     '<span class="cal-acct '+chkFirmCls(ft)+'">'+esc(ft||"?")+'</span>'
+   +     '<span class="chk-stage">'+esc(c.stage||"")+'</span>'
+   +     (docs.length?'<span class="chk-stage">보정문서 '+docs.length+'건</span>':'')
+   +   '</div>'
+   +   '<div class="chk-cs">'+esc(c.case_no||"사건번호 없음")+'</div>'
+   +   '<div class="chk-memo"><b>할 일</b> '+esc(memo||"(적힌 것 없음 · 전자소송에서 보정명령을 확인해야 합니다)")+'</div>';
+  /* ★부족한 것 */
+  if(gaps.length){
+    h+='<div class="chk-gaps"><span class="gl">채워야 할 것</span>'
+      +gaps.map(function(g){return '<span class="gap">'+esc(g.t)+'</span>';}).join("")
+      +'<span class="gtog" onclick="chkOpen[\''+id+'\']='+(open?'false':'true')+';chkRender()">'+(open?"접기":"왜 · 어떻게 ▾")+'</span></div>';
+    if(open){
+      h+='<div class="chk-why">'+gaps.map(function(g){
+        return '<div class="wl"><b>'+esc(g.t)+'</b><span class="w1">'+esc(g.why)+'</span><span class="w2">→ '+esc(g.how)+'</span></div>';
+      }).join("")+'</div>';
+      /* 그 자리에서 채울 수 있는 것 */
+      var fixes=gaps.map(function(g){return g.fix;});
+      if(fixes.indexOf("case")>=0)
+        h+='<div class="chk-fix"><label>사건번호 넣기</label><input placeholder="예) 서울회생법원 2026개회11179" onchange="chkSetCase(\''+id+'\',this.value)"></div>';
+      if(!String(c.phone||"").trim())
+        h+='<div class="chk-fix"><label>연락처 넣기</label><input placeholder="예) 010-1234-5678" onchange="chkSetPhone(\''+id+'\',this.value)"></div>';
+    }
+  }else{
+    h+='<div class="chk-gaps ok"><span class="gl ok">채울 것 없음</span><span class="gap ok">필요한 정보가 다 있습니다</span></div>';
+  }
+  h+= '</div>'
+   + '<div class="chk-act">'
+   +   '<select class="chk-sel" '+(busyNow?"disabled":"")+' onchange="chkSetOwner(\''+id+'\',this.value)">'+chkOwnerOptions(c.assignee)+'</select>';
+  if(mode!=="new"){
+    h+= '<div class="chk-btns">'
+     +   '<label class="chk-due">기한 바꾸기<input type="date" value="'+esc(String(c.court_deadline||"").slice(0,10))+'" '+(busyNow?"disabled":"")+' onchange="chkSetDue(\''+id+'\',this.value)"></label>'
+     +   '<button class="btn primary chk-ok" '+(busyNow?"disabled":"")+' onclick="chkSubmitted(\''+id+'\')">제출 끝냄</button>'
+     +   '<button class="btn ghost chk-ok" '+(busyNow?"disabled":"")+' onclick="chkNotOurs(\''+id+'\')">사유 적고 내리기</button>'
+     +   (docs.length?'<button class="btn ghost chk-ok" onclick="showView(\'bjbox\')">보정 문서 보기</button>'
+                     :'<button class="btn ghost chk-ok" onclick="showView(\'bjbox\')">보정 문서 등록</button>')
+     + '</div>';
+  }
+  h+= '</div></div>';
+  return h;
 }
 function chkSec(title, sub, rows, mode, emptyTxt){
   var h='<div class="chk-sec"><div class="chk-h"><h2>'+esc(title)+'<span class="cnt">'+rows.length+'</span></h2>'
@@ -11862,10 +12027,10 @@ function chkNewSec(rows){
     var n=(typeof bxLeft==="function")?bxLeft(r):null;
     var cls=(n===null)?"":(n<0?"r":(n<=1?"a":"g"));
     return '<div class="chk-row link" onclick="showView(\'bjbox\')">'
-      +'<div class="chk-left '+cls+'">'+esc(chkLeftTxt(n))+'<span class="d">'+esc(String(r.court_deadline||"").slice(0,10))+'</span></div>'
+      +'<div class="chk-left '+cls+'">'+esc(chkLeftTxt(n))+'<span class="d">'+esc(String(r.court_deadline||"").slice(0,10)||"—")+'</span></div>'
       +'<div class="chk-mid"><div class="chk-nm">'+esc(r.client_name||r.case_no||"이름 없음")+'</div>'
       +'<div class="chk-cs">'+esc([r.court,r.case_no].filter(Boolean).join(" "))+'</div>'
-      +'<div class="chk-memo">'+esc(String(r.created_at||"").slice(0,10))+' 등록 · 판독 전</div></div>'
+      +'<div class="chk-memo">'+esc(String(r.created_at||"").slice(0,10))+' 등록 · 아직 판독 전입니다. 열어서 무슨 보정인지 읽어야 합니다</div></div>'
       +'<div class="chk-act"><span class="chk-go">판독하러 가기 →</span></div></div>';
   }).join("");
   return h+'</div>';
@@ -11894,13 +12059,13 @@ function chkRender(){
    +  '</select>'
    +'</div>';
   h+=chkSec("오늘 확인할 것",
-            "확인하기로 표시해 둔 사건입니다. 처리했으면 [확인함]을 눌러 목록에서 내리세요",
-            b.todo,"over","오늘 확인하기로 표시해 둔 사건이 없습니다");
+            "확인하기로 표시해 둔 사건입니다. 줄마다 무엇이 비었는지 적어 뒀습니다. 채우고 나서 [제출 끝냄]이나 [사유 적고 내리기]로 목록에서 내리세요",
+            b.todo,"todo","오늘 확인하기로 표시해 둔 사건이 없습니다");
   h+=chkSec("기한이 지난 보정",
             "마감일이 지났는데 아직 정리가 안 된 사건입니다",
             b.over,"over","기한이 지난 보정이 없습니다. 좋습니다");
   h+=chkSec("오늘과 이번 주 기한",
-            "오늘부터 7일 안에 마감인 보정입니다",
+            "오늘부터 7일 안에 마감인 보정입니다. 미리 무엇이 비었는지 채워 두세요",
             b.soon,"soon","이번 주 안에 마감인 보정이 없습니다");
   h+=chkNewSec(b.neu);
   h+=chkSec("담당자가 안 정해진 것",
@@ -11915,7 +12080,7 @@ async function chkEnter(force){
   chkRender();
   if(typeof navBadges==="function")navBadges();
 }
-/* 대시보드 맨 위 빨간 띠 (8번 알림) */
+/* 대시보드 맨 위 알림 띠 (8번) */
 function chkBanner(){
   var host=document.getElementById("chk-banner");
   if(!host)return;
@@ -11923,12 +12088,166 @@ function chkBanner(){
   try{ n=chkAlertCount(); }catch(e){ n=0; }
   if(!n){ host.innerHTML=""; host.classList.add("hide"); return; }
   host.classList.remove("hide");
-  host.innerHTML='<div class="chk-alert"><b>오늘 확인할 사건 '+n+'건</b>이 있습니다. 아침 점검에서 하나씩 확인해 주세요.'
+  host.innerHTML='<div class="chk-alert"><b>오늘 확인할 사건 '+n+'건</b>이 있습니다. 무엇이 비었는지 줄마다 적어 뒀습니다.'
     +'<button class="btn" onclick="showView(\'chk\')">아침 점검 열기</button></div>';
 }
-/* 대시보드에 들어올 때 조용히 준비 */
 async function chkPrime(){
   try{ await chkLoad(false); chkBanner(); if(typeof navBadges==="function")navBadges(); }catch(e){}
+}
+
+/* ===== 보정 판독 갈림길 · 붙여넣기 자동세팅 : 여기부터 (2026-08-30) ===== */
+/* ==========================================================
+   가 · 나 : 보정 판독 갈림길(수동/자동) + 붙여넣기 자동세팅
+   2026-08-30 혜림 요청
+   ========================================================== */
+var bjPick="pick";        /* pick 갈림길 · paste 붙여넣기 · done 결과 */
+var bjAutoText="";        /* 붙여넣은 글 */
+var bjAutoErr="";         /* 잘못됐을 때 안내 */
+var bjAutoSum=null;       /* 세팅 결과 요약 */
+
+/* Claude 에게 그대로 주면 되는 부탁글 */
+function bjAutoPromptText(){
+  return [
+"아래 개인회생 보정명령 내용을 읽고, 정확히 이 모양의 JSON 하나만 출력해 주세요. 설명은 붙이지 마세요.",
+"",
+"{",
+'  "송달확인일": "2026-08-25",',
+'  "항목": [',
+'    { "번호": 1, "내용": "채권자목록에 누락된 채권을 추가하고 부채증명서를 제출하십시오", "유형코드": "B01", "메모": "" }',
+"  ]",
+"}",
+"",
+"규칙",
+"1. 항목은 보정명령에 적힌 요구사항을 하나씩 끊어서 넣습니다. 한 항목에 두 가지를 담지 마세요.",
+"2. 내용은 원문 문장을 그대로 옮깁니다. 요약하지 마세요.",
+"3. 유형코드를 모르면 빈 문자열로 두세요.",
+"4. 송달확인일을 모르면 그 줄을 빼세요.",
+"",
+"보정명령 내용 :",
+"(여기에 보정명령 글을 붙여넣으세요)"
+  ].join("\n");
+}
+function bjAutoCopyPrompt(){
+  var t=bjAutoPromptText();
+  try{
+    navigator.clipboard.writeText(t);
+    if(typeof toast==="function")toast("부탁글을 복사했습니다. Claude에 붙여넣으세요");
+  }catch(e){ alert(t); }
+}
+
+/* ---------- 갈림길 · 붙여넣기 · 결과 화면 ---------- */
+function bjPickHtml(){
+  if(bjPick==="paste")return bjPasteHtml();
+  if(bjPick==="done")return bjDoneHtml();
+  return ''
+   +'<div class="sec bj-pick">'
+   +  '<div class="bp-t">이 보정을 어떻게 세팅할까요?</div>'
+   +  '<div class="bp-s">한 번 고르면 다음 화면부터 그 방식으로 갑니다. 중간에 언제든 바꿀 수 있습니다.</div>'
+   +  '<div class="bp-cards">'
+   +    '<div class="bp-card" onclick="bjPick=\'pick\';bjStep=1;bjRender()">'
+   +      '<div class="bp-ic">✍</div><div class="bp-h">손으로 하기</div>'
+   +      '<div class="bp-d">지금까지 하던 방식입니다. 문서 종류 → 기한 → 항목을 차례로 확인하며 직접 고릅니다.</div>'
+   +      '<div class="bp-go">이 방식으로 →</div>'
+   +    '</div>'
+   +    '<div class="bp-card hot" onclick="bjPick=\'paste\';bjAutoErr=\'\';bjRender()">'
+   +      '<div class="bp-ic">⚡</div><div class="bp-h">붙여넣기로 자동</div>'
+   +      '<div class="bp-d">Claude에게 보정명령을 읽히고 받은 답(JSON)을 붙여넣으면 항목과 송달확인일이 한 번에 채워집니다.</div>'
+   +      '<div class="bp-go">붙여넣기 →</div>'
+   +    '</div>'
+   +  '</div>'
+   +'</div>';
+}
+function bjPasteHtml(){
+  return ''
+   +'<div class="sec bj-pick">'
+   +  '<div class="bp-t">붙여넣기로 자동 세팅</div>'
+   +  '<div class="bp-s">순서 : ① 아래 [부탁글 복사]를 눌러 Claude에 붙여넣기 → ② 보정명령 글도 같이 넣기 → ③ Claude가 준 JSON을 아래 칸에 붙여넣기</div>'
+   +  '<div class="bp-row"><button class="btn ghost" onclick="bjAutoCopyPrompt()">① 부탁글 복사</button>'
+   +    '<span class="bj-note">Claude에게 무엇을 어떻게 달라고 할지 적힌 글입니다. 그대로 복사해서 쓰세요.</span></div>'
+   +  (bjAutoErr?'<div class="bj-alert red">'+esc(bjAutoErr)+'</div>':'')
+   +  '<textarea id="bj-auto-ta" class="bp-ta" placeholder=\'③ 여기에 Claude가 준 JSON을 붙여넣으세요.  예)  { "송달확인일": "2026-08-25", "항목": [ { "번호": 1, "내용": "…", "유형코드": "B01" } ] }\'>'+esc(bjAutoText)+'</textarea>'
+   +  '<div class="bp-row">'
+   +    '<button class="btn primary bj-big" onclick="bjAutoApply()">이대로 채우기</button>'
+   +    '<span class="bj-link" onclick="bjPick=\'pick\';bjRender()">손으로 하기로 돌아가기</span>'
+   +  '</div>'
+   +'</div>';
+}
+function bjDoneHtml(){
+  var s=bjAutoSum||{n:0,typed:0,served:""};
+  return ''
+   +'<div class="sec bj-pick">'
+   +  '<div class="bp-t">자동 세팅이 끝났습니다</div>'
+   +  '<div class="bp-s">아래 내용으로 채웠습니다. 다음 화면에서 하나씩 눈으로 확인한 뒤 저장하세요. 저장 전에는 아무것도 바뀌지 않습니다.</div>'
+   +  '<div class="bp-sum">'
+   +    '<div class="bp-si"><b>'+s.n+'</b><span>보정 항목</span></div>'
+   +    '<div class="bp-si"><b>'+s.typed+'</b><span>유형코드가 붙은 항목</span></div>'
+   +    '<div class="bp-si"><b>'+esc(s.served||"안 바꿈")+'</b><span>송달확인일</span></div>'
+   +  '</div>'
+   +  (s.list&&s.list.length?'<div class="bp-list">'+s.list.map(function(x,i){
+        return '<div class="bp-li"><b>'+(i+1)+'.</b> <span class="tx">'+esc(x.t)+'</span>'
+             +(x.c?'<span class="cd">'+esc(x.c)+'</span>':'<span class="cd no">유형 미지정</span>')+'</div>';
+      }).join("")+'</div>':'')
+   +  '<div class="bp-row">'
+   +    '<button class="btn primary bj-big" onclick="bjPick=\'pick\';bjKindOk=true;bjStep=3;bjRender()">이대로 항목 확인하러 가기</button>'
+   +    '<span class="bj-link" onclick="bjPick=\'paste\';bjRender()">다시 붙여넣기</span>'
+   +    '<span class="bj-link" onclick="bjPick=\'pick\';bjStep=1;bjRender()">처음부터 손으로 하기</span>'
+   +  '</div>'
+   +'</div>';
+}
+
+/* ---------- 붙여넣은 JSON 을 실제로 채우기 ---------- */
+function bjAutoPickArr(o){
+  if(Array.isArray(o))return o;
+  var keys=["항목","items","list","보정항목","rows"];
+  for(var i=0;i<keys.length;i++){ if(Array.isArray(o[keys[i]]))return o[keys[i]]; }
+  return null;
+}
+function bjAutoField(x,names){
+  for(var i=0;i<names.length;i++){
+    var v=x[names[i]];
+    if(v!==undefined&&v!==null&&String(v).trim()!=="")return String(v).trim();
+  }
+  return "";
+}
+function bjAutoApply(){
+  var ta=document.getElementById("bj-auto-ta");
+  bjAutoText=ta?ta.value:"";
+  var t=String(bjAutoText||"").trim();
+  if(!t){ bjAutoErr="붙여넣은 내용이 없습니다."; bjRender(); return; }
+  /* 앞뒤에 설명이 붙어 와도 첫 { 부터 마지막 } 까지만 읽는다 */
+  var a=t.indexOf("{"), b=t.lastIndexOf("}");
+  if(a<0||b<a){ a=t.indexOf("["); b=t.lastIndexOf("]"); }
+  if(a<0||b<a){ bjAutoErr="JSON 을 찾지 못했습니다. Claude가 준 답에서 { 로 시작해 } 로 끝나는 부분을 통째로 붙여넣어 주세요."; bjRender(); return; }
+  var o;
+  try{ o=JSON.parse(t.slice(a,b+1)); }
+  catch(e){ bjAutoErr="JSON 모양이 깨져 있습니다. 따옴표나 쉼표가 빠지지 않았는지 보세요. (자세히: "+String(e.message||e).slice(0,120)+")"; bjRender(); return; }
+  var arr=bjAutoPickArr(o);
+  if(!arr||!arr.length){ bjAutoErr="항목 목록을 찾지 못했습니다. \"항목\" 안에 배열이 있어야 합니다."; bjRender(); return; }
+
+  var items=[],list=[],typed=0;
+  arr.forEach(function(x,i){
+    if(typeof x==="string")x={내용:x};
+    var txt=bjAutoField(x,["내용","item_text","text","요구","본문","content"]);
+    if(!txt)return;
+    var code=bjAutoField(x,["유형코드","type_codes","code","유형","types"]);
+    var memo=bjAutoField(x,["메모","memo","note","비고"]);
+    if(code)typed++;
+    items.push({seq:items.length+1,item_text:txt,type_codes:code,unresolved:false,memo:memo,item_status:"대기",round_no:null,options:{}});
+    list.push({t:txt.length>70?txt.slice(0,70)+"…":txt,c:code});
+  });
+  if(!items.length){ bjAutoErr="항목에서 글을 못 읽었습니다. 각 항목에 \"내용\"이 있어야 합니다."; bjRender(); return; }
+
+  var served=bjAutoField(o,["송달확인일","served_at","송달일","확인일"]);
+  if(served&&/^\d{4}-\d{2}-\d{2}$/.test(served.slice(0,10))&&bjD){ bjD.served_at=served.slice(0,10); }
+  else served="";
+
+  bjIt=items;
+  bjSel=0; bjIdx=0;
+  bjAutoErr="";
+  bjAutoSum={n:items.length,typed:typed,served:served,list:list};
+  bjPick="done";
+  bjRender();
+  if(typeof toast==="function")toast("항목 "+items.length+"개를 채웠습니다");
 }
 
 </script>

@@ -837,6 +837,10 @@
   .bp-li .tx{flex:1 1 auto}
   .bp-li .cd{flex:0 0 auto;font-size:11.5px;font-weight:800;color:#7A1427;background:var(--brand-soft);border-radius:999px;padding:1px 9px}
   .bp-li .cd.no{color:var(--muted);background:var(--gray-bg)}
+  .bj-waybar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--brand-soft);border:1px solid #E9CDD3;border-radius:8px;padding:9px 12px;margin:10px 0 14px}
+  .bj-waybar .wl{font-size:12px;font-weight:800;color:var(--brand)}
+  .bj-waybar .wn{font-size:12px;color:var(--muted)}
+  @media(max-width:720px){ .bj-waybar .wn{flex:0 0 100%} }
   @media(max-width:900px){
     .chk-row{flex-wrap:wrap}
     .chk-left{flex:0 0 100%}
@@ -5175,6 +5179,16 @@ async function bjMakePdfUrl(rerender){
   }catch(e){bjPdfUrl=null;}
   if(rerender)bjRender();
 }
+/* 2026-08-30 : 어느 탭에 있든 판독 첫 화면(갈림길/붙여넣기)으로 보낸다 */
+function bjWayGo(mode){
+  bjWay=mode||"pick";
+  if(mode==="paste"){bjAutoErr="";}
+  bjMode="read";
+  if(typeof bjMarkSeen==="function"){try{bjMarkSeen("read");}catch(e){}}
+  bjStep=0;
+  bjRender();
+  try{window.scrollTo(0,0);}catch(e){}
+}
 async function bjOpenPdf(){
   if(!bjD.pdf_path)return;
   busy(true);
@@ -5561,7 +5575,15 @@ function bjRender(){
            +(can?' style="cursor:pointer" title="이 단계로 가기" onclick="bjStepJump(\''+k+'\')"':'')
            +'>'+names[i]+(can?'<em class="go">'+(i<cur?'되돌아가기':'가기')+'</em>':'')+'</span>';
        }).join("")+'</div>';
-     })();
+     })()
+    /* 2026-08-30 : 이미 진행된 문서는 2·3 탭으로 바로 열려서 갈림길을 못 본다.
+       어느 탭에 있든 여기서 붙여넣기 자동세팅으로 갈 수 있게 한다. */
+    +'<div class="bj-waybar">'
+      +'<span class="wl">세팅 방식</span>'
+      +'<button class="btn ghost mini" onclick="bjWayGo(\'pick\')">✍ 손으로 하기 · 자동 고르기</button>'
+      +'<button class="btn primary mini" onclick="bjWayGo(\'paste\')">⚡ 붙여넣기로 자동 세팅</button>'
+      +'<span class="wn">Claude가 읽어준 JSON을 붙여넣으면 항목이 한 번에 채워집니다</span>'
+    +'</div>';
   if(bjMode==="read"){
     w.innerHTML=head+bjReadHtml(kinds);
     if(bjView==="pdf"&&!BJ_MOBILE&&bjD.pdf_path)bjPdfMount();

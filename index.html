@@ -1266,6 +1266,127 @@
     #view-work .wd-architem::before{display:none}
     #view-work .wd-architem .when{position:static;width:auto;text-align:left;margin-bottom:4px;display:flex;gap:8px;align-items:baseline}
   }
+
+/* ═══ 2026-08-29 보정서 제출 등록 화면 ═══ */
+#wd-sub-wrap select,#wd-sub-wrap textarea,#wd-sub-wrap input[type=date],#wd-sub-wrap input[type=text]{
+  width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font:inherit;font-size:13.5px;
+  background:#fff;color:var(--ink);font-family:inherit}
+#wd-sub-wrap textarea{line-height:1.9;resize:vertical}
+#wd-sub-wrap textarea.over{border-color:var(--red)}
+.wdkinds{display:inline-flex;gap:3px;background:var(--gray-soft);padding:3px;border-radius:10px;margin-bottom:10px}
+.wdkinds button{border:0;background:transparent;padding:6px 12px;border-radius:7px;font:inherit;font-size:12.5px;
+  font-weight:800;color:var(--muted);cursor:pointer}
+.wdkinds button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.wdban{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;border:1px solid;border-radius:10px;padding:9px 12px}
+.wdban b{font-size:14.5px;font-weight:900}.wdban span{font-size:11.5px;opacity:.85}
+.wdban em{margin-left:auto;font-style:normal;font-size:11.5px;font-weight:700;opacity:.85}
+.wdban.court{background:var(--red-soft);border-color:#f3c9c9;color:#a01c1c}
+.wdban.ours{background:var(--amber-soft);border-color:#f0d9a8;color:#8a5000}
+.wdacc{border:1px solid var(--line);border-radius:10px;margin-top:8px;background:#fff}
+.wdacc-h{display:flex;width:100%;align-items:center;gap:9px;border:0;background:transparent;padding:10px 12px;
+  cursor:pointer;text-align:left;font:inherit}
+.wdacc-h:hover{background:var(--gray-soft)}
+.wdacc-ar{flex:none;font-size:10px;color:var(--muted)}
+.wdacc-t{min-width:0;flex:1}
+.wdacc-t b{display:block;font-size:12.5px;font-weight:800}
+.wdacc-t span{display:block;font-size:11.5px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wdacc-b{border-top:1px solid var(--line);padding:12px}
+.wdrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.wdsep{height:1px;background:var(--line);margin:14px 0}
+.wdseg{display:inline-flex;gap:2px;background:var(--gray-soft);padding:2px;border-radius:8px}
+.wdseg button{border:0;background:transparent;padding:4px 10px;border-radius:6px;font:inherit;font-size:12px;
+  font-weight:700;color:var(--muted);cursor:pointer}
+.wdseg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.wdtgs3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.wdtgs2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.wdtg{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 6px;cursor:pointer;font:inherit;
+  text-align:center;line-height:1.3}
+.wdtg b{display:block;font-size:13px;font-weight:800;color:var(--ink)}
+.wdtg span{display:block;font-size:10.5px;color:var(--muted);margin-top:2px}
+.wdtg.on{border-color:var(--brand);background:var(--brand-soft)}
+.wdtg.on b,.wdtg.on span{color:var(--brand)}
+.wdpick{background:var(--gray-soft);border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin:9px 0 0}
+.wdpick em{display:block;font-style:normal;font-size:10.5px;font-weight:800;color:var(--muted);letter-spacing:.3px}
+.wdpick b{display:block;font-size:14.5px;font-weight:900;margin-top:1px}
+.wdpick u{display:block;text-decoration:none;font-size:11.5px;color:var(--muted);margin-top:2px}
+.wdwarn{background:var(--amber-soft);border:1px solid #f0d9a8;color:#8a5000;border-radius:9px;padding:8px 11px;
+  font-size:11.5px;line-height:1.6;margin:7px 0}
+.wdok{background:var(--green-soft);border:1px solid #b7e6d0;color:#04684a;border-radius:9px;padding:9px 11px;
+  font-size:12.5px;font-weight:700}
+.wdchip{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 10px;font:inherit;font-size:12px;
+  font-weight:700;cursor:pointer;color:var(--ink)}
+.wdchip.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}
+.wdprev{background:var(--gray-soft);border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-top:9px;
+  font-size:12px;line-height:1.7}
+.wdit{display:flex;gap:9px;align-items:flex-start;border-top:1px solid var(--line);padding:8px 2px}
+.wdit:first-child{border-top:0}
+.wdit .n{flex:none;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;
+  background:var(--gray-soft);border-radius:5px;font-size:10.5px;font-weight:800;color:var(--muted)}
+.wdit .g{min-width:0;flex:1}
+.wdit .g b{display:block;font-size:12.5px;font-weight:700}
+.wdit .g em{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:1px}
+.wdit u{flex:none;text-decoration:none;font-size:10.5px;font-weight:700;color:var(--muted);
+  background:var(--gray-soft);border-radius:5px;padding:2px 6px}
+.wdhist{border:1px solid var(--line);border-radius:9px;margin-bottom:7px;overflow:hidden}
+.wdhist .h{display:flex;gap:9px;align-items:center;padding:8px 10px}
+.wdhist .rd{flex:none;background:var(--gray-soft);border-radius:5px;padding:2px 7px;font-size:10.5px;font-weight:800}
+.wdhist .g{min-width:0;flex:1}
+.wdhist .g b{display:block;font-size:12.5px;font-weight:700}
+.wdhist .g em{display:block;font-style:normal;font-size:11px;color:var(--muted)}
+.wdhist .f,.wdhist .m{border-top:1px solid var(--line);padding:7px 10px}
+.wdhist .m{background:var(--amber-soft)}
+.wdhist em.x,.wdhist .f>em,.wdhist .m>em{display:block;font-style:normal;font-size:10.5px;font-weight:800;
+  color:var(--muted);letter-spacing:.3px;margin-bottom:4px}
+.wdhist .m>em{color:#8a5000}
+.wdhist .fl{display:flex;gap:7px;align-items:center;width:100%;border:0;background:transparent;padding:3px 0;
+  cursor:pointer;font:inherit;text-align:left}
+.wdhist .fl i{flex:none;font-style:normal;background:var(--gray-soft);border-radius:4px;padding:1px 5px;
+  font-size:9.5px;font-weight:800;color:var(--muted)}
+.wdhist .fl span{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.wdhist .fl:hover span{color:var(--brand);text-decoration:underline}
+.wdhist .fl u{flex:none;text-decoration:none;font-size:10.5px;color:var(--muted)}
+.wdhist .mi{display:flex;gap:6px;align-items:center;padding:2px 0;font-size:12px}
+.wdhist .mi b{min-width:0;flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wdhist .mi u{flex:none;text-decoration:none;font-size:10px;font-weight:800;border-radius:4px;padding:1px 5px}
+.wdhist .mi u.no{background:var(--red-soft);color:#a01c1c}
+.wdhist .mi u.ok{background:var(--green-soft);color:#04684a}
+.wdal{border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.wdal .r{display:flex;gap:9px;align-items:center;padding:7px 10px;border-top:1px solid var(--line)}
+.wdal .r:first-child{border-top:0}
+.wdal .d{flex:none;width:64px;font-size:11.5px;font-weight:800}
+.wdal .g{min-width:0;flex:1}
+.wdal .g b{display:block;font-size:12px;font-weight:700}
+.wdal .g em{display:block;font-style:normal;font-size:10.5px;color:var(--muted)}
+.wdal u{flex:none;text-decoration:none;font-size:10.5px;font-weight:700;color:var(--muted)}
+.wdal u.no{color:var(--red)}
+.wdbh{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.wdbh b{font-size:12.5px;font-weight:800}
+.wdbh u{margin-left:auto;text-decoration:none;font-size:11.5px;font-weight:700;color:var(--muted)}
+.wdbh u.no{color:var(--red)}
+.wdbar{height:4px;background:var(--gray-soft);border-radius:4px;overflow:hidden;margin-bottom:7px}
+.wdbar i{display:block;height:100%;background:var(--brand);border-radius:4px}
+.wdbar i.no{background:var(--red)}
+.wdchk-h{display:flex;gap:8px;align-items:center;margin-bottom:7px}
+.wdchk-h b{font-size:12.5px;font-weight:800}
+.wdchk-n{border-radius:20px;padding:2px 9px;font-size:11px;font-weight:800;color:#fff}
+.wdchk-n.ok{background:var(--green)}.wdchk-n.no{background:var(--red)}
+.wdchk-r{margin-left:auto;font-size:11.5px;font-weight:700}
+.wdchk-r.ok{color:var(--green)}.wdchk-r.no{color:var(--red)}
+.wdchk{display:flex;gap:8px;align-items:flex-start;border:1px solid;border-left-width:3px;border-radius:8px;
+  padding:8px 10px;margin-bottom:4px;width:100%;text-align:left;font:inherit;background:#fff}
+.wdchk i{flex:none;font-style:normal;font-size:11px;font-weight:900;line-height:1.5}
+.wdchk span{min-width:0}
+.wdchk b{display:block;font-size:12.5px;font-weight:800}
+.wdchk em{display:block;font-style:normal;font-size:11px;margin-top:1px;opacity:.9}
+.wdchk.no{border-color:#f3c9c9;border-left-color:var(--red);background:var(--red-soft);color:#a01c1c}
+.wdchk.ok{border-color:#b7e6d0;border-left-color:var(--green);background:var(--green-soft);color:#04684a;cursor:pointer}
+.wdchk.okq{border-color:transparent;border-left-color:transparent;background:transparent;color:var(--ink);padding:4px 10px}
+.wdchk.okq i{color:var(--green)}
+.wdchk.okq em{color:var(--muted)}
+.wdchk u{margin-left:auto;text-decoration:none;font-size:11px;font-weight:700;opacity:.8}
+.wdpaper{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;font-size:13px;
+  line-height:2;white-space:pre-wrap;word-break:break-word;max-height:52vh;overflow:auto}
+.wdpaper.sm{font-size:12.5px;line-height:1.8;padding:12px 14px}
 </style>
 </head>
 <body>
@@ -1620,7 +1741,12 @@ async function boot(){
   document.getElementById("who").innerHTML=me.isMaster?("<b>"+esc(me.name)+"</b> 관리자<br>전체 사건 열람"):("<b>"+esc(me.name)+"</b> 담당자<br>내 사건만 열람");
   document.getElementById("nav-staff").classList.toggle("hide",!me.isMaster);
   document.getElementById("nav-set").classList.toggle("hide",!me.isMaster);
-  document.getElementById("s-total-l").textContent=me.isMaster?"전체 사건":"내 사건";
+  /* 2026-08-30 고침 : 대시보드를 새로 짜면서 s-total-l 칸이 없어졌는데
+     이 줄이 남아 있어 로그인 직후 boot() 가 여기서 멈췄습니다.
+     그래서 refreshAll() 과 showView("dash") 가 아예 실행되지 않았습니다.
+     칸이 있으면 쓰고 없으면 넘어가게 합니다. */
+  var _tl=document.getElementById("s-total-l");
+  if(_tl) _tl.textContent=me.isMaster?"전체 사건":"내 사건";
   await refreshAll();
   showView("dash");
 }
@@ -8177,6 +8303,18 @@ async function wdLoad(){
           .forEach(function(r){(wdSubFilesMap[r.submission_id]=wdSubFilesMap[r.submission_id]||[]).push(r);});
       }
     }catch(e){}
+    /* ★2026-08-29 : 보정 항목(몇 항인지) · 지연사유 사전 */
+    wdItems=[];
+    try{
+      var _ids=(wdArch||[]).map(function(a){return a.id;}).filter(Boolean);
+      if(_ids.length){
+        var _it=await sbc.from("bj_items")
+          .select("id,doc_id,seq,item_text,type_codes,item_status,round_no")
+          .in("doc_id",_ids).order("seq");
+        if(!_it.error)wdItems=_it.data||[];
+      }
+    }catch(e){}
+    await wdLoadReasons();
     /* 취합앱 참고 (읽기 전용 · 재사용 2개월 판단용) */
     wdRefDocs=[];wdRefChk=[];
     if(wdCase.client_id){
@@ -10862,25 +11000,486 @@ async function wdDvSaveStrategy(){
   finally{busy(false);}
 }
 
-/* ---------- 보정서 제출 등록 (파일 여러 개) ---------- */
+/* ═══════════════════════════════════════════════════════
+   2026-08-29 : 보정서 본문 만들기 (SQL W3·W4·W5)
+   실제 제출본 형식 그대로.
+     귀원의 보정명령에 따라 다음과 같이 보정합니다.
+     다 음
+     1. 보정권고1항. 소득금액증명, 급여명세서 3개월
+     를 제출합니다.
+     [일부제출이면 사유 + 추후제출일 + 선처 문단]
+   못 내는 항은 본문에 쓰지 않는다. 첨부서류는 따로 관리한다(6,000자 제외).
+   ═══════════════════════════════════════════════════════ */
+var wdItems=[];              /* bj_items (몇 항인지) */
+var wdRs=[], wdEx=[];        /* kb_delay_reasons · kb_delay_extras */
+var WD_HAS_RS=false;         /* 표가 없으면 이 기능만 조용히 꺼진다 */
+var wdKind="보정서", wdDueMode="", wdEstDate="";
+var wdRKey="", wdREtc="", wdTone="mid", wdLen="m", wdExtras={};
+var wdBody="", wdBodyEdited=false, wdAtt="", wdAttEdited=false;
+var WD_BODY_MAX=6000;
+var wdNextDue="", wdSubDate="";
+
+async function wdLoadReasons(){
+  wdRs=[];wdEx=[];WD_HAS_RS=false;
+  try{
+    var r=await sbc.from("kb_delay_reasons").select("*").order("grp_order").order("sort_order");
+    if(!r.error&&r.data){ wdRs=r.data.filter(function(x){return x.active!==false;}); }
+    var e=await sbc.from("kb_delay_extras").select("*").order("sort_order");
+    if(!e.error&&e.data){ wdEx=e.data.filter(function(x){return x.active!==false;}); }
+    WD_HAS_RS=wdRs.length>0;
+  }catch(err){WD_HAS_RS=false;}
+}
+
+/* ── 날짜 ── */
+function wdIsHolY(y){var d=parseD(y);if(!d)return false;
+  try{return isHoliday(d);}catch(e){var w=d.getDay();return w===0||w===6;}}
+function wdNextBiz(y){var d=parseD(y);if(!d)return y||"";var g=0;
+  while(wdIsHolY(fmt(d))&&g<40){d.setDate(d.getDate()+1);g++;}return fmt(d);}
+function wdWk(y){var d=parseD(y);return d?["일","월","화","수","목","금","토"][d.getDay()]:"";}
+function wdPlus(y,n){var d=parseD(y);if(!d)return"";d.setDate(d.getDate()+n);return fmt(d);}
+function wdDDay(y){var d=parseD(y);return d?Math.round((d-today0())/86400000):null;}
+function wdDocDate(y){var d=parseD(y);return d?(d.getFullYear()+". "+("0"+(d.getMonth()+1)).slice(-2)+". "+("0"+d.getDate()).slice(-2)+"."):"";}
+function wdKorDate(y){var d=parseD(y);return d?(d.getFullYear()+"년 "+(d.getMonth()+1)+"월 "+d.getDate()+"일"):"";}
+
+/* ── 이 사건의 지금 유효한 보정마감일 ── */
+function wdCurDue(){
+  var best=null;
+  (wdSubs||[]).forEach(function(s){if(s&&s.next_due&&(!best||String(s.next_due)>String(best)))best=String(s.next_due).slice(0,10);});
+  if(best)return{d:best,src:"우리 약속"};
+  var a=(wdArch||[]).filter(function(x){return x&&x.court_deadline;})
+    .sort(function(x,y){return String(y.court_deadline).localeCompare(String(x.court_deadline));})[0];
+  if(a)return{d:String(a.court_deadline).slice(0,10),src:"법원"};
+  if(wdCli&&wdCli.court_deadline)return{d:String(wdCli.court_deadline).slice(0,10),src:"법원"};
+  return null;
+}
+function wdNextRound(){var mx=0;(wdSubs||[]).forEach(function(s){var n=parseInt(s&&s.round_no,10);if(n>mx)mx=n;});return mx+1;}
+function wdHeadWord(){var a=(wdArch||[])[0];return (a&&a.doc_type==="보정권고")?"보정권고":"보정명령";}
+
+/* ── 들어온 서류 / 못 들어온 서류 ── */
+var WD_DONE={"보관완료":1,"받음":1,"완료":1,"해당없음":1};
+function wdGot(){return (wdDocs||[]).filter(function(d){return ((wdFilesMap[d.id]||[]).length)||WD_DONE[d.status];});}
+function wdMiss(){return (wdDocs||[]).filter(function(d){return !(((wdFilesMap[d.id]||[]).length)||WD_DONE[d.status]);});}
+/* 이번에 낼 수 있는 항만, 항 번호 순서대로 */
+function wdReady(){
+  var g=wdGot(),seen={},out=[];
+  g.forEach(function(d){
+    var s=parseInt(d.item_seq,10); if(!s)return;
+    (seen[s]||(seen[s]=[])).push(d.name);
+  });
+  Object.keys(seen).forEach(function(k){
+    var it=(wdItems||[]).filter(function(x){return parseInt(x.seq,10)===parseInt(k,10);})[0];
+    out.push({seq:parseInt(k,10),names:seen[k],label:(it&&it.item_text)||""});
+  });
+  return out.sort(function(a,b){return a.seq-b.seq;});
+}
+
+/* ── 조사 : 마지막 서류 이름(괄호 앞)의 받침으로 를/을 ── */
+function wdJosa(name){
+  var s=String(name||"").replace(/\([^)]*\)/g,"").replace(/[\s.,]+$/,"");
+  var c=s.slice(-1),code=c?c.charCodeAt(0):0;
+  if(code>=0xAC00&&code<=0xD7A3)return((code-0xAC00)%28)?"을":"를";
+  return "를";
+}
+
+/* ── 사유 문구 ── */
+function wdRObj(){return (wdRs||[]).filter(function(x){return x.key===wdRKey;})[0]||null;}
+function wdReasonText(){
+  if(wdRKey==="기타")return (wdREtc||"").trim();
+  var o=wdRObj(); if(!o)return "";
+  return (wdLen==="s"?o.txt_s:(wdLen==="l"?o.txt_l:o.txt_m))||o.txt_m||"";
+}
+function wdExtraText(){
+  var out=[];
+  (wdEx||[]).forEach(function(e){ if(wdExtras[e.key])out.push(e.txt); });
+  return out.join(" ");
+}
+function wdDueWithExtra(){
+  if(wdDueMode==="fact")return "";
+  var d=wdNextDue?wdDocDate(wdNextDue):"____", ex=wdExtraText();
+  return d+(ex?("("+ex+")"):"");
+}
+function wdApology(){
+  return {plain:"일부 자료를 함께 제출하지 못하였습니다.",
+          mid:"일부 자료를 함께 제출하지 못하게 된 점 송구스럽습니다.",
+          polite:"일부 자료를 함께 제출하지 못하게 된 점 매우 송구스럽습니다."}[wdTone];
+}
+function wdTail(){
+  var D=wdDueWithExtra();
+  if(wdDueMode==="fact")
+    return {plain:"사실조회 회신이 오는 즉시 나머지 자료를 제출하겠습니다.",
+            mid:"현재 사실조회를 촉탁하여 신청한 상태로, 회신이 도달하는 즉시 나머지 보정사항을 성실하게 제출하도록 하겠사오니 부디 선처 부탁드립니다.",
+            polite:"현재 해당 기관에 사실조회를 촉탁하여 신청한 상태이며, 회신이 도달하는 즉시 지체 없이 나머지 보정사항을 성실하게 정리하여 제출하도록 하겠사오니 부디 선처 간곡히 부탁드립니다."}[wdTone];
+  return {plain:"나머지 보정사항은 "+D+"까지 제출하겠습니다.",
+          mid:"나머지 보정사항은 성실하게 준비하여 "+D+"까지 보정서를 제출하도록 하겠사오니 부디 선처 부탁드립니다.",
+          polite:"채무자가 개인회생 절차를 정상적으로 이행할 수 있도록 나머지 보정사항을 성실하게 준비하여 "+D+"까지 보정서를 제출하도록 하겠사오니 부디 선처 간곡히 부탁드립니다."}[wdTone];
+}
+
+/* ── 본문 ── */
+function wdAutoBody(){
+  if(wdKind==="보정기간연장신청서")return wdAutoExt();
+  var rdy=wdReady(), miss=wdMiss(), h=wdHeadWord(), L=[];
+  L.push("귀원의 "+h+"에 따라 다음과 같이 보정합니다.");
+  L.push(""); L.push("다 음"); L.push("");
+  if(rdy.length){
+    rdy.forEach(function(x,i){
+      L.push((i+1)+". "+h+x.seq+"항. "+x.names.join(", "));
+      if(x.note)L.push("-> "+x.note);
+    });
+    L.push("");
+    var last=rdy[rdy.length-1].names;
+    L.push(wdJosa(last[last.length-1])+" 제출합니다.");
+  }else{ L.push("1. 이번 회에 제출하는 자료는 없습니다."); }
+  L.push("");
+  if(!miss.length){
+    L.push(wdTone==="plain"?"귀원의 보정사항을 모두 제출하였습니다."
+      :(wdTone==="mid"?"채무자는 귀원의 보정사항에 대하여 성실하게 준비하여 위와 같이 모두 제출하였습니다.\n부디 선처 부탁드립니다."
+      :"채무자는 귀원의 보정사항에 대하여 성실하게 준비하여 위와 같이 모두 제출하였습니다.\n채무자가 개인회생 절차를 정상적으로 이행할 수 있도록 부디 선처 간곡히 부탁드립니다."));
+  }else{
+    var rt=wdReasonText();
+    L.push((rt?rt+" ":"")+wdApology());
+    L.push(wdTail());
+  }
+  return L.join("\n");
+}
+function wdAutoExt(){
+  var due=wdCurDue(), rt=wdReasonText(), h=wdHeadWord(), a=(wdArch||[])[0]||{}, L=[];
+  var od=a.order_date||"", sv=a.served_at||"", D=wdDueWithExtra();
+  L.push("위 사건에 관하여 신청인의 소송대리인은 다음과 같은 사유로 보정기간연장을 신청하오니");
+  L.push("허가하여 주시기 바랍니다.");
+  L.push(""); L.push("- 다 음 -"); L.push("");
+  var open="사유 : 위 사건에 관하여 귀원의 "+(od?wdDocDate(od):"____")+"자 "+h+"를 "+(sv?wdDocDate(sv):"____")+"자에 송달받아 성실히 준비하고 있으나, ";
+  if(wdTone==="plain"){
+    L.push(open+(rt?rt+" ":"")+"보정서 제출이 지연되고 있습니다.");
+    L.push("성실하게 준비하여 "+D+"까지 보정서를 제출하겠습니다.");
+  }else if(wdTone==="mid"){
+    L.push(open+(rt?rt+" ":"")+"보정서 제출이 지연되고 있어 매우 송구스럽습니다.");
+    L.push("채무자는 성실하게 준비하여 "+D+"까지 보정서를 제출하도록 하겠사오니 부디 선처 부탁드립니다.");
+  }else{
+    L.push(open+(rt?rt+" ":"")+"부득이 이 사건 보정기간의 연장을 신청하게 되어 매우 송구스럽습니다.");
+    L.push("");
+    L.push("지금까지 채무자는 다소 서툰 부분이 있으나 회생을 하기 위하여 성심성의껏 보정에 임하여 왔습니다.");
+    L.push("귀원께 거듭 기간의 연장을 구하게 되어 면목이 없사오나, 자료의 회신과 취합이 채무자의 노력만으로는");
+    L.push("해결되기 어려운 사정임을 헤아려 주시기를 간곡히 청합니다.");
+    L.push("");
+    L.push("채무자가 개인회생 절차를 정상적으로 이행할 수 있도록 "+D+"까지 보정서를 제출하도록 하겠사오니");
+    L.push("보정기간 연장에 있어 부디 선처 간곡히 부탁드립니다.");
+  }
+  return L.join("\n");
+}
+/* 첨부서류 목록 : 우리쪽 확인용. 본문 6,000자에 들어가지 않는다. */
+function wdAutoAtt(){
+  var names=[]; wdReady().forEach(function(x){x.names.forEach(function(n){if(names.indexOf(n)<0)names.push(n);});});
+  return names.length?names.map(function(n,i){return (i+1)+". "+n;}).join("\n"):"";
+}
+function wdSyncDoc(){ if(!wdBodyEdited)wdBody=wdAutoBody(); if(!wdAttEdited)wdAtt=wdAutoAtt(); }
+
+/* ---------- 보정서 제출 등록 (2026-08-29 전면 개편) ---------- */
+var wdOpen={due:true,body:true};
+var wdChkOk=false, wdShowPass=false;
+
+function wdAcc(id,title,summary,inner,tone){
+  var on=!!wdOpen[id];
+  var col=(tone==="bad")?"#DC2626":((tone==="ok")?"#059669":"var(--muted)");
+  return '<div class="wdacc">'
+   +'<button type="button" class="wdacc-h" onclick="wdTog(\''+id+'\')">'
+   +'<span class="wdacc-ar">'+(on?"▾":"▸")+'</span>'
+   +'<span class="wdacc-t"><b>'+title+'</b>'
+   +(summary?'<span style="color:'+col+'">'+summary+'</span>':'')+'</span></button>'
+   +(on?'<div class="wdacc-b">'+inner+'</div>':'')+'</div>';
+}
+function wdTog(k){wdOpen[k]=!wdOpen[k];wdSubRender();}
+
+/* ── 제출 전 검사 8개 ── */
+function wdChkList(){
+  var due=wdCurDue(), miss=wdMiss(), isFact=(wdDueMode==="fact"), isExt=(wdKind==="보정기간연장신청서");
+  var n=(wdBody||"").length, r=[];
+  if(!isExt){
+    r.push({ok:_wdSubPick.length>0,t:"제출 파일을 1개 이상 붙였다",
+      s:_wdSubPick.length?(_wdSubPick.length+"개"):"아래 [파일 고르기]를 눌러주세요"});
+    var bad=_wdSubPick.filter(function(f){return !f.size;});
+    r.push({ok:bad.length===0,t:"빈(0바이트) 파일이 없다",
+      s:!_wdSubPick.length?"파일을 고르면 확인합니다":(bad.length?("비어 있음 · "+bad.map(function(f){return f.name;}).join(", ")):"이상 없음")});
+  }
+  r.push({ok:!!due,t:"이 차수의 보정마감일을 알고 있다",
+    s:due?(wdKorDate(due.d)+" · "+due.src):"보정 문서함에서 법원 기한을 먼저 넣어주세요"});
+  var dd=due?wdDDay(due.d):null;
+  r.push({ok:!!due&&wdSubDate<=due.d,t:"제출일이 마감일을 넘기지 않았다",
+    s:due?("제출 "+wdKorDate(wdSubDate)+" · 마감 "+wdKorDate(due.d)+(dd!==null?" (오늘 D"+(dd>=0?"-"+dd:"+"+(-dd))+")":"")):"마감일 미상"});
+  var need=(miss.length>0||isExt);
+  r.push({ok:!need||isFact||!!wdNextDue,t:"못 낸 서류가 있으면 언제 낼지 정했다",
+    s:!need?"필요한 서류가 전부 들어왔습니다"
+      :(isFact?("추후제출 "+miss.length+"개 · 사실조회 회신 시")
+      :(wdNextDue?("추후제출 "+miss.length+"개 → "+wdKorDate(wdNextDue)+"까지"):"위에서 기한을 골라주세요"))});
+  r.push({ok:!wdNextDue||(!!due&&wdNextDue>due.d),t:"약속일이 마감일보다 뒤다",
+    s:!wdNextDue?(isFact?"사실조회라 날짜를 특정하지 않습니다":"해당 없음")
+      :(due?(wdNextDue>due.d?(wdKorDate(due.d)+" → "+wdKorDate(wdNextDue)+" (＋"+Math.round((parseD(wdNextDue)-parseD(due.d))/86400000)+"일)"):"약속일이 마감일보다 앞이거나 같습니다"):"마감일 미상")});
+  r.push({ok:!need||!!wdReasonText(),t:"지연 사유를 적었다",
+    s:!need?"전부 제출이라 사유가 필요 없습니다":(wdReasonText()?("“"+wdReasonText().slice(0,36)+"…”"):"사유를 골라주세요 · 법원에 그대로 들어갑니다")});
+  var dup=(wdSubs||[]).filter(function(s){return parseInt(s.round_no,10)===wdNextRound();});
+  r.push({ok:dup.length===0,t:"같은 차수를 이미 내지 않았다",
+    s:dup.length?"이미 기록돼 있습니다":(wdNextRound()+"차 · 처음 제출")});
+  r.push({ok:n>0&&n<=WD_BODY_MAX,t:"본문이 6,000자 이내다",
+    s:!n?"본문이 비어 있습니다":(n>WD_BODY_MAX?("현재 "+n.toLocaleString()+"자 · "+(n-WD_BODY_MAX).toLocaleString()+"자 초과"):("현재 "+n.toLocaleString()+"자 · 남은 "+(WD_BODY_MAX-n).toLocaleString()+"자"))});
+  return r;
+}
+function wdChkDraw(){
+  var r=wdChkList(), bad=r.filter(function(x){return !x.ok;}), pass=r.length-bad.length;
+  wdChkOk=(bad.length===0);
+  var z=document.getElementById("wd-chk");
+  if(z)z.innerHTML=
+    '<div class="wdchk-h"><b>제출 전 검사</b>'
+   +'<span class="wdchk-n '+(wdChkOk?"ok":"no")+'">'+pass+' / '+r.length+'</span>'
+   +'<span class="wdchk-r '+(wdChkOk?"ok":"no")+'">'+(wdChkOk?"전부 통과":(bad.length+"개 남음"))+'</span></div>'
+   +bad.map(function(x){
+      return '<div class="wdchk no"><i>✕</i><span><b>'+esc(x.t)+'</b><em>'+esc(x.s)+'</em></span></div>';}).join("")
+   +(pass?'<button type="button" class="wdchk ok as-btn" onclick="wdTogPass()"><i>✓</i>'
+      +'<span><b>통과 '+pass+'개</b></span><u>'+(wdShowPass?"접기":"펼치기")+'</u></button>'
+     +(wdShowPass?r.filter(function(x){return x.ok;}).map(function(x){
+        return '<div class="wdchk okq"><i>✓</i><span><b>'+esc(x.t)+'</b><em>'+esc(x.s)+'</em></span></div>';}).join(""):"")
+    :"");
+  var b=document.getElementById("wd-sub-go");
+  if(b){b.disabled=!wdChkOk;b.style.opacity=wdChkOk?"1":".5";b.style.cursor=wdChkOk?"pointer":"not-allowed";
+    b.textContent=wdChkOk?"등록":("등록할 수 없습니다 ("+pass+"/"+r.length+")");}
+}
+function wdTogPass(){wdShowPass=!wdShowPass;wdChkDraw();}
+
+/* ── 조각 ── */
+function wdSeg(items,cur,fn){
+  return '<span class="wdseg">'+items.map(function(x){
+    return '<button type="button" class="'+(cur===x.k?"on":"")+'" onclick="'+fn+'(\''+x.k+'\')">'+x.n+'</button>';}).join("")+'</span>';
+}
+function wdTg(k,label,sub,on,fn){
+  return '<button type="button" class="wdtg'+(on?" on":"")+'" onclick="'+fn+'">'
+   +'<b>'+esc(label)+'</b><span>'+esc(sub)+'</span></button>';
+}
+var WD_TONES=[{k:"plain",n:"담백"},{k:"mid",n:"보통"},{k:"polite",n:"정중"}];
+var WD_LENS=[{k:"s",n:"짧게"},{k:"m",n:"보통"},{k:"l",n:"길게"}];
+
+/* ── 알림 일정 ── */
+function wdAlarmRows(){
+  var due=wdCurDue(),rows=[];
+  if(wdSubDate)rows.push({d:wdSubDate,n:"법원 제출일",b:"이날 전자소송에 제출"});
+  if(due&&due.d!==wdSubDate)rows.push({d:due.d,n:"보정마감일",b:"넘기면 기각 위험"});
+  if(wdDueMode==="fact"&&wdEstDate)rows.push({d:wdEstDate,n:"사실조회 회신 예상",b:"내부 관리용"});
+  else if(wdNextDue){var bz=wdNextBiz(wdNextDue);
+    rows.push({d:wdNextBiz(wdPlus(bz,-3)),n:"다음 제출 D-3",b:"서류 다 모였는지 확인"});
+    rows.push({d:bz,n:"다음 보정마감일",b:(bz!==wdNextDue)?("문서에는 "+wdKorDate(wdNextDue)+"로 적음"):"추후제출 약속일"});}
+  rows.sort(function(a,b){return String(a.d).localeCompare(String(b.d));});
+  return rows;
+}
+
+/* ── 모달 본체 ── */
+function wdSubHtml(){
+  var due=wdCurDue(), miss=wdMiss(), rdy=wdReady(), isExt=(wdKind==="보정기간연장신청서"), rd=wdNextRound();
+  var dd=due?wdDDay(due.d):null;
+
+  var banner=due
+   ? '<div class="wdban '+(due.src==="법원"?"court":"ours")+'"><b>마감 '+esc(wdKorDate(due.d))+'('+wdWk(due.d)+')</b>'
+     +'<span>'+esc(due.src)+(dd!==null?" · D"+(dd>=0?"-"+dd:"+"+(-dd)):"")+'</span>'
+     +'<em>'+rd+'차 · 내부용</em></div>'
+   : '<div class="wdban court"><b>마감일을 모릅니다</b><span>보정 문서함에서 법원 기한을 먼저 넣어주세요</span></div>';
+
+  /* 제출일 */
+  var sdd=wdSubDate?Math.round((parseD(wdSubDate)-today0())/86400000):null;
+  var isLast=(due&&wdSubDate===due.d);
+  var dateIn='<div class="wdrow"><input type="date" id="wd-sub-date" value="'+esc(wdSubDate)+'" onchange="wdSetDate(this.value)">'
+   +(due?'<button type="button" class="wd-cabtn" onclick="wdSetDate(\''+due.d+'\')">마감일로</button>':'')+'</div>'
+   +'<div class="bj-note">기본값은 마감일 당일입니다. 미리 만들어 두어도 기한을 최대한 씁니다.</div>';
+  var dateSum=wdKorDate(wdSubDate)+"("+wdWk(wdSubDate)+")"+(isLast?" · 마감일 당일":"")+(sdd!==null?(" · "+(sdd>0?"D-"+sdd:(sdd===0?"오늘":"D+"+(-sdd)))):"");
+
+  /* 지난 제출 */
+  var histIn=(wdSubs||[]).map(function(s,i){
+    var fs=wdSubFilesMap[s.id]||[];
+    return '<div class="wdhist"><div class="h"><span class="rd">'+(s.round_no||"?")+'차</span>'
+     +'<span class="g"><b>'+esc(wdKorDate(String(s.submitted_at||"").slice(0,10)))+' 제출</b>'
+     +'<em>'+(s.next_due?("다음 약속 "+wdKorDate(String(s.next_due).slice(0,10))):"추후제출 없음")+'</em></span>'
+     +(s.body_text?'<button type="button" class="wd-cabtn" onclick="wdSubBodyView(\''+s.id+'\')">본문</button>':'')+'</div>'
+     +(fs.length?'<div class="f"><em>제출한 파일 '+fs.length+'개</em>'+fs.map(function(f){
+        return '<button type="button" class="fl" onclick="wdSubFileView(\''+f.id+'\')"><i>'+esc((wdExt(f.file_name)||"?").replace(".","").toUpperCase().slice(0,4))+'</i>'
+         +'<span>'+esc(f.file_name)+'</span><u>'+wdSizeStr(f.size)+'</u></button>';}).join("")+'</div>':'')
+     +((s.defer_items&&s.defer_items.length)?'<div class="m"><em>그때 못 낸 서류 '+s.defer_items.length+'개</em>'
+        +s.defer_items.map(function(x){var nm=(x&&x.name)||x;
+          var still=wdMiss().some(function(d){return d.name===nm;});
+          return '<span class="mi"><b>'+esc(nm)+'</b><u class="'+(still?"no":"ok")+'">'+(still?"아직":"받음")+'</u></span>';}).join("")+'</div>':'')
+     +'</div>';}).join("");
+
+  /* 항목 */
+  var itemIn=rdy.map(function(x){
+    return '<div class="wdit"><span class="n">'+x.seq+'</span><span class="g"><b>'+esc(x.names.join(", "))+'</b>'
+     +'<em>'+esc(x.label)+'</em></span></div>';}).join("")
+   +(miss.length?'<div class="bj-note">못 내는 항은 본문에 아예 쓰지 않습니다.</div>':'');
+
+  /* 못 내는 서류 */
+  var missIn=miss.map(function(d){
+    var it=(wdItems||[]).filter(function(x){return parseInt(x.seq,10)===parseInt(d.item_seq,10);})[0];
+    return '<div class="wdit"><span class="n">'+(d.item_seq||"?")+'</span><span class="g"><b>'+esc(d.name)+'</b>'
+     +'<em>'+esc((it&&it.item_text)||"")+'</em></span><u>'+esc(d.status||"대기")+'</u></div>';}).join("")
+   +'<div class="bj-note">우리쪽 확인용입니다. 본문에는 쓰지 않고 추후제출로만 넘어갑니다.</div>';
+
+  /* 기한 */
+  var raw=[7,14,21].map(function(n){return due?wdPlus(due.d,n):"";});
+  var lbl=function(y){return y?((+y.slice(5,7))+"월 "+(+y.slice(8,10))+"일("+wdWk(y)+")"+(wdIsHolY(y)?" 휴":"")):"미정";};
+  var pickBox="";
+  if(wdDueMode==="fact"){
+    pickBox='<div class="wdpick"><em>문서 문구</em><b>사실조회 회신을 받는 즉시</b></div>'
+     +'<div class="bj-note" style="margin-top:8px">내부 관리용 예상일</div>'
+     +'<input type="date" value="'+esc(wdEstDate)+'" onchange="wdSetEst(this.value)">';
+  }else if(wdDueMode){
+    var bz=wdNextDue?wdNextBiz(wdNextDue):"";
+    var fs2=(wdSubDate&&wdNextDue)?Math.round((parseD(wdNextDue)-parseD(wdSubDate))/86400000):null;
+    var ft=wdNextDue?wdDDay(wdNextDue):null;
+    pickBox='<div class="wdpick"><em>문서에 찍히는 날짜</em><b>'+esc(wdNextDue?wdKorDate(wdNextDue)+"("+wdWk(wdNextDue)+")":"미정")+'</b>'
+     +(wdNextDue?'<u>제출일 +'+fs2+'일 · 오늘 D-'+ft+'</u>':'')+'</div>'
+     +((bz&&bz!==wdNextDue)?'<div class="wdwarn">그날은 '+(["일","토"].indexOf(wdWk(wdNextDue))>=0?wdWk(wdNextDue)+"요일":"공휴일")
+        +'입니다. 문서에는 그대로 쓰고 기한은 '+esc(wdKorDate(bz))+'('+wdWk(bz)+')에 만료되므로 앱 일정만 그날로 잡습니다.</div>':'')
+     +'<input type="date" value="'+esc(wdNextDue)+'" onchange="wdSetNext(this.value)">';
+  }
+  var dueIn="",dueSum="",dueTone="";
+  if(miss.length||isExt){
+    dueIn=(miss.length?'<div class="bj-note" style="margin-bottom:8px">안 온 서류 <b>'+miss.length+'개</b> · '+esc(miss.map(function(d){return d.name;}).join(", "))+'</div>':'')
+     +'<div class="wdtgs3">'+wdTg("7","7일",lbl(raw[0]),wdDueMode==="7","wdPick(\'7\')")
+     +wdTg("14","14일",lbl(raw[1]),wdDueMode==="14","wdPick(\'14\')")
+     +wdTg("21","21일",lbl(raw[2]),wdDueMode==="21","wdPick(\'21\')")+'</div>'
+     +'<div class="wdtgs2">'+wdTg("fact","사실조회 회신 시","날짜 특정 안 함",wdDueMode==="fact","wdPick(\'fact\')")
+     +wdTg("etc","기타","직접 입력",wdDueMode==="etc","wdPick(\'etc\')")+'</div>'
+     +pickBox
+     +'<div class="bj-note" style="margin-top:8px">문서에는 고른 날짜를 그대로 씁니다. 토요일과 공휴일이면 민법 제161조에 따라 기한이 다음 평일에 만료되므로 앱 일정만 그 평일로 잡습니다.</div>'
+     +'<div class="wdsep"></div>'+wdReasonHtml();
+    dueSum=(wdDueMode==="fact")?"사실조회 회신 시":(wdNextDue?(wdKorDate(wdNextDue)+"까지"):"기한 미정");
+    if(wdRKey)dueSum+=" · "+((wdRObj()&&wdRObj().name)||"직접 입력");
+    dueTone=((wdDueMode==="fact"||wdNextDue)&&wdReasonText())?"ok":"bad";
+  }else{
+    dueIn='<div class="wdok">서류가 전부 들어왔습니다</div>'
+     +'<div class="wdrow" style="margin-top:10px"><span class="bj-note">말투</span>'+wdSeg(WD_TONES,wdTone,"wdSetTone")+'</div>';
+    dueSum="추후제출 없음 · 전부 제출"; dueTone="ok";
+  }
+
+  var al=wdAlarmRows();
+  var alarmIn='<div class="wdal">'+al.map(function(x){var k=wdDDay(x.d);
+     return '<div class="r"><span class="d">'+((+x.d.slice(5,7))+"/"+(+x.d.slice(8,10))+"("+wdWk(x.d)+")")+'</span>'
+      +'<span class="g"><b>'+esc(x.n)+'</b><em>'+esc(x.b)+'</em></span>'
+      +'<u class="'+((k!==null&&k<=3)?"no":"")+'">'+(k!==null?(k>0?"D-"+k:(k===0?"오늘":"D+"+(-k))):"")+'</u></div>';}).join("")+'</div>'
+   +'<div class="bj-note">저장하면 이 날짜들이 담당자 알림과 기한 달력에 올라갑니다.</div>';
+
+  var opts='<option value="">연결 안 함</option>'+(wdArch||[]).map(function(a){
+    return '<option value="'+a.id+'"'+(wdOrderDoc===a.id?' selected':'')+'>'+esc(wdFmtD(wdArchDate(a)))+' '+esc(a.doc_type||"문서")+'</option>';}).join("");
+
+  var n=(wdBody||"").length, over=(n>WD_BODY_MAX);
+  var bodyIn='<div class="wdbh"><b>'+(isExt?"연장신청서":"보정서")+' 본문</b>'
+   +'<span class="bj-note">전자소송 입력칸용</span>'
+   +'<u class="'+(over?"no":"")+'">'+n.toLocaleString()+' / 6,000자</u></div>'
+   +'<div class="wdbar"><i style="width:'+Math.min(100,Math.round(n/WD_BODY_MAX*100))+'%" class="'+(over?"no":"")+'"></i></div>'
+   +'<textarea id="wd-body" rows="12" spellcheck="false" oninput="wdOnBody(this.value)" class="'+(over?"over":"")+'">'+esc(wdBody)+'</textarea>'
+   +'<div class="wdrow">'
+   +'<button type="button" class="wd-cabtn" onclick="wdCopyBody()">복사</button>'
+   +'<button type="button" class="wd-cabtn" onclick="wdResetBody()">다시 만들기</button>'
+   +'<span class="bj-note" style="margin-left:auto">'+(wdBodyEdited?"직접 고침":"자동 갱신")+'</span></div>';
+
+  var attN=(wdAtt||"").split("\n").filter(function(x){return x.trim();}).length;
+  var attIn='<div class="wdbh"><b>첨부서류</b><span class="bj-note">우리쪽 확인용</span><u>'+attN+'건</u></div>'
+   +'<textarea id="wd-att" rows="'+Math.max(3,Math.min(9,attN+1))+'" spellcheck="false" oninput="wdOnAtt(this.value)"></textarea>'
+   +'<div class="wdrow"><button type="button" class="wd-cabtn" onclick="wdCopyAtt()">복사</button>'
+   +'<button type="button" class="wd-cabtn" onclick="wdResetAtt()">다시 만들기</button>'
+   +'<span class="bj-note" style="margin-left:auto">'+(wdAttEdited?"직접 고침":"자동 갱신")+'</span></div>'
+   +'<div class="bj-note">본문 6,000자에 들어가지 않습니다.</div>';
+
+  var fileIn='<button type="button" class="wd-cabtn" style="width:100%;text-align:center" onclick="wdSubPickFiles()">파일 고르기</button>'
+   +'<div id="wd-sub-flist" class="bj-note" style="margin-top:6px">'+(_wdSubPick.length?esc(_wdSubPick.map(function(f){return f.name;}).join(", ")):"아직 고른 파일이 없어요")+'</div>';
+
+  return '<div class="wdkinds">'+["보정서","보정기간연장신청서"].map(function(k){
+      return '<button type="button" class="'+(wdKind===k?"on":"")+'" onclick="wdSetKind(\''+k+'\')">'+(k==="보정서"?"보정서":"연장신청서")+'</button>';}).join("")+'</div>'
+   +banner
+   +'<div class="fld" style="margin-top:12px"><label>어느 보정권고·명령에 대한 제출인가요?</label>'
+   +'<select id="wd-sub-doc" onchange="wdSetOrderDoc(this.value)">'+opts+'</select></div>'
+   +wdAcc("date","법원 제출일",dateSum,dateIn)
+   +((wdSubs||[]).length?wdAcc("hist","지난 제출",(wdSubs.length+"건"),histIn):"")
+   +(rdy.length?wdAcc("item","이번에 내는 항목",(rdy.length+"개 항 · "+rdy.map(function(x){return x.seq+"항";}).join(", ")),itemIn):"")
+   +(miss.length?wdAcc("miss","이번에 못 내는 서류",(miss.length+"개"),missIn,"bad"):"")
+   +wdAcc("due",(isExt?"연장 기한과 사유":"추후제출 기한과 사유"),dueSum,dueIn,dueTone)
+   +wdAcc("alarm","알림과 캘린더",(al.length+"건"),alarmIn)
+   +(isExt?"":wdAcc("file","첨부 파일",(_wdSubPick.length?(_wdSubPick.length+"개"):"없음"),fileIn,_wdSubPick.length?"ok":"bad"))
+   +'<div class="wdsep"></div>'+bodyIn
+   +(isExt?"":'<div class="wdsep"></div>'+attIn)
+   +'<div class="wdsep"></div><div id="wd-chk"></div>'
+   +'<div class="fld" style="margin-top:12px"><label>메모 (선택)</label><input id="wd-sub-memo" placeholder="예: 일부제출"></div>'
+   +'<div class="wd-macts"><button class="btn ghost" onclick="wdCloseModal()">닫기</button>'
+   +'<button class="btn primary" id="wd-sub-go" onclick="wdSubSave()">등록</button></div>';
+}
+function wdReasonHtml(){
+  if(!WD_HAS_RS)return '<div class="bj-note">지연 사유 사전이 아직 없습니다. SQL W4 를 실행하면 여기에 사유 목록이 나옵니다.</div>';
+  var grps=[],seen={};
+  wdRs.forEach(function(x){ if(!seen[x.grp]){seen[x.grp]=1;grps.push(x.grp);} });
+  var opts='<option value="">사유를 골라주세요</option>'+grps.map(function(g){
+    return '<optgroup label="'+esc(g)+'">'+wdRs.filter(function(x){return x.grp===g;}).map(function(x){
+      return '<option value="'+esc(x.key)+'"'+(wdRKey===x.key?" selected":"")+'>'+esc(x.name)+'</option>';}).join("")+'</optgroup>';}).join("");
+  var prev=wdReasonText();
+  return '<label style="display:block;font-size:12.5px;font-weight:800;margin-bottom:5px">지연 사유'
+   +' <span style="font-weight:500;color:var(--muted)">법원에 그대로 들어갑니다</span></label>'
+   +'<select onchange="wdSetReason(this.value)">'+opts+'</select>'
+   +(wdRKey==="기타"?'<textarea rows="2" oninput="wdSetREtc(this.value)" placeholder="예: 채무자는 현재 해외 체류 중으로 자료 수령이 지연되고 있어" style="margin-top:6px">'+esc(wdREtc)+'</textarea>':'')
+   +'<div class="wdrow" style="margin-top:8px"><span class="bj-note">길이</span>'+wdSeg(WD_LENS,wdLen,"wdSetLen")
+   +'<span class="bj-note" style="margin-left:8px">말투</span>'+wdSeg(WD_TONES,wdTone,"wdSetTone")+'</div>'
+   +'<div class="bj-note" style="margin:8px 0 5px">추가 사정 (날짜 뒤 괄호로 붙습니다)</div>'
+   +'<div class="wdrow">'+wdEx.map(function(e){
+      return '<button type="button" class="wdchip'+(wdExtras[e.key]?" on":"")+'" onclick="wdTogExtra(\''+esc(e.key)+'\')">'+esc(e.name)+'</button>';}).join("")+'</div>'
+   +(prev?'<div class="wdprev"><b>본문 문장</b> '+esc(prev+" "+wdApology())+'</div>':'');
+}
+/* ── 조작 ── */
+function wdSetKind(k){wdKind=k;wdBodyEdited=false;if(k==="보정기간연장신청서"&&wdTone==="mid")wdTone="polite";wdSubRender();}
+function wdSetOrderDoc(v){wdOrderDoc=v||null;}
+function wdSetDate(v){wdSubDate=v||fmt(new Date());wdBodyEdited=false;wdSubRender();}
+function wdPick(k){
+  var due=wdCurDue(); wdDueMode=k; wdBodyEdited=false;
+  if(k==="fact"){wdNextDue="";if(!wdEstDate&&due)wdEstDate=wdNextBiz(wdPlus(due.d,30));}
+  else if(k==="etc"){if(!wdNextDue&&due)wdNextDue=wdPlus(due.d,14);}
+  else{wdNextDue=due?wdPlus(due.d,parseInt(k,10)):"";}
+  wdSubRender();
+}
+function wdSetNext(v){wdNextDue=v||"";wdDueMode=wdDueMode||"etc";wdBodyEdited=false;wdSubRender();}
+function wdSetEst(v){wdEstDate=v||"";wdSubRender();}
+function wdSetTone(v){wdTone=v;wdBodyEdited=false;wdSubRender();}
+function wdSetLen(v){wdLen=v;wdBodyEdited=false;wdSubRender();}
+function wdSetReason(v){wdRKey=v;wdBodyEdited=false;wdSubRender();}
+function wdSetREtc(v){wdREtc=v;wdBodyEdited=false;wdBody=wdAutoBody();
+  var ta=document.getElementById("wd-body");if(ta)ta.value=wdBody;wdChkDraw();}
+function wdTogExtra(k){wdExtras[k]=!wdExtras[k];wdBodyEdited=false;wdSubRender();}
+function wdOnBody(v){wdBody=v;wdBodyEdited=true;
+  var n=v.length,over=(n>WD_BODY_MAX);
+  var h=document.querySelector(".wdbh u"); if(h){h.textContent=n.toLocaleString()+" / 6,000자";h.className=over?"no":"";}
+  var b=document.querySelector(".wdbar i"); if(b){b.style.width=Math.min(100,Math.round(n/WD_BODY_MAX*100))+"%";b.className=over?"no":"";}
+  var ta=document.getElementById("wd-body"); if(ta)ta.className=over?"over":"";
+  wdChkDraw();}
+function wdOnAtt(v){wdAtt=v;wdAttEdited=true;}
+function wdResetBody(){wdBodyEdited=false;wdSubRender();wdToast("본문을 다시 만들었습니다");}
+function wdResetAtt(){wdAttEdited=false;wdAtt=wdAutoAtt();wdSubRender();wdToast("첨부서류 목록을 다시 만들었습니다");}
+async function wdCopyBody(){var ok=await wdCopyText(wdBody);wdToast(ok?"복사했습니다. 전자소송 칸에 붙여넣으세요":"복사 실패");}
+async function wdCopyAtt(){var ok=await wdCopyText(wdAtt);wdToast(ok?"첨부서류 목록을 복사했습니다":"복사 실패");}
+function wdSubBodyView(id){
+  var s=(wdSubs||[]).filter(function(x){return x.id===id;})[0]; if(!s)return;
+  wdModal('<h3 style="margin:0 0 8px">'+(s.round_no||"?")+'차 보정서 · '+esc(String(s.submitted_at||"").slice(0,10))+'</h3>'
+   +'<div class="wdpaper">'+esc(s.body_text||"(저장된 본문이 없습니다)")+'</div>'
+   +(s.att_text?'<div class="bj-note" style="margin-top:10px">첨부서류</div><div class="wdpaper sm">'+esc(s.att_text)+'</div>':'')
+   +'<div class="wd-macts"><button class="btn primary" onclick="wdCloseModal()">닫기</button></div>',560);
+}
+var wdOrderDoc=null;
+function wdSubRender(){
+  wdSyncDoc();
+  var box=document.getElementById("wd-sub-wrap"); if(!box)return;
+  var memo=(document.getElementById("wd-sub-memo")||{}).value||"";
+  box.innerHTML=wdSubHtml();
+  var m=document.getElementById("wd-sub-memo"); if(m)m.value=memo;
+  var a=document.getElementById("wd-att"); if(a)a.value=wdAtt;
+  wdChkDraw();
+}
 function wdSubAdd(orderDocId){
-  _wdSubPick=[];
-  var opts='<option value="">연결 안 함</option>'+wdArch.map(function(a){
-    return '<option value="'+a.id+'"'+(orderDocId===a.id?' selected':'')+'>'+esc(wdFmtD(wdArchDate(a)))+' '+esc(a.doc_type||"문서")+' ('+esc(a.status||"")+')</option>';
-  }).join("");
-  wdModal('<h3 style="margin:0 0 6px">보정서 제출 등록</h3>'
-    +'<p class="bj-note" style="margin:0 0 10px">법원에 낸 보정서를 기록해요. 어느 보정권고에 대한 제출인지 연결하면 문서함에서 흐름이 보여요.</p>'
-    +'<div class="fld"><label>어느 보정권고·명령에 대한 제출인가요?</label><select id="wd-sub-doc">'+opts+'</select></div>'
-    +'<div class="grid" style="grid-template-columns:1fr 1fr">'
-    +'<div><label>법원 제출일</label><input type="date" id="wd-sub-date" value="'+fmt(new Date())+'"></div>'
-    +'<div><label>회차 (선택)</label><input type="number" id="wd-sub-round" min="1" placeholder="예: 1"></div>'
-    +'</div>'
-    +'<div class="fld" style="margin-top:10px"><label>메모 (선택)</label><input id="wd-sub-memo" placeholder="예: 일부제출, 소득자료는 추후제출"></div>'
-    +'<div class="fld"><label>파일 (여러 개 가능)</label>'
-    +'<button class="wd-cabtn" style="width:100%;text-align:center" onclick="wdSubPickFiles()">파일 고르기</button>'
-    +'<div id="wd-sub-flist" class="bj-note" style="margin-top:6px">아직 고른 파일이 없어요</div></div>'
-    +'<div class="wd-macts"><button class="btn ghost" onclick="wdCloseModal()">닫기</button>'
-    +'<button class="btn primary" onclick="wdSubSave()">등록</button></div>',540);
+  _wdSubPick=[]; wdOrderDoc=orderDocId||null;
+  wdKind="보정서"; wdDueMode=""; wdNextDue=""; wdEstDate="";
+  wdRKey=""; wdREtc=""; wdTone="mid"; wdLen="m"; wdExtras={};
+  wdBody=""; wdBodyEdited=false; wdAtt=""; wdAttEdited=false;
+  wdChkOk=false; wdShowPass=false; wdOpen={due:true};
+  var due=wdCurDue(); wdSubDate=due?due.d:fmt(new Date());   /* 기본은 마감일 당일 */
+  wdModal('<h3 style="margin:0 0 10px">보정서 제출 등록</h3><div id="wd-sub-wrap"></div>',600);
+  wdSubRender();
 }
 function wdSubPickFiles(){
   var inp=document.createElement("input");inp.type="file";inp.multiple=true;
@@ -10900,6 +11499,10 @@ function wdSubPickFiles(){
   inp.click();
 }
 async function wdSubSave(){
+  if(!wdChkOk){wdChkDraw();if(!wdChkOk){wdToast("검사를 통과하지 못했어요. 빨간 줄을 먼저 해결해주세요");return;}}
+  return wdSubSave2();
+}
+async function wdSubSave2(){
   if(wdBusy)return;
   if(!_wdSubPick.length){wdToast("파일을 1개 이상 골라주세요");return;}
   var docId=((document.getElementById("wd-sub-doc")||{}).value||"")||null;
@@ -10908,8 +11511,27 @@ async function wdSubSave(){
   var memo=((document.getElementById("wd-sub-memo")||{}).value||"").trim()||null;
   wdBusy=true;busy(true);
   try{
-    var ins=await sbc.from("bj_submissions").insert({case_no:wdCase.case_no,client_id:wdCase.client_id||null,
-      order_doc_id:docId,round_no:round,submitted_at:date,memo:memo}).select("*");
+    var _miss=wdMiss().map(function(d){return {name:d.name};});
+    var _due=wdCurDue();
+    var base={case_no:wdCase.case_no,client_id:wdCase.client_id||null,
+      order_doc_id:docId,round_no:round,submitted_at:date,memo:memo};
+    var extra={
+      kind:wdKind, deadline_at:(_due?_due.d:null),
+      next_due:(wdDueMode==="fact"?null:(wdNextDue||null)),
+      next_due_biz:(wdDueMode==="fact"?null:(wdNextDue?wdNextBiz(wdNextDue):null)),
+      est_date:(wdDueMode==="fact"?(wdEstDate||null):null),
+      court_reaction:"무응답",
+      body_text:(wdBody||null), att_text:(wdAtt||null),
+      defer_items:(_miss.length?_miss:null),
+      reason_key:(wdRKey||null), reason_text:(wdReasonText()||null),
+      reason_extras:(Object.keys(wdExtras).filter(function(k){return wdExtras[k];}).length
+        ?Object.keys(wdExtras).filter(function(k){return wdExtras[k];}):null)};
+    var payload={};for(var _k in base)payload[_k]=base[_k];for(var _k2 in extra)payload[_k2]=extra[_k2];
+    var ins=await sbc.from("bj_submissions").insert(payload).select("*");
+    if(ins.error&&/column|deadline_at|next_due|body_text|att_text|reason_|kind|est_date|court_reaction|defer_items/i.test(String(ins.error.message||""))){
+      wdToast("차수 기한 칸이 아직 없어요 · SQL W3 을 실행하면 기록됩니다");
+      ins=await sbc.from("bj_submissions").insert(base).select("*");
+    }
     if(ins.error){
       if(String(ins.error.message||"").indexOf("bj_submissions")>=0||ins.error.code==="42P01")
         throw new Error("SQL W2를 먼저 실행해야 해요 (보정처리_SQL_W2 파일)");
@@ -10933,9 +11555,17 @@ async function wdSubSave(){
       }
       wdSubFilesMap[sub.id].push(fr.data[0]);
     }
+    /* 약속일이 있으면 그 날짜가 새 보정마감일이 된다 (일정은 평일 보정본으로) */
+    if(wdDueMode!=="fact"&&wdNextDue){
+      try{ if(wdCli&&wdCli.id){
+        var _bz=wdNextBiz(wdNextDue);
+        var uc=await sbc.from("clients").update({court_deadline:_bz,deadline_kind:"보정기한"}).eq("id",wdCli.id).select("id");
+        if(!uc.error&&uc.data&&uc.data.length)wdCli.court_deadline=_bz;
+      } }catch(e3){}
+    }
     _wdSubPick=[];
     wdCloseModal();wdRender();
-    wdToast("보정서 제출을 등록했어요 ✓");
+    wdToast(wdNextDue?("등록 완료 · 다음 보정마감일이 "+wdKorDate(wdNextBiz(wdNextDue))+"로 바뀌었어요"):"보정서 제출을 등록했어요 ✓");
   }catch(e){wdToast("등록 실패: "+(e.message||e));wdRender();}
   finally{wdBusy=false;busy(false);}
 }

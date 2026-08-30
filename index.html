@@ -760,6 +760,46 @@
   .cal-acct.bl{color:#2B4570;background:#EDF1F7;border:1px solid #D2DBEA}
   .cal-acct.ij{color:#7A1427;background:var(--brand-soft);border:1px solid #E9CDD3}
   .cal-acct.nb{color:var(--muted);background:#F1EEEA;border:1px solid var(--line-d)}
+  /* ---------- 아침 점검 보드 (2026-08-30) ---------- */
+  .chk-top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:2px 0 14px}
+  .chk-top h1{margin:0;font-size:23px;font-weight:800;letter-spacing:-.3px}
+  .chk-date{font-size:13px;color:var(--muted);margin-top:4px}
+  .chk-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .chk-tabs{display:flex;gap:6px}
+  .chk-tab{border:1px solid var(--line-d);background:#fff;color:var(--ink-2);border-radius:999px;padding:6px 16px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit}
+  .chk-tab.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  .chk-sel{border:1px solid var(--line-d);background:#fff;border-radius:6px;padding:6px 8px;font-size:13px;font-family:inherit;color:var(--ink);max-width:150px}
+  .chk-sel.wide{max-width:200px;padding:7px 10px}
+  .chk-sec{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-bottom:16px;overflow:hidden}
+  .chk-h{padding:14px 16px 12px;border-bottom:1px solid var(--line)}
+  .chk-h h2{margin:0;font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px}
+  .chk-h .cnt{background:var(--brand);color:#fff;border-radius:999px;font-size:12px;font-weight:800;padding:1px 9px;line-height:18px}
+  .chk-sub{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .chk-empty{padding:22px 16px;color:var(--muted);font-size:13.5px}
+  .chk-row{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .chk-row:last-child{border-bottom:0}
+  .chk-row.busy{opacity:.5}
+  .chk-row.link{cursor:pointer}
+  .chk-row.link:hover{background:#FBFAF8}
+  .chk-left{flex:0 0 104px;font-size:13px;font-weight:800;line-height:1.35}
+  .chk-left .d{display:block;font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px}
+  .chk-left.r{color:var(--red)} .chk-left.a{color:var(--amber)} .chk-left.g{color:var(--ink-2)}
+  .chk-mid{flex:1 1 auto;min-width:0}
+  .chk-nm{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:800;flex-wrap:wrap}
+  .chk-stage{font-size:11px;font-weight:700;color:var(--muted);background:var(--gray-bg);border-radius:999px;padding:1px 8px;line-height:18px}
+  .chk-cs{font-size:12.5px;color:var(--ink-2);margin-top:3px}
+  .chk-memo{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.5;word-break:break-all}
+  .chk-act{flex:0 0 auto;display:flex;align-items:center;gap:7px}
+  .chk-ok{padding:7px 13px;font-size:13px}
+  .chk-go{font-size:12.5px;color:var(--brand);font-weight:700;white-space:nowrap}
+  .chk-alert{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--red-bg);border:1px solid #E9CDD3;border-left:4px solid var(--brand);border-radius:var(--r);padding:13px 16px;margin-bottom:16px;font-size:14px;color:var(--ink)}
+  .chk-alert .btn{background:var(--brand);color:#fff;margin-left:auto;padding:7px 14px;font-size:13.5px}
+  @media(max-width:760px){
+    .chk-row{flex-wrap:wrap}
+    .chk-left{flex:0 0 100%}
+    .chk-act{flex:0 0 100%;justify-content:flex-start}
+    .chk-sel{max-width:none;flex:1 1 auto}
+  }
   .cal-kind{font-size:11.5px;font-weight:800;border-radius:4px;padding:1px 7px;white-space:nowrap}
   .cal-kind.court {color:#fff;background:#9B1B33}
   .cal-kind.info  {color:#B45309;background:#FEF4E8;border:1px solid #E8B879}
@@ -1411,6 +1451,7 @@
     <div class="who" id="who"></div>
     <nav class="nav" id="nav">
       <div class="ncap">송달</div>
+      <a id="nav-chk" onclick="showView('chk')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>아침 점검</span><span class="nbadge" id="nb-chk"></span></a>
       <a id="nav-dash" onclick="showView('dash')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg><span>대시보드</span></a>
       <a id="nav-list" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg><span>송달문서</span><span class="nbadge" id="nb-list"></span></a>
       <a id="nav-pending" onclick="showView('pending')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span>감지 대기함</span><span class="nbadge" id="nb-pending"></span></a>
@@ -1456,6 +1497,7 @@
     </div>
 
     <div id="view-dash">
+      <div id="chk-banner" class="hide"></div>
       <div class="stats">
         <div class="stat hot"><div class="n" id="s-d0">0</div><div class="l">오늘까지 · 오늘 안에 처리</div></div>
         <div class="stat"><div class="n" id="s-d1">0</div><div class="l">내일까지 · 하루 여유</div></div>
@@ -1584,6 +1626,7 @@
     <div id="view-recon" class="hide"><div id="rc-wrap"></div>
       <input type="file" id="rc-file" accept=".xlsx,.xls" class="hide" onchange="rcPick(event)"></div>
     <div id="view-cal" class="hide"><div id="cal-wrap"></div></div>
+    <div id="view-chk" class="hide"><div id="chk-wrap"></div></div>
     <div id="view-bjbox" class="hide"></div>
     <div id="view-hist" class="hide"><div class="soon"><div class="t">제출 이력</div>
       <div class="d">회차별로 낸 보정서와 서류를 모아 봅니다.<br><b>만들 예정입니다.</b></div></div></div>
@@ -3815,7 +3858,7 @@ async function bxDel(id){
   finally{busy(false);}
 }
 
-var BJ_VIEWS=["dash","list","pending","recon","cal","bjbox","work","hist","staff","set","bj"];
+var BJ_VIEWS=["chk","dash","list","pending","recon","cal","bjbox","work","hist","staff","set","bj"];
 /* 왼쪽 메뉴 숫자표 : 화면을 바꾸거나 목록을 다시 그릴 때마다 갱신 */
 function navBadges(){
   function put(id,nv,hot){
@@ -3836,6 +3879,7 @@ function navBadges(){
   try{ put("pending",(typeof PENDING!=="undefined"&&PENDING)?PENDING.length:0,true); }catch(e){}
   try{ put("work",(typeof WD!=="undefined"&&WD&&WD.rows)?WD.rows.length:0); }catch(e){}
   try{ put("bjbox",(typeof bxRows!=="undefined"&&bxRows)?bxRows.filter(function(r){return bxStage(r)!=="완료";}).length:0); }catch(e){}
+  try{ put("chk",(typeof chkAlertCount==="function")?chkAlertCount():0,true); }catch(e){}
 }
 function sideStat(ok,when){
   var l=document.getElementById("side-lamp"),t=document.getElementById("side-last");
@@ -3874,19 +3918,21 @@ function showView(vw){
   /* 화면 안에 제목이 따로 있는 화면은 위쪽 공통 제목줄을 숨긴다 */
   var _top=document.querySelector(".mbody > .top");
   /* ★bj(보정 판독)는 화면 안에 제목줄과 4단계 표시줄이 있어 위쪽 줄이 겹쳤다 (2026-08-04) */
-  if(_top)_top.classList.toggle("hide",["bjbox","recon","cal","hist","bj"].indexOf(vw)>=0);
+  if(_top)_top.classList.toggle("hide",["bjbox","recon","cal","hist","bj","chk"].indexOf(vw)>=0);
   const titles={dash:"대시보드",list:"송달문서",staff:"직원 현황",set:"설정",bj:"보정 판독",work:"대행 작업대",
-    pending:"감지 대기함",recon:"미확인 송달 대조",cal:"기한 달력",bjbox:"보정 문서함",hist:"제출 이력"};
+    pending:"감지 대기함",recon:"미확인 송달 대조",cal:"기한 달력",bjbox:"보정 문서함",hist:"제출 이력",chk:"아침 점검"};
   const subs={dash:me&&me.isMaster?"전체 사건을 한눈에":"내 담당 사건을 한눈에",list:"송달 등록·수정·검색 (케이스허브 사건 연동)",staff:"공용 계정 현황",set:"공휴일·데이터 관리",bj:"등록 → 판독 → 유형 선택 → 서류 확정 → 안내 발송",work:"사무실 대행 발급 · 파일 정리 · 요청메시지 · 보정 문서함",
     pending:"전자소송에서 자동으로 찾아낸 새 송달",recon:"전자소송 미확인 송달 엑셀과 대조",cal:"보정 기한과 안내 마감을 달력으로",bjbox:"등록한 보정 문서 모아 보기",hist:"회차별 제출 기록"};
-  document.getElementById("view-title").textContent=titles[vw];
-  document.getElementById("view-sub").textContent=subs[vw];
+  document.getElementById("view-title").textContent=titles[vw]||"";
+  document.getElementById("view-sub").textContent=subs[vw]||"";
   tbSet();
   navBadges();
   if(vw==="pending"&&typeof loadPending==="function")loadPending();
   if(vw==="bjbox")bxRender();
   if(vw==="recon")rcRender();
   if(vw==="cal")calEnter();
+  if(vw==="chk"&&typeof chkEnter==="function")chkEnter();
+  if(vw==="dash"&&typeof chkPrime==="function")chkPrime();
   if(vw==="staff")renderStaff();
   if(vw==="set")document.getElementById("holi-input").value=holidays.join("\n");
   if(vw==="bj")bjRender();
@@ -11643,6 +11689,248 @@ async function wdSubDel(subId){
   const {data:{session}}=await sbc.auth.getSession();
   if(session)await boot();
 })();
+/* ===== 아침 점검 보드 : 여기부터 (2026-08-30) ===== */
+/* ==========================================================
+   아침 점검 보드 (chk)   2026-08-30
+   혜림 요청 : 5 배분 · 6 점검표 · 8 알림 을 한 화면에서 끝낸다.
+   아침에 앱을 열면 여기부터 보고, 위에서 아래로 훑으면 그날 할 일이 끝나게.
+   ========================================================== */
+var chkCli=[];            /* clients 전체(숨김 제외) */
+var chkFirm="";           /* 사무소 거르기 : "" 전체 / 서초 / 남부 / 블루 */
+var chkOwner="";          /* 담당자 거르기 */
+var chkLoaded=false;
+var chkSaving={};         /* 저장 중인 줄 표시 */
+
+function chkToday0(){ var d=new Date(); d.setHours(0,0,0,0); return d; }
+/* 음수면 지난 것, 0이면 오늘 */
+function chkLeft(dstr){
+  if(!dstr)return null;
+  var s=String(dstr).slice(0,10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return null;
+  var p=s.split("-");
+  var d=new Date(+p[0],+p[1]-1,+p[2]); d.setHours(0,0,0,0);
+  return Math.round((d-chkToday0())/86400000);
+}
+function chkLeftTxt(n){
+  if(n===null)return "기한 없음";
+  if(n<0)return (-n)+"일 지남";
+  if(n===0)return "오늘까지";
+  if(n===1)return "내일까지";
+  return n+"일 남음";
+}
+function chkFirmOf(c){
+  var f=(typeof rcFirmOfOffice==="function")?rcFirmOfOffice(c.office_id):"";
+  if(!f)return "";
+  if(f.indexOf("블루")>=0)return "블루";
+  if(f.indexOf("남부")>=0)return "남부";
+  return "서초";
+}
+function chkFirmCls(t){ return t==="블루"?"bl":(t==="남부"?"nb":"ij"); }
+function chkFmtD(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+
+/* ---------- 자료 읽기 ---------- */
+async function chkLoad(force){
+  if(chkLoaded&&!force)return;
+  if(typeof busy==="function")busy(true);
+  try{
+    var COLS="id,name,office_id,case_no,stage,court_deadline,needs_review,review_note,assignee,sheet_memo,correcting,on_hold,archived";
+    var rows=[],from=0,STEP=1000;
+    for(var i=0;i<60;i++){
+      var r=await sbc.from("clients").select(COLS).range(from,from+STEP-1);
+      if(r.error&&i===0){ /* 새 칸이 아직 없는 DB면 있는 것만 읽는다 */
+        COLS="id,name,office_id,case_no,stage,court_deadline,assignee,archived";
+        r=await sbc.from("clients").select(COLS).range(from,from+STEP-1);
+      }
+      if(r.error)throw r.error;
+      var d=r.data||[];
+      rows=rows.concat(d);
+      if(d.length<STEP)break;
+      from+=STEP;
+    }
+    chkCli=rows.filter(function(c){return !c.archived;});
+    chkLoaded=true;
+  }catch(e){ chkCli=[]; }
+  finally{ if(typeof busy==="function")busy(false); }
+  try{ await bxLoad(false); }catch(e){}
+}
+
+/* ---------- 구획 나누기 ---------- */
+function chkPass(c){
+  if(chkFirm&&chkFirmOf(c)!==chkFirm)return false;
+  if(chkOwner&&String(c.assignee||"")!==chkOwner)return false;
+  return true;
+}
+function chkBuckets(){
+  var todo=[],over=[],soon=[],noown=[];
+  chkCli.forEach(function(c){
+    if(!chkPass(c))return;
+    var n=chkLeft(c.court_deadline);
+    var done=(c.stage==="종결"||c.stage==="기각"||c.stage==="면책허가결정");
+    if(c.needs_review===true&&!done) todo.push(c);          /* ★확인하라고 표시해 둔 것 */
+    else if(n!==null&&n<0&&!c.on_hold&&!done) over.push(c);
+    else if(n!==null&&n>=0&&n<=7&&!c.on_hold&&!done) soon.push(c);
+    if(!String(c.assignee||"").trim()&&n!==null&&n<=14&&!c.on_hold&&!done) noown.push(c);
+  });
+  function bydue(a,b){ return String(a.court_deadline||"").localeCompare(String(b.court_deadline||"")); }
+  todo.sort(bydue); over.sort(bydue); soon.sort(bydue); noown.sort(bydue);
+  var neu=(typeof bxRows!=="undefined"&&bxRows?bxRows:[]).filter(function(r){
+    return (typeof bxStage==="function")&&bxStage(r)==="판독 전";
+  }).sort(function(a,b){ return String(b.created_at||"").localeCompare(String(a.created_at||"")); });
+  return {todo:todo,over:over,soon:soon,noown:noown,neu:neu};
+}
+/* 알림 숫자 : 사이드바 배지와 대시보드 띠가 같이 쓴다 */
+function chkAlertCount(){
+  var f=chkFirm,o=chkOwner; chkFirm="";chkOwner="";
+  var b=chkBuckets(); chkFirm=f;chkOwner=o;
+  return b.todo.length+b.over.length;
+}
+
+/* ---------- 저장 : 담당자 지정 (5번 배분) ---------- */
+async function chkSetOwner(id,name){
+  var c=chkCli.find(function(x){return x.id===id;});
+  if(!c)return;
+  chkSaving[id]=true; chkRender();
+  try{
+    var r=await sbc.from("clients").update({assignee:(name||null),updated_at:new Date().toISOString()}).eq("id",id);
+    if(r.error)throw r.error;
+    c.assignee=name||null;
+    if(typeof toast==="function")toast(c.name+" 담당자를 "+(name||"미지정")+"(으)로 두었습니다");
+  }catch(e){ alert("담당자 저장에 실패했습니다. 잠시 뒤 다시 해주세요."); }
+  finally{ delete chkSaving[id]; chkRender(); }
+}
+/* ---------- 저장 : 확인함 (6번 점검표) ---------- */
+async function chkDone(id){
+  var c=chkCli.find(function(x){return x.id===id;});
+  if(!c)return;
+  chkSaving[id]=true; chkRender();
+  var who=(typeof me!=="undefined"&&me&&me.name)?me.name:"";
+  var note=chkFmtD(new Date())+" "+who+" 확인함";
+  try{
+    var r=await sbc.from("clients").update({needs_review:false,review_note:note,updated_at:new Date().toISOString()}).eq("id",id);
+    if(r.error)throw r.error;
+    c.needs_review=false; c.review_note=note;
+    if(typeof toast==="function")toast(c.name+" 확인 표시했습니다");
+  }catch(e){ alert("확인 표시 저장에 실패했습니다."); }
+  finally{ delete chkSaving[id]; chkRender(); if(typeof navBadges==="function")navBadges(); }
+}
+
+/* ---------- 화면 ---------- */
+function chkOwnerOptions(cur){
+  var L=['<option value="">담당자 미지정</option>'];
+  (typeof staff!=="undefined"&&staff?staff:[]).forEach(function(s){
+    if(s.active===false)return;
+    var nm=s.name||"";
+    if(!nm)return;
+    L.push('<option value="'+esc(nm)+'"'+(nm===String(cur||"")?" selected":"")+'>'+esc(nm)+'</option>');
+  });
+  return L.join("");
+}
+function chkRow(c,mode){
+  var n=chkLeft(c.court_deadline);
+  var cls=(n===null)?"":(n<0?"r":(n<=1?"a":"g"));
+  var ft=chkFirmOf(c);
+  var memo=String(c.sheet_memo||"").replace(/\s*\/\s*날짜메모:[\s\S]*$/,"").trim();
+  var note=memo||"(할 일 메모 없음)";
+  var busyNow=!!chkSaving[c.id];
+  return ''
+   +'<div class="chk-row'+(busyNow?" busy":"")+'">'
+   +  '<div class="chk-left '+cls+'">'+esc(chkLeftTxt(n))+'<span class="d">'+esc(String(c.court_deadline||"").slice(0,10))+'</span></div>'
+   +  '<div class="chk-mid">'
+   +    '<div class="chk-nm">'+esc(c.name||"이름 없음")+'<span class="cal-acct '+chkFirmCls(ft)+'">'+esc(ft||"?")+'</span>'
+   +      '<span class="chk-stage">'+esc(c.stage||"")+'</span></div>'
+   +    '<div class="chk-cs">'+esc(c.case_no||"사건번호 없음")+'</div>'
+   +    '<div class="chk-memo">'+esc(note)+'</div>'
+   +  '</div>'
+   +  '<div class="chk-act">'
+   +    '<select class="chk-sel" '+(busyNow?"disabled":"")+' onchange="chkSetOwner(\''+c.id+'\',this.value)">'+chkOwnerOptions(c.assignee)+'</select>'
+   +    (mode==="over"?'<button class="btn ghost chk-ok" '+(busyNow?"disabled":"")+' onclick="chkDone(\''+c.id+'\')">확인함</button>':'')
+   +  '</div>'
+   +'</div>';
+}
+function chkSec(title, sub, rows, mode, emptyTxt){
+  var h='<div class="chk-sec"><div class="chk-h"><h2>'+esc(title)+'<span class="cnt">'+rows.length+'</span></h2>'
+       +'<div class="chk-sub">'+esc(sub)+'</div></div>';
+  if(!rows.length)h+='<div class="chk-empty">'+esc(emptyTxt)+'</div>';
+  else h+=rows.map(function(r){return chkRow(r,mode);}).join("");
+  return h+'</div>';
+}
+function chkNewSec(rows){
+  var h='<div class="chk-sec"><div class="chk-h"><h2>새로 온 보정 문서<span class="cnt">'+rows.length+'</span></h2>'
+       +'<div class="chk-sub">등록만 되고 아직 판독을 시작하지 않은 문서입니다. 누르면 보정 문서함으로 갑니다</div></div>';
+  if(!rows.length)h+='<div class="chk-empty">판독을 기다리는 새 문서가 없습니다.</div>';
+  else h+=rows.slice(0,40).map(function(r){
+    var n=(typeof bxLeft==="function")?bxLeft(r):null;
+    var cls=(n===null)?"":(n<0?"r":(n<=1?"a":"g"));
+    return '<div class="chk-row link" onclick="showView(\'bjbox\')">'
+      +'<div class="chk-left '+cls+'">'+esc(chkLeftTxt(n))+'<span class="d">'+esc(String(r.court_deadline||"").slice(0,10))+'</span></div>'
+      +'<div class="chk-mid"><div class="chk-nm">'+esc(r.client_name||r.case_no||"이름 없음")+'</div>'
+      +'<div class="chk-cs">'+esc([r.court,r.case_no].filter(Boolean).join(" "))+'</div>'
+      +'<div class="chk-memo">'+esc(String(r.created_at||"").slice(0,10))+' 등록 · 판독 전</div></div>'
+      +'<div class="chk-act"><span class="chk-go">판독하러 가기 →</span></div></div>';
+  }).join("");
+  return h+'</div>';
+}
+function chkRender(){
+  var wrap=document.getElementById("chk-wrap");
+  if(!wrap)return;
+  var b=chkBuckets();
+  var d=new Date();
+  var yo="일월화수목금토".charAt(d.getDay());
+  var firms=["","서초","남부","블루"];
+  var h=''
+   +'<div class="chk-top">'
+   +  '<div class="chk-title"><h1>아침 점검</h1>'
+   +    '<div class="chk-date">'+chkFmtD(d)+' ('+yo+') · 위에서 아래로 훑으면 오늘 할 일이 끝납니다</div></div>'
+   +  '<button class="btn ghost" onclick="chkEnter(true)">↻ 새로고침</button>'
+   +'</div>'
+   +'<div class="chk-bar">'
+   +  '<div class="chk-tabs">'+firms.map(function(f){
+        return '<button class="chk-tab'+(chkFirm===f?" on":"")+'" onclick="chkFirm=\''+f+'\';chkRender()">'+(f||"전체")+'</button>';
+      }).join("")+'</div>'
+   +  '<select class="chk-sel wide" onchange="chkOwner=this.value;chkRender()">'
+   +    '<option value="">담당자 전체</option>'
+   +    (typeof staff!=="undefined"&&staff?staff:[]).filter(function(s){return s.name&&s.active!==false;})
+        .map(function(s){return '<option'+(chkOwner===s.name?" selected":"")+'>'+esc(s.name)+'</option>';}).join("")
+   +  '</select>'
+   +'</div>';
+  h+=chkSec("오늘 확인할 것",
+            "확인하기로 표시해 둔 사건입니다. 처리했으면 [확인함]을 눌러 목록에서 내리세요",
+            b.todo,"over","오늘 확인하기로 표시해 둔 사건이 없습니다");
+  h+=chkSec("기한이 지난 보정",
+            "마감일이 지났는데 아직 정리가 안 된 사건입니다",
+            b.over,"over","기한이 지난 보정이 없습니다. 좋습니다");
+  h+=chkSec("오늘과 이번 주 기한",
+            "오늘부터 7일 안에 마감인 보정입니다",
+            b.soon,"soon","이번 주 안에 마감인 보정이 없습니다");
+  h+=chkNewSec(b.neu);
+  h+=chkSec("담당자가 안 정해진 것",
+            "2주 안에 기한이 있는데 담당자가 비어 있는 사건입니다. 오른쪽에서 골라주세요",
+            b.noown,"noown","담당자가 다 정해져 있습니다");
+  wrap.innerHTML=h;
+}
+async function chkEnter(force){
+  var wrap=document.getElementById("chk-wrap");
+  if(wrap&&!chkLoaded)wrap.innerHTML='<div class="chk-empty">불러오는 중입니다…</div>';
+  await chkLoad(!!force);
+  chkRender();
+  if(typeof navBadges==="function")navBadges();
+}
+/* 대시보드 맨 위 빨간 띠 (8번 알림) */
+function chkBanner(){
+  var host=document.getElementById("chk-banner");
+  if(!host)return;
+  var n=0;
+  try{ n=chkAlertCount(); }catch(e){ n=0; }
+  if(!n){ host.innerHTML=""; host.classList.add("hide"); return; }
+  host.classList.remove("hide");
+  host.innerHTML='<div class="chk-alert"><b>오늘 확인할 사건 '+n+'건</b>이 있습니다. 아침 점검에서 하나씩 확인해 주세요.'
+    +'<button class="btn" onclick="showView(\'chk\')">아침 점검 열기</button></div>';
+}
+/* 대시보드에 들어올 때 조용히 준비 */
+async function chkPrime(){
+  try{ await chkLoad(false); chkBanner(); if(typeof navBadges==="function")navBadges(); }catch(e){}
+}
+
 </script>
 </body>
 </html>

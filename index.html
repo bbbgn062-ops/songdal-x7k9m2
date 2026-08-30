@@ -5036,7 +5036,7 @@ async function bjOpen(docId){
     }
     bjStd=[];bjKindOk=false;bjIdx=0;bjSel=0;bjOne=false;bjPage=1;bjPdfUrl=null;bjOptOpen={};bjTypeOpen={};bjPeek=false;
     bjStep=0;bjAcc=1;bjMsgTab="k1";   /* M-2 화면 상태 초기화 · 0=수동/자동 갈림길 (2026-08-30) */
-    bjPick="pick";bjAutoText="";bjAutoErr="";bjAutoSum=null;
+    bjWay="pick";bjAutoText="";bjAutoErr="";bjAutoSum=null;
     if(bjD.pdf_path){
       try{
         var su=await sbc.storage.from("bojeong").createSignedUrl(bjD.pdf_path,3600);
@@ -12100,7 +12100,7 @@ async function chkPrime(){
    가 · 나 : 보정 판독 갈림길(수동/자동) + 붙여넣기 자동세팅
    2026-08-30 혜림 요청
    ========================================================== */
-var bjPick="pick";        /* pick 갈림길 · paste 붙여넣기 · done 결과 */
+var bjWay="pick";        /* pick 갈림길 · paste 붙여넣기 · done 결과 */
 var bjAutoText="";        /* 붙여넣은 글 */
 var bjAutoErr="";         /* 잘못됐을 때 안내 */
 var bjAutoSum=null;       /* 세팅 결과 요약 */
@@ -12137,19 +12137,19 @@ function bjAutoCopyPrompt(){
 
 /* ---------- 갈림길 · 붙여넣기 · 결과 화면 ---------- */
 function bjPickHtml(){
-  if(bjPick==="paste")return bjPasteHtml();
-  if(bjPick==="done")return bjDoneHtml();
+  if(bjWay==="paste")return bjPasteHtml();
+  if(bjWay==="done")return bjDoneHtml();
   return ''
    +'<div class="sec bj-pick">'
    +  '<div class="bp-t">이 보정을 어떻게 세팅할까요?</div>'
    +  '<div class="bp-s">한 번 고르면 다음 화면부터 그 방식으로 갑니다. 중간에 언제든 바꿀 수 있습니다.</div>'
    +  '<div class="bp-cards">'
-   +    '<div class="bp-card" onclick="bjPick=\'pick\';bjStep=1;bjRender()">'
+   +    '<div class="bp-card" onclick="bjWay=\'pick\';bjStep=1;bjRender()">'
    +      '<div class="bp-ic">✍</div><div class="bp-h">손으로 하기</div>'
    +      '<div class="bp-d">지금까지 하던 방식입니다. 문서 종류 → 기한 → 항목을 차례로 확인하며 직접 고릅니다.</div>'
    +      '<div class="bp-go">이 방식으로 →</div>'
    +    '</div>'
-   +    '<div class="bp-card hot" onclick="bjPick=\'paste\';bjAutoErr=\'\';bjRender()">'
+   +    '<div class="bp-card hot" onclick="bjWay=\'paste\';bjAutoErr=\'\';bjRender()">'
    +      '<div class="bp-ic">⚡</div><div class="bp-h">붙여넣기로 자동</div>'
    +      '<div class="bp-d">Claude에게 보정명령을 읽히고 받은 답(JSON)을 붙여넣으면 항목과 송달확인일이 한 번에 채워집니다.</div>'
    +      '<div class="bp-go">붙여넣기 →</div>'
@@ -12168,7 +12168,7 @@ function bjPasteHtml(){
    +  '<textarea id="bj-auto-ta" class="bp-ta" placeholder=\'③ 여기에 Claude가 준 JSON을 붙여넣으세요.  예)  { "송달확인일": "2026-08-25", "항목": [ { "번호": 1, "내용": "…", "유형코드": "B01" } ] }\'>'+esc(bjAutoText)+'</textarea>'
    +  '<div class="bp-row">'
    +    '<button class="btn primary bj-big" onclick="bjAutoApply()">이대로 채우기</button>'
-   +    '<span class="bj-link" onclick="bjPick=\'pick\';bjRender()">손으로 하기로 돌아가기</span>'
+   +    '<span class="bj-link" onclick="bjWay=\'pick\';bjRender()">손으로 하기로 돌아가기</span>'
    +  '</div>'
    +'</div>';
 }
@@ -12188,9 +12188,9 @@ function bjDoneHtml(){
              +(x.c?'<span class="cd">'+esc(x.c)+'</span>':'<span class="cd no">유형 미지정</span>')+'</div>';
       }).join("")+'</div>':'')
    +  '<div class="bp-row">'
-   +    '<button class="btn primary bj-big" onclick="bjPick=\'pick\';bjKindOk=true;bjStep=3;bjRender()">이대로 항목 확인하러 가기</button>'
-   +    '<span class="bj-link" onclick="bjPick=\'paste\';bjRender()">다시 붙여넣기</span>'
-   +    '<span class="bj-link" onclick="bjPick=\'pick\';bjStep=1;bjRender()">처음부터 손으로 하기</span>'
+   +    '<button class="btn primary bj-big" onclick="bjWay=\'pick\';bjKindOk=true;bjStep=3;bjRender()">이대로 항목 확인하러 가기</button>'
+   +    '<span class="bj-link" onclick="bjWay=\'paste\';bjRender()">다시 붙여넣기</span>'
+   +    '<span class="bj-link" onclick="bjWay=\'pick\';bjStep=1;bjRender()">처음부터 손으로 하기</span>'
    +  '</div>'
    +'</div>';
 }
@@ -12245,7 +12245,7 @@ function bjAutoApply(){
   bjSel=0; bjIdx=0;
   bjAutoErr="";
   bjAutoSum={n:items.length,typed:typed,served:served,list:list};
-  bjPick="done";
+  bjWay="done";
   bjRender();
   if(typeof toast==="function")toast("항목 "+items.length+"개를 채웠습니다");
 }

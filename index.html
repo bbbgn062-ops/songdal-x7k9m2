@@ -3894,12 +3894,33 @@ async function bxRender(){
     : '<div class="soon"><div class="t">보이는 문서가 없습니다</div><div class="d">위 탭이나 조건을 바꿔 보세요.<br>새 보정권고 PDF는 위쪽 [새 보정권고 PDF 등록]으로 넣습니다.</div></div>';
   w.innerHTML=h;
 }
+/* 2026-08-31 혜림 : "당사자 안내 완료인 건 기한 미정이 아니라 완료로 보였으면 해"
+   기한이 없는 문서(금지·중지명령 등)는 「기한 미정」 대신 지금 무슨 상태인지를 보여 준다 */
+function bxLeftBlock(r){
+  var st=String(r.status||"");
+  var hd=(typeof bjHandlingOfRow==="function")?bjHandlingOfRow(r):"제출";
+  if(st==="완료"){
+    var when=String(r.notified_at||r.paid_at||r.updated_at||"").slice(0,10);
+    return '<div class="bx-dday g"><b>완료</b><span>'+esc(when||"처리 끝")+'</span></div>';
+  }
+  if(hd==="전달"){
+    return r.notified_at
+      ? '<div class="bx-dday g"><b>안내함</b><span>'+esc(String(r.notified_at).slice(0,10))+'</span></div>'
+      : '<div class="bx-dday a"><b>안내 필요</b><span>기한 없음</span></div>';
+  }
+  if(hd==="납부"&&!r.paid_at){
+    var pn=bxLeft(r);
+    return '<div class="bx-dday '+bxLeftCls(pn)+'"><b>납부 확인</b><span>'+esc(r.court_deadline||"기한 미정")+'</span></div>';
+  }
+  var n2=bxLeft(r);
+  return '<div class="bx-dday '+bxLeftCls(n2)+'"><b>'+bxLeftTxt(n2)+'</b><span>'+esc(r.court_deadline||"기한 미정")+'</span></div>';
+}
 function bxCard(r){
   var n=bxLeft(r),st=bxStage(r),open=!!bxOpen[r.id];
   var subs=bxSubs.filter(function(s){return s.order_doc_id===r.id;});
   return '<div class="bx-card'+(open?" open":"")+'" id="bx-'+r.id+'">'
     +'<div class="bx-row" onclick="bxToggle(\''+r.id+'\')">'
-      +'<div class="bx-dday '+bxLeftCls(n)+'"><b>'+bxLeftTxt(n)+'</b><span>'+esc(r.court_deadline||"기한 미정")+'</span></div>'
+      +bxLeftBlock(r)
       +'<div class="bx-mid">'
         +'<div class="l1"><b>'+esc(bxName(r))+'</b> <span class="bx-st s-'+(st==="완료"?"done":(st==="진행중"?"prog":(st==="판독 중"?"read":"wait")))+'">'+st+'</span></div>'
         +'<div class="l2">'+esc(r.court||"법원 미상")+' · '+esc(r.case_no||"")+'  <b>'+esc(r.doc_type||"보정 문서")+' · '+(r.round_no||1)+'회차</b>'
@@ -5364,12 +5385,23 @@ async function bjDlPdf(){
   if(!bjD||!bjD.pdf_path){alert("원본 파일이 없습니다.");return;}
   busy(true);
   try{
-    var r=await sbc.storage.from("bojeong").createSignedUrl(bjD.pdf_path,600);
+    /* 2026-08-31 : a.download 는 다른 서버(Supabase) 주소에는 안 먹어서 창만 열렸다.
+       파일을 실제로 받아서(blob) 내 컴퓨터에 저장시킨다. 이름도 알아보기 쉽게 바꾼다. */
+    var nm=[(bjD.case_no||"사건번호"),
+            (typeof bjDecideKind==="function"?(bjDecideKind(bjD.raw_text,bjD.doc_type)||bjD.doc_type||"결정문"):(bjD.doc_type||"결정문")),
+            ((typeof bjHandName==="function"?bjHandName():"")||"")]
+           .filter(Boolean).join("_").replace(/[\\/:*?"<>|]/g,"")+".pdf";
+    var r=await sbc.storage.from("bojeong").createSignedUrl(bjD.pdf_path,600,{download:nm});
     if(r.error)throw r.error;
+    var url=r.data.signedUrl;
+    var blob=null;
+    try{ var res=await fetch(url); if(res.ok)blob=await res.blob(); }catch(e){}
     var a=document.createElement("a");
-    a.href=r.data.signedUrl; a.download=String(bjD.pdf_path).split("/").pop();
+    a.href=blob?URL.createObjectURL(blob):url;
+    a.download=nm;
     document.body.appendChild(a); a.click(); a.remove();
-    if(typeof toast==="function")toast("결정문을 내려받았습니다");
+    if(blob)setTimeout(function(){try{URL.revokeObjectURL(a.href);}catch(e){}},4000);
+    if(typeof toast==="function")toast(nm+" 내려받았습니다");
   }catch(e){alert("내려받기 실패: "+(e.message||e));}
   finally{busy(false);}
 }

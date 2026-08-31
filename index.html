@@ -1676,7 +1676,8 @@
           <div><label>송달 도착일 <span style="font-weight:400;color:#8a94a6">(나중에 입력 가능)</span></label><input id="f-date" type="date"></div>
           <div><label>문서 처리기한 (확인일부터)</label><select id="f-term" onchange="onTermChange()">
             <option value="7">7일</option><option value="14" selected>14일</option><option value="21">21일</option>
-            <option value="30">30일</option><option value="custom">기타(직접 입력)</option></select></div>
+            <option value="30">30일</option><option value="custom">기타(직접 입력)</option>
+            <option value="none">기한 없음 (금지·중지명령 등 결정문)</option></select></div>
           <div id="f-custom-wrap" class="hide"><label>직접 입력 (일수)</label><input id="f-custom" type="number" min="1" placeholder="예: 10"></div>
           <div><label>제출 상태</label><select id="f-submit" onchange="onSubmitChange()">
             <option value="미제출">미제출</option><option value="일부제출">일부제출(추후제출 예정)</option><option value="제출완료">제출완료</option></select></div>
@@ -4062,7 +4063,7 @@ function goRegister(){showView("list");resetForm();showForm();document.getElemen
 function goDetail(id){showView("list");detailId=id;render();window.scrollTo({top:0,behavior:"smooth"});}
 function onTermChange(){document.getElementById("f-custom-wrap").classList.toggle("hide",v("f-term")!=="custom");}
 function onSubmitChange(){const part=v("f-submit")==="일부제출";document.getElementById("f-followup-wrap").classList.toggle("hide",!part);document.getElementById("f-followupnote-wrap").classList.toggle("hide",!part);}
-function getTermDays(){const t=v("f-term");if(t==="custom")return Math.max(1,parseInt(v("f-custom"))||7);return parseInt(t);}
+function getTermDays(){const t=v("f-term");if(t==="none")return null;if(t==="custom")return Math.max(1,parseInt(v("f-custom"))||7);return parseInt(t);}
 function fillOwnerSelect(){
   const sel=document.getElementById("f-owner");
   if(!me.isMaster){sel.innerHTML=`<option value="${esc(me.id)}">${esc(me.name)}</option>`;sel.value=me.id;sel.disabled=true;}
@@ -4140,7 +4141,8 @@ function editCase(id){
   set("f-caseno",c.caseno);set("f-name",c.name);set("f-court",c.court||"");set("f-doctype",c.doctype||"보정명령");set("f-date",c.date);set("f-memo",c.memo||"");
   set("f-clientq",c.client_id?(c.name+" (연동됨)"):"");
   if(me.isMaster)document.getElementById("f-owner").value=c.owner_id||"";
-  const preset=["7","14","21","30"].includes(String(c.termDays))?String(c.termDays):"custom";
+  const preset=(c.termDays===null||c.termDays===undefined||c.termDays==="")?"none"
+              :(["7","14","21","30"].includes(String(c.termDays))?String(c.termDays):"custom");
   set("f-term",preset);onTermChange();if(preset==="custom")set("f-custom",c.termDays);
   set("f-submit",c.submitStatus||"미제출");onSubmitChange();
   set("f-followup",c.followupDate||"");set("f-followupnote",c.followupNote||"");

@@ -4359,8 +4359,8 @@ function renderDetail(){
   w.innerHTML=`<div class="detail">
     <div class="h2row"><h2 style="margin:0">${esc(c.name)} · ${esc(c.caseno)} <span class="pill">서류 ${docProg(c)}%</span></h2>
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">닫기</button></div>
-    <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")}${(c.doctype||"").includes("보정")?` <button class="btn primary mini" onclick="bjFromDelivery('${c.id}')">보정 판독</button>`:""} <button class="btn ghost mini" onclick="wdOpenFromCase('${c.id}')">대행 작업대</button></span></div>
-    ${(c.doctype||"").includes("보정")?`<div style="margin:10px 0 2px"><div style="font-weight:600;font-size:13px;margin:0 0 6px">이 사건의 보정 문서</div><div id="bjprev-${c.id}">불러오는 중…</div></div>`:""}
+    <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")} <button class="btn primary mini" onclick="bjFromDelivery('${c.id}')">문서 등록·판독</button> <button class="btn ghost mini" onclick="wdOpenFromCase('${c.id}')">대행 작업대</button></span></div>
+    <div style="margin:10px 0 2px"><div style="font-weight:600;font-size:13px;margin:0 0 6px">이 사건의 문서</div><div id="bjprev-${c.id}">불러오는 중…</div></div>
     <div class="kv"><span class="k">담당자</span><span>${esc(ownerName(c.owner_id)||"미지정")}</span></div>
     ${c.client_id?'<div id="clientinfo-'+c.id+'" style="margin:8px 0;padding:10px 12px;background:#faf8f6;border-radius:10px;font-size:13px">의뢰인 정보 불러오는 중…</div>':''}
     <div class="kv"><span class="k">송달 도착일</span><span>${esc(c.date)}</span></div>
@@ -4379,7 +4379,7 @@ function renderDetail(){
     ${c.client_id?'<div style="font-weight:600;font-size:13.5px;margin:16px 0 6px">보정서 파일 (사무소별 보안 저장)</div><div id="bojeong-'+c.id+'" style="font-size:13px">불러오는 중…</div><div style="margin-top:8px"><label class="btn ghost mini" style="margin:0;cursor:pointer">＋ 보정서 올리기<input type="file" accept="application/pdf,image/*" onchange="uploadBojeong(\''+c.id+'\',event)" style="display:none"></label></div>':''}
   </div>`;
   if(c.client_id){loadClientInfo(c);loadBojeong(c);}
-  if((c.doctype||"").includes("보정"))bjLoadPreview(c);
+  bjLoadPreview(c);
 }
 
 /* ---------- 의뢰인 정보(전화·주민번호) + 보정서 파일 ---------- */
@@ -5001,13 +5001,26 @@ async function bjRegisterAll(){
            금지명령처럼 같은 사건에 두 번째 문서가 오면 여기서 막혔다.
            이럴 땐 새로 만들지 말고 이미 있는 송달 기록에 문서만 붙인다. */
         var deliveryId=null;
-        var ins=await sd().from("deliveries").insert(row).select("id");
+        /* 2026-08-31 혜림 : "한 의뢰인이면 같은 의뢰인 상세화면에 차곡차곡 쌓여야지"
+           같은 사건번호·같은 당사자 줄이 이미 있으면 새 줄을 만들지 않고 거기에 문서만 붙인다.
+           문서마다 줄을 만들면 같은 사람이 목록에 여러 번 나와서 보기 어렵다. */
+        try{
+          var pre=await sd().from("deliveries").select("id,party_name").eq("case_no",b.case_no).limit(20);
+          var prows=(pre.data||[]);
+          if(prows.length){
+            var nm0=String(b.client_name||"").replace(/\s/g,"");
+            var hit=prows.filter(function(x){return String(x.party_name||"").replace(/\s/g,"")===nm0;});
+            var pick=hit.length?hit[0]:prows[0];
+            if(pick){ deliveryId=pick.id; bjReused.push(b.fname); }
+          }
+        }catch(e){}
+        var ins=deliveryId?{data:[{id:deliveryId}]}:await sd().from("deliveries").insert(row).select("id");
         /* 처리기한 칸을 비우지 못하는 DB면 원래대로 넣고 다시 시도한다 */
-        if(ins.error&&row.term_days===null&&/not.?null/i.test(String(ins.error.message||""))){
+        if(!deliveryId&&ins.error&&row.term_days===null&&/not.?null/i.test(String(ins.error.message||""))){
           row.term_days=term;
           ins=await sd().from("deliveries").insert(row).select("id");
         }
-        if(ins.error){
+        if(!deliveryId&&ins.error){
           var dup=(String(ins.error.code||"")==="23505")||/duplicate key|unique constraint/i.test(String(ins.error.message||""));
           if(!dup)throw ins.error;
           var ex=await sd().from("deliveries").select("id,party_name").eq("case_no",b.case_no).limit(20);
@@ -5017,7 +5030,7 @@ async function bjRegisterAll(){
           var same=rows.filter(function(x){return String(x.party_name||"").replace(/\s/g,"")===String(b.client_name||"").replace(/\s/g,"");});
           deliveryId=(same.length?same[0].id:rows[0].id);
           bjReused.push(b.fname);
-        }else{
+        }else if(!deliveryId){
           if(!ins.data||!ins.data.length)throw new Error("송달 기록이 저장되지 않았어요(0건). 로그인 계정 권한(role)을 확인하세요.");
           deliveryId=ins.data[0].id;
         }
@@ -5038,7 +5051,7 @@ async function bjRegisterAll(){
         b._done=true;
       }catch(e){alert(b.fname+" 등록 실패: "+(e.message||e));}
     }
-    if(bjReused.length)alert("이미 등록돼 있는 사건이라 새 송달 기록을 만들지 않고, 원래 있던 사건에 문서만 붙였습니다.\n\n"+bjReused.join("\n")+"\n\n사건 화면에서 문서 목록으로 같이 보입니다.");
+    if(bjReused.length)alert("이미 등록돼 있는 의뢰인이라 줄을 새로 만들지 않고, 원래 있던 사건에 문서만 쌓았습니다.\n\n"+bjReused.join("\n")+"\n\n[상세]를 열면 「이 사건의 문서」에 차곡차곡 보입니다.");
     bjBatch=bjBatch.filter(function(b){return !b._done;});
     bjRenderBatch();
     await refreshAll();
@@ -10864,7 +10877,7 @@ async function bjLoadPreview(c){
   try{
     var r=await sbc.from("bj_documents").select("id,doc_type,order_date,served_at,status,created_at,pdf_path,court_deadline").eq("delivery_id",c.id).order("created_at",{ascending:false}).limit(50);
     var rows=r.data||[];
-    if(!rows.length){el.innerHTML='<div class="bj-note">아직 등록된 보정 문서가 없어요. 위 [보정 판독]으로 PDF를 올리면 여기에 카드로 쌓여요.</div>';return;}
+    if(!rows.length){el.innerHTML='<div class="bj-note">아직 등록된 문서가 없습니다. 위 [문서 등록·판독]으로 PDF를 올리면 여기에 차곡차곡 쌓입니다.</div>';return;}
     var active=rows.filter(function(a){return a.status!=="완료";});
     var summ;
     if(active.length){

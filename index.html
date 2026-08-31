@@ -4153,7 +4153,28 @@ function resetForm(){
   document.getElementById("save-btn").textContent="등록";
 }
 async function delCase(id){
-  if(!confirm("이 사건을 삭제할까요? (연결된 보정 판독 기록과 PDF도 함께 지워져요)"))return;
+  /* 2026-08-31 : 삭제는 붙어 있는 보정 문서와 PDF까지 같이 지운다.
+     무엇이 딸려 지워지는지 파일 이름까지 보여 주고 물어본다. 중복 줄 정리하다 원본을 날리면 되돌릴 수 없다. */
+  var info="", hasDocs=false;
+  busy(true);
+  try{
+    var dd=await sbc.from("bj_documents").select("id,doc_type,pdf_path,status,served_at").eq("delivery_id",id);
+    var rws=(dd.data||[]);
+    hasDocs=rws.length>0;
+    if(hasDocs){
+      info="\n\n★ 이 줄에 붙어 있는 보정 문서 "+rws.length+"개와 PDF 원본이 같이 지워집니다.\n\n"
+        +rws.map(function(x){
+            return " · "+(x.doc_type||"종류 없음")
+              +(x.pdf_path?"  ["+String(x.pdf_path).split("/").pop()+"]":"  [PDF 없음]")
+              +"  "+(x.status||"");
+          }).join("\n")
+        +"\n\n되돌릴 수 없습니다. 정말 지울까요?";
+    }else{
+      info="\n\n이 줄에는 붙어 있는 보정 문서가 없습니다. 빈 줄이라 지워도 안전합니다.";
+    }
+  }catch(e){ info="\n\n(붙어 있는 문서를 확인하지 못했습니다. 연결된 보정 판독 기록과 PDF도 함께 지워집니다)"; }
+  finally{ busy(false); }
+  if(!confirm("이 사건을 삭제할까요?"+info))return;
   busy(true);
   try{
     /* 연결된 보정 판독 기록 + 보관 PDF 정리 (고아 기록 방지) */

@@ -1536,6 +1536,21 @@
 .bh-kchip.on{background:#9B1B33;border-color:#9B1B33;color:#fff}
 .bh-kinds .n{flex-basis:100%;font-size:12px;color:#8A8078;margin-top:2px}
 
+/* 달력 기한 종류 드롭다운 (2026-08-31) */
+.cal-kwrap{position:relative;display:inline-block}
+.cal-kbtn{padding:6px 12px;border:1px solid #D8D3CC;border-radius:8px;background:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#3A342E}
+.cal-kbtn:hover,.cal-kbtn.on{border-color:#9B1B33;color:#9B1B33}
+.cal-kmenu{position:absolute;z-index:60;top:calc(100% + 6px);right:0;min-width:290px;background:#fff;border:1px solid #D8D3CC;border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.14);padding:8px}
+.cal-kact{display:flex;gap:6px;padding:2px 4px 8px;border-bottom:1px solid #EFEAE4;margin-bottom:6px}
+.cal-kact button{flex:1;padding:6px 8px;border:1px solid #D8D3CC;border-radius:7px;background:#FBFAF8;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:#3A342E}
+.cal-kact button:hover{border-color:#9B1B33;color:#9B1B33}
+.cal-krow{display:flex;align-items:center;gap:8px;padding:7px 6px;border-radius:8px;cursor:pointer;font-size:13px}
+.cal-krow:hover{background:#FBF7F8}
+.cal-krow input{width:16px;height:16px;accent-color:#9B1B33}
+.cal-krow b{font-weight:700;color:#3A342E}
+.cal-krow i{font-style:normal;font-size:11.5px;color:#8A8078;margin-left:auto;text-align:right}
+.cal-kclose{text-align:center;padding:7px;margin-top:4px;border-top:1px solid #EFEAE4;font-size:12px;color:#8A8078;cursor:pointer}
+
 </style>
 </head>
 <body>
@@ -3289,17 +3304,22 @@ var calFirm="";            /* 사무소 거르기 ("법률사무소 블루" 같�
 var calCli=null;           /* client_id → {name, office_id} */
 var calCD=[];              /* public.case_dates 줄들 */
 var calCDReady=false;      /* case_dates 표가 있는가 */
-var calKind={court:true,client:true,read:true,meet:true,grant:true,proc:true,follow:true};
+/* 2026-08-31 혜림 : 채권자집회기일과 인가결정공고는 달력에서 뺀다.
+   보정 법원기한 · 추후제출기한 · 처리기한 · 개시결정일만 본다.
+   (집회·공고를 만드는 코드는 그대로 두었다. calKind 에 없으니 걸러져 안 보인다) */
+var calKind={court:true,client:true,read:true,proc:true,follow:true,open:true};
+var calKindOpen=false;   /* 종류 고르기 드롭다운 열림 */
 
 var CAL_KIND=[
-  {k:"court", t:"법원", label:"법원 기한",     cls:"court", sw:"#9B1B33", why:"보정서 제출 마지막 날"},
-  {k:"client",t:"안내", label:"안내 마감",     cls:"info",  sw:"#B45309", why:"의뢰인 서류 받을 날"},
-  {k:"read",  t:"간주", label:"송달간주일",    cls:"deem",  sw:"#8B857D", why:"열지 않아도 송달된 것으로 보는 날"},
-  {k:"meet",  t:"집회", label:"채권자집회",    cls:"meet",  sw:"#2B4570", why:"의뢰인이 법원에 나가는 날"},
-  {k:"grant", t:"공고", label:"인가결정 공고",  cls:"grant", sw:"#20604A", why:"인가결정이 공고되는 날"},
+  {k:"court", t:"법원", label:"보정 법원기한",  cls:"court", sw:"#9B1B33", why:"보정서 제출 마지막 날"},
+  {k:"follow",t:"추후", label:"추후제출 기한",  cls:"follow",sw:"#0E5A5E", why:"나머지 서류 내기로 한 날"},
   {k:"proc",  t:"처리", label:"처리기한",      cls:"proc",  sw:"#5B4B8A", why:"우리 사무실 처리 마감"},
-  {k:"follow",t:"추후", label:"추후제출",      cls:"follow",sw:"#0E5A5E", why:"나머지 서류 내기로 한 날"}
+  {k:"open",  t:"개시", label:"개시결정일",    cls:"grant", sw:"#20604A", why:"개인회생 절차가 시작된 날"},
+  {k:"client",t:"안내", label:"안내 마감",     cls:"info",  sw:"#B45309", why:"의뢰인 서류 받을 날"},
+  {k:"read",  t:"간주", label:"송달간주일",    cls:"deem",  sw:"#8B857D", why:"열지 않아도 송달된 것으로 보는 날"}
 ];
+function calKindAll(on){ CAL_KIND.forEach(function(k){ calKind[k.k]=!!on; }); calRender(); }
+function calKindBox(){ calKindOpen=!calKindOpen; calRender(); }
 /* 공휴일 이름 (달력 칸에 표시). 없으면 그냥 '공휴일' */
 var CAL_HOLNM={
   "01-01":"신정","03-01":"삼일절","05-01":"근로자의날","05-05":"어린이날","06-06":"현충일",
@@ -3515,6 +3535,21 @@ function calItems(){
       Object.assign({},base,{moved:!!r.prev_date,notified:r.notified!==false}));
   });
 
+  /* 4) 개시결정일 : 개시결정 결정문에 적힌 날짜 (2026-08-31) */
+  (bxRows||[]).forEach(function(r){
+    var kd=(typeof bjDecideKind==="function")?bjDecideKind(r.raw_text,r.doc_type):"";
+    if(kd!=="개시결정")return;
+    var od=String(r.order_date||r.served_at||"").slice(0,10);
+    if(!od)return;
+    var c2=(cases||[]).find(function(x){return x.id===r.delivery_id;});
+    var cl2=(c2&&c2.client_id&&calCli&&calCli[c2.client_id])||calCliOf(r.court||(c2&&c2.court),r.case_no||(c2&&c2.caseno));
+    push(od,"open",{
+      name:(c2&&c2.name)||(cl2&&cl2.name)||r.case_no||"이름 없음",
+      caseno:r.case_no||(c2&&c2.caseno)||"", court:r.court||(c2&&c2.court)||"",
+      doc:"개시결정", ownerId:r.assignee||(c2&&c2.owner_id)||"",
+      officeId:(cl2&&cl2.office_id)||null, goType:"bj", goId:r.id });
+  });
+
   return out.filter(function(x){
     if(!calKind[x.kind])return false;
     if(calOwner&&x.ownerId!==calOwner)return false;
@@ -3599,12 +3634,27 @@ function calRender(){
       +["법무법인 이준 서초 분사무소","법률사무소 블루","법무법인 남부"].map(function(f){
           return '<option value="'+esc(f)+'"'+(calFirm===f?" selected":"")+'>'+esc(f.replace("법무법인 ","").replace("법률사무소 ",""))+'</option>';}).join("")
       +'</select>'
-      +CAL_KIND.map(function(k){
-          var off=(k.k==="meet"||k.k==="grant")&&!calCDReady;
-          return '<label class="cal-tck"'+(off?' title="집회·공고 표가 아직 없습니다"':'')+'>'
-            +'<input type="checkbox" '+(calKind[k.k]?"checked":"")+(off?" disabled":"")
-            +' onchange="calToggleKind(\''+k.k+'\',this.checked)">'+k.t+'</label>';
-        }).join("")
+      +(function(){
+          var on=CAL_KIND.filter(function(k){return calKind[k.k];}).length;
+          var h2='<span class="cal-kwrap">'
+            +'<button class="cal-kbtn'+(calKindOpen?" on":"")+'" type="button" onclick="calKindBox()">'
+              +'보이는 기한 '+on+' / '+CAL_KIND.length+' ▾</button>';
+          if(calKindOpen){
+            h2+='<div class="cal-kmenu">'
+              +'<div class="cal-kact"><button type="button" onclick="calKindAll(true)">전부 보기</button>'
+              +'<button type="button" onclick="calKindAll(false)">전부 끄기</button></div>'
+              +CAL_KIND.map(function(k){
+                  return '<label class="cal-krow">'
+                    +'<input type="checkbox" '+(calKind[k.k]?"checked":"")
+                    +' onchange="calToggleKind(\''+k.k+'\',this.checked)">'
+                    +'<span class="cal-sw" style="background:'+k.sw+'"></span>'
+                    +'<b>'+esc(k.label)+'</b><i>'+esc(k.why)+'</i></label>';
+                }).join("")
+              +'<div class="cal-kclose" onclick="calKindBox()">닫기</div>'
+            +'</div>';
+          }
+          return h2+'</span>';
+        })()
       +'<button class="cal-ib" type="button" onclick="calPrint()">인쇄</button>'
     +'</span>'
     +'</div>';
@@ -3618,7 +3668,7 @@ function calRender(){
     +(nNotice?'<button class="cal-sumi notice" type="button" onclick="calShow(\'__notice__\')">의뢰인에게 아직 안 알린 기일변경 <b>'+nNotice+'건</b></button>':'')
     +'</div>';
 
-  if(!calCDReady)h+='<div class="bj-note cal-noprint" style="margin:-4px 0 8px">집회·공고는 저장할 표가 아직 없어 꺼져 있습니다. <b>SQL_송달앱_집회공고기일_표만들기_20260818.sql</b> 을 실행하면 켜집니다.</div>';
+  /* 2026-08-31 : 집회·공고를 달력에서 뺐으므로 안내 문구도 뺀다 */
 
   /* ── 달력 + 오른쪽 패널 ── */
   h+='<div class="cal-two'+(calSel?'':' one')+'">';

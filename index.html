@@ -1563,6 +1563,30 @@
 .chk-x{margin-left:auto;font-style:normal;color:#B9B1A8;cursor:pointer;font-size:16px;padding:0 6px;line-height:1}
 .chk-x:hover{color:#9B1B33}
 
+/* 자동 세팅 결과 화면 (2026-08-31) */
+.ba-who{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 4px;font-size:12.5px;color:#6B6259}
+.ba-who b{color:#9B1B33;font-size:14px;margin-left:3px}
+.ba-grp{margin-top:14px;border:1px solid #E4DED6;border-radius:12px;padding:10px 12px;background:#FBFAF8}
+.ba-gh{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.ba-gh b{font-size:13.5px;color:#9B1B33}
+.ba-gh span{font-size:12px;color:#8A8078}
+.ba-gh i{margin-left:auto;font-style:normal;font-size:11.5px;color:#8A8078;font-weight:700}
+.ba-it{padding:8px 0;border-top:1px solid #EFEAE4}
+.ba-t{font-size:13px;line-height:1.6;color:#3A342E}
+.ba-w{font-size:11.5px;color:#8A8078}
+.ba-m{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:5px}
+.ba-tag{font-size:11px;font-weight:800;border-radius:999px;padding:2px 9px;background:#F1EEEA;color:#6B6259}
+.ba-tag.own-c{background:#FDE7EA;color:#9B1B33}
+.ba-tag.own-o{background:#E9F0F7;color:#2B4570}
+.ba-tag.own-b{background:#EAF3EE;color:#20604A}
+.ba-tag.code{background:#F4EFF6;color:#5B4B8A}
+.ba-tag.no{background:#F1EEEA;color:#A9A199}
+.ba-chk{font-size:11.5px;color:#8A6100;background:#FFF4E0;border-radius:7px;padding:2px 8px}
+.ba-nd{margin-top:4px;font-size:11.5px;color:#6B6259}
+.ba-again{display:flex;gap:6px;flex-wrap:wrap}
+.ba-again span{font-size:12.5px;font-weight:700;background:#fff;border:1px solid #D8D3CC;border-radius:999px;padding:5px 12px;color:#3A342E}
+.ba-ta{width:100%;min-height:150px;padding:10px;border:1px solid #D8D3CC;border-radius:9px;font-size:12.5px;line-height:1.7;background:#fff;resize:vertical}
+
 </style>
 </head>
 <body>
@@ -5652,7 +5676,8 @@ async function bjConfirmRead(){
   try{
     var del=await sbc.from("bj_items").delete().eq("doc_id",bjD.id);
     if(del.error)throw del.error;
-    var rows=items.map(function(x){return {doc_id:bjD.id,seq:x.seq,item_text:x.item_text,type_codes:x.type_codes||null,unresolved:!!x.unresolved,memo:x.memo||null};});
+    /* 2026-08-31 : 자동 세팅으로 잡은 착수시점·담당·필요자료(options)도 같이 저장한다 */
+    var rows=items.map(function(x){return {doc_id:bjD.id,seq:x.seq,item_text:x.item_text,type_codes:x.type_codes||null,unresolved:!!x.unresolved,memo:x.memo||null,options:(x.options&&Object.keys(x.options).length)?x.options:null};});
     var ins=await sbc.from("bj_items").insert(rows).select("id,seq");
     if(ins.error)throw ins.error;
     if(!ins.data||ins.data.length!==rows.length)throw new Error("항목 저장 건수가 맞지 않아요 ("+(ins.data?ins.data.length:0)+"/"+rows.length+"). 권한을 확인하세요.");
@@ -12537,26 +12562,78 @@ var bjAutoErr="";         /* 잘못됐을 때 안내 */
 var bjAutoSum=null;       /* 세팅 결과 요약 */
 
 /* Claude 에게 그대로 주면 되는 부탁글 */
+/* 2026-08-31 혜림 : 예전 부탁글은 항목만 받아와서 실제 일 세팅이 하나도 안 됐다.
+   착수시점·담당·필요자료·요청리스트·재제출·안내문까지 한 번에 받아온다. */
 function bjAutoPromptText(){
+  var who=(typeof bjHandName==="function"?bjHandName():"")||"○○○";
+  var cs=(bjD&&bjD.case_no)||"";
   return [
-"아래 개인회생 보정명령 내용을 읽고, 정확히 이 모양의 JSON 하나만 출력해 주세요. 설명은 붙이지 마세요.",
+"당신은 개인회생 사건을 다루는 법무법인 사무직원입니다.",
+"아래 개인회생 보정명령을 읽고, 정확히 이 모양의 JSON 하나만 출력해 주세요. 설명·인사말은 붙이지 마세요.",
 "",
 "{",
 '  "송달확인일": "2026-08-25",',
+'  "법원제출기한": "2026-09-07",',
 '  "항목": [',
-'    { "번호": 1, "내용": "채권자목록에 누락된 채권을 추가하고 부채증명서를 제출하십시오", "유형코드": "B01", "메모": "" }',
-"  ]",
+"    {",
+'      "번호": 1,',
+'      "내용": "채권자목록에 누락된 채권을 추가하고 부채증명서를 제출하십시오",',
+'      "유형코드": "B01",',
+'      "착수시점": "자료 받고",',
+'      "확인할것": "",',
+'      "담당": "당사자+사무실",',
+'      "필요자료": ["부채증명서 - 국민은행"],',
+'      "메모": ""',
+"    }",
+"  ],",
+'  "요청리스트": [',
+'    { "무엇": "거래내역서", "어디": "국민은행 123-45-6789", "이유": "최근 1년 활동성 계좌" }',
+"  ],",
+'  "재제출": ["채권자목록", "재산목록", "수입지출목록", "변제계획안"],',
+'  "당사자안내문": "'+who+' 님 안녕하세요. 법무법인 이준 서초 분사무소입니다. …"',
 "}",
 "",
-"규칙",
-"1. 항목은 보정명령에 적힌 요구사항을 하나씩 끊어서 넣습니다. 한 항목에 두 가지를 담지 마세요.",
+"■ 항목 규칙",
+"1. 보정명령에 적힌 요구사항을 하나씩 끊어서 넣습니다. 한 항목에 두 가지를 담지 마세요.",
 "2. 내용은 원문 문장을 그대로 옮깁니다. 요약하지 마세요.",
 "3. 유형코드를 모르면 빈 문자열로 두세요.",
-"4. 송달확인일을 모르면 그 줄을 빼세요.",
+"",
+"■ 착수시점 (셋 중 하나를 그대로 적습니다)",
+'  "지금 바로"   = 받을 자료 없이 오늘 우리가 바로 고칠 수 있는 것',
+'  "자료 받고"   = 숫자나 서류가 들어와야 시작할 수 있는 것',
+'  "조건부 즉시" = 시작은 오늘 가능하지만 발급·작성 전에 한 번 확인해야 하는 것',
+'                  → 무엇을 확인해야 하는지 "확인할것"에 한 줄로 적습니다.',
+"",
+"■ 담당 (셋 중 하나를 그대로 적습니다)",
+'  "당사자"        = 본인이 직접 해야 하는 일 (은행 방문, 본인 인증 발급 등)',
+'  "사무실"        = 우리 사무실이 처리할 일 (서면 작성, 계산, 제출)',
+'  "당사자+사무실" = 자료를 받아서 우리가 표로 만드는 일',
+"",
+"■ 필요자료",
+"  그 항목을 하려면 받아야 하는 서류 이름을 적습니다. 없으면 빈 배열 [] 로 둡니다.",
+"  은행·기관 이름까지 알 수 있으면 같이 적습니다. 예) \"부채증명서 - 국민은행\"",
+"",
+"■ 요청리스트",
+"  의뢰인에게 달라고 해야 하는 자료를 한 줄씩 모읍니다.",
+"  거래내역서는 어느 계좌인지까지 적습니다(활동성 계좌 등). 없으면 빈 배열 [] 로 둡니다.",
+"",
+"■ 재제출",
+"  보정 내용을 반영한 뒤 다시 내야 하는 서면을 적습니다.",
+"  보통 채권자목록 · 재산목록 · 수입지출목록 · 변제계획안 4종을 전부 다시 냅니다.",
+"  보정명령이 일부만 요구하면 그것만 적습니다.",
+"",
+"■ 당사자안내문",
+"  그대로 카톡이나 문자에 붙여넣을 수 있는 문장으로 씁니다.",
+"  존댓말로 쓰고, ① 무엇이 왔는지 ② 무엇을 보내주셔야 하는지 ③ 언제까지인지 세 가지가 들어가야 합니다.",
+"  법률 용어는 풀어서 씁니다. 겁주는 표현은 쓰지 않습니다.",
+"",
+"■ 그 밖에",
+"  송달확인일이나 법원제출기한을 모르면 그 줄을 통째로 빼세요. 지어내지 마세요.",
+(cs?("  이 사건 번호는 "+cs+" 입니다."):null),
 "",
 "보정명령 내용 :",
 "(여기에 보정명령 글을 붙여넣으세요)"
-  ].join("\n");
+  ].filter(function(x){return x!==null;}).join("\n");
 }
 function bjAutoCopyPrompt(){
   var t=bjAutoPromptText();
@@ -12603,27 +12680,100 @@ function bjPasteHtml(){
    +  '</div>'
    +'</div>';
 }
+/* 2026-08-31 : 세팅 결과를 실제 일 순서대로 보여 준다.
+   착수시점(지금 바로 / 자료 받고 / 조건부 즉시) → 누가 할 일 → 받을 것 → 다시 낼 것 → 안내문 */
+function bjAutoCopy(t,msg){
+  try{ navigator.clipboard.writeText(t); if(typeof toast==="function")toast(msg||"복사했습니다"); }
+  catch(e){ alert(t); }
+}
+function bjAutoNoticeText(){
+  var s=bjAutoSum||{};
+  var t=String(s.notice||"").trim();
+  if(t)return t;
+  var nm=(typeof bjHandName==="function"?bjHandName():"")||"○○○";
+  var lines=[nm+" 님 안녕하세요. 법무법인 이준 서초 분사무소입니다.","","법원에서 보정명령이 왔습니다.",""];
+  if(s.reqs&&s.reqs.length){
+    lines.push("아래 서류를 보내주셔야 진행할 수 있습니다.");
+    s.reqs.forEach(function(r){ lines.push(" · "+r.what+(r.where?" ("+r.where+")":"")); });
+    lines.push("");
+  }
+  if(bjD&&bjD.client_deadline)lines.push(String(bjD.client_deadline).slice(0,10)+"까지 보내주시면 됩니다.");
+  lines.push("","문의사항 있으시면 언제든 연락 주세요.");
+  return lines.join("\n");
+}
+function bjAutoGrpHtml(title,sub,rows){
+  if(!rows.length)return '';
+  return '<div class="ba-grp"><div class="ba-gh"><b>'+esc(title)+'</b><span>'+esc(sub)+'</span><i>'+rows.length+'건</i></div>'
+    + rows.map(function(x){
+        return '<div class="ba-it">'
+         +'<div class="ba-t">'+esc(x.t)+'</div>'
+         +'<div class="ba-m">'
+         +  '<span class="ba-tag own-'+(x.owner==="당사자"?"c":(x.owner==="사무실"?"o":"b"))+'">'+esc(x.owner||"")+'</span>'
+         +  (x.c?'<span class="ba-tag code">'+esc(x.c)+'</span>':'<span class="ba-tag no">유형 미지정</span>')
+         +  (x.chk?'<span class="ba-chk">확인 : '+esc(x.chk)+'</span>':'')
+         + '</div>'
+         +((x.needs&&x.needs.length)?'<div class="ba-nd">받을 것 : '+x.needs.map(esc).join(" · ")+'</div>':'')
+         +'</div>';
+      }).join("")
+    +'</div>';
+}
 function bjDoneHtml(){
-  var s=bjAutoSum||{n:0,typed:0,served:""};
-  return ''
-   +'<div class="sec bj-pick">'
-   +  '<div class="bp-t">자동 세팅이 끝났습니다</div>'
-   +  '<div class="bp-s">아래 내용으로 채웠습니다. 다음 화면에서 하나씩 눈으로 확인한 뒤 저장하세요. 저장 전에는 아무것도 바뀌지 않습니다.</div>'
-   +  '<div class="bp-sum">'
-   +    '<div class="bp-si"><b>'+s.n+'</b><span>보정 항목</span></div>'
-   +    '<div class="bp-si"><b>'+s.typed+'</b><span>유형코드가 붙은 항목</span></div>'
-   +    '<div class="bp-si"><b>'+esc(s.served||"안 바꿈")+'</b><span>송달확인일</span></div>'
-   +  '</div>'
-   +  (s.list&&s.list.length?'<div class="bp-list">'+s.list.map(function(x,i){
-        return '<div class="bp-li"><b>'+(i+1)+'.</b> <span class="tx">'+esc(x.t)+'</span>'
-             +(x.c?'<span class="cd">'+esc(x.c)+'</span>':'<span class="cd no">유형 미지정</span>')+'</div>';
-      }).join("")+'</div>':'')
-   +  '<div class="bp-row">'
-   +    '<button class="btn primary bj-big" onclick="bjWay=\'pick\';bjKindOk=true;bjStep=3;bjRender()">이대로 항목 확인하러 가기</button>'
-   +    '<span class="bj-link" onclick="bjWay=\'paste\';bjRender()">다시 붙여넣기</span>'
-   +    '<span class="bj-link" onclick="bjWay=\'pick\';bjStep=1;bjRender()">처음부터 손으로 하기</span>'
-   +  '</div>'
+  var s=bjAutoSum||{n:0,typed:0,served:"",list:[]};
+  var L=s.list||[];
+  var now=L.filter(function(x){return x.start==="지금 바로";});
+  var wait=L.filter(function(x){return x.start==="자료 받고";});
+  var cond=L.filter(function(x){return x.start==="조건부 즉시";});
+  var cCli=L.filter(function(x){return x.owner==="당사자";}).length;
+  var cOff=L.filter(function(x){return x.owner==="사무실";}).length;
+  var cBoth=L.filter(function(x){return x.owner==="당사자+사무실";}).length;
+  var reqs=s.reqs||[], again=s.again||[];
+  var notice=bjAutoNoticeText();
+
+  var h='<div class="sec bj-pick">'
+   +'<div class="bp-t">자동 세팅이 끝났습니다</div>'
+   +'<div class="bp-s">아래대로 잡았습니다. 저장 전에는 아무것도 바뀌지 않습니다. 틀린 곳은 다음 화면에서 고칠 수 있습니다.</div>'
+   +'<div class="bp-sum">'
+   +  '<div class="bp-si"><b>'+s.n+'</b><span>보정 항목</span></div>'
+   +  '<div class="bp-si"><b>'+now.length+'</b><span>지금 바로</span></div>'
+   +  '<div class="bp-si"><b>'+wait.length+'</b><span>자료 받고</span></div>'
+   +  '<div class="bp-si"><b>'+cond.length+'</b><span>조건부 즉시</span></div>'
+   +'</div>'
+   +'<div class="ba-who">'
+   +  '<span>당사자가 할 일 <b>'+cCli+'</b></span>'
+   +  '<span>우리가 할 일 <b>'+cOff+'</b></span>'
+   +  '<span>같이 하는 일 <b>'+cBoth+'</b></span>'
+   +  (s.served?'<span>송달확인일 <b>'+esc(s.served)+'</b></span>':'')
+   +  (s.due?'<span>법원기한 <b>'+esc(s.due)+'</b></span>':'')
    +'</div>';
+
+  h+=bjAutoGrpHtml("지금 바로","받을 자료 없이 오늘 고칠 수 있는 것",now);
+  h+=bjAutoGrpHtml("자료 받고","숫자나 서류가 들어와야 시작할 수 있는 것",wait);
+  h+=bjAutoGrpHtml("조건부 즉시","발급·작성 전에 한 번 확인할 것",cond);
+
+  if(reqs.length){
+    h+='<div class="ba-grp"><div class="ba-gh"><b>의뢰인에게 받을 것</b><span>요청 리스트</span><i>'+reqs.length+'건</i></div>'
+     + reqs.map(function(r){
+         return '<div class="ba-it"><div class="ba-t">'+esc(r.what)+(r.where?' <span class="ba-w">'+esc(r.where)+'</span>':'')+'</div>'
+           +(r.why?'<div class="ba-nd">'+esc(r.why)+'</div>':'')+'</div>';
+       }).join("")
+     + '<button class="btn ghost mini" style="margin-top:8px" onclick="bjAutoCopy('+JSON.stringify(reqs.map(function(r){return "· "+r.what+(r.where?" ("+r.where+")":"");}).join("\n")).replace(/"/g,"&quot;")+',\'요청 목록을 복사했습니다\')">요청 목록 복사</button>'
+     + '</div>';
+  }
+  if(again.length){
+    h+='<div class="ba-grp"><div class="ba-gh"><b>보정 반영 후 다시 낼 것</b><span>최종 재제출</span><i>'+again.length+'종</i></div>'
+     + '<div class="ba-again">'+again.map(function(x){return '<span>'+esc(x)+'</span>';}).join("")+'</div></div>';
+  }
+
+  h+='<div class="ba-grp"><div class="ba-gh"><b>당사자에게 보낼 안내</b><span>그대로 복사해서 카톡·문자로</span></div>'
+   +'<textarea class="ba-ta" readonly>'+esc(notice)+'</textarea>'
+   +'<button class="btn primary mini" style="margin-top:6px" onclick="bjAutoCopy(bjAutoNoticeText(),\'안내 문구를 복사했습니다\')">안내 문구 복사</button></div>';
+
+  h+='<div class="bp-row" style="margin-top:16px">'
+   +  '<button class="btn primary bj-big" onclick="bjWay=\'pick\';bjKindOk=true;bjStep=3;bjRender()">이대로 항목 확인하러 가기</button>'
+   +  '<span class="bj-link" onclick="bjWay=\'paste\';bjRender()">다시 붙여넣기</span>'
+   +  '<span class="bj-link" onclick="bjWay=\'pick\';bjStep=1;bjRender()">처음부터 손으로 하기</span>'
+   +'</div>';
+  return h+'</div>';
 }
 
 /* ---------- 붙여넣은 JSON 을 실제로 채우기 ---------- */
@@ -12632,6 +12782,36 @@ function bjAutoPickArr(o){
   var keys=["항목","items","list","보정항목","rows"];
   for(var i=0;i<keys.length;i++){ if(Array.isArray(o[keys[i]]))return o[keys[i]]; }
   return null;
+}
+var BJ_STARTS=["지금 바로","자료 받고","조건부 즉시"];
+var BJ_OWNERS=["당사자","사무실","당사자+사무실"];
+/* Claude 가 조금 다르게 써도 셋 중 하나로 맞춘다 */
+function bjAutoNorm(v,allow,dflt){
+  var t=String(v||"").replace(/\s/g,"");
+  for(var i=0;i<allow.length;i++){ if(allow[i].replace(/\s/g,"")===t)return allow[i]; }
+  if(/지금|즉시가능|바로/.test(t)&&!/조건/.test(t))return "지금 바로";
+  if(/조건/.test(t))return "조건부 즉시";
+  if(/자료|받고|대기/.test(t))return "자료 받고";
+  if(/본인|당사자/.test(t)&&/사무|우리/.test(t))return "당사자+사무실";
+  if(/본인|당사자/.test(t))return "당사자";
+  if(/사무|우리/.test(t))return "사무실";
+  return dflt;
+}
+function bjAutoArr(v){
+  if(!v)return [];
+  if(Array.isArray(v))return v.map(function(x){return String(x||"").trim();}).filter(Boolean);
+  return String(v).split(/[,·\n]/).map(function(x){return x.trim();}).filter(Boolean);
+}
+/* 요청리스트는 문자열일 수도, {무엇,어디,이유} 일 수도 있다 */
+function bjAutoReqs(v){
+  if(!v)return [];
+  if(!Array.isArray(v))v=[v];
+  return v.map(function(x){
+    if(typeof x==="string")return {what:x.trim(),where:"",why:""};
+    return {what:String(x["무엇"]||x.what||"").trim(),
+            where:String(x["어디"]||x.where||"").trim(),
+            why:String(x["이유"]||x.why||"").trim()};
+  }).filter(function(x){return x.what||x.where;});
 }
 function bjAutoField(x,names){
   for(var i=0;i<names.length;i++){
@@ -12662,9 +12842,16 @@ function bjAutoApply(){
     if(!txt)return;
     var code=bjAutoField(x,["유형코드","type_codes","code","유형","types"]);
     var memo=bjAutoField(x,["메모","memo","note","비고"]);
+    /* 2026-08-31 : 실제 일 세팅에 쓰는 값들 */
+    var start=bjAutoNorm(bjAutoField(x,["착수시점","시작","start"]),BJ_STARTS,"자료 받고");
+    var owner=bjAutoNorm(bjAutoField(x,["담당","주체","owner"]),BJ_OWNERS,"사무실");
+    var chk=bjAutoField(x,["확인할것","확인","check"]);
+    var needs=bjAutoArr(x["필요자료"]||x["필요서류"]||x.needs);
     if(code)typed++;
-    items.push({seq:items.length+1,item_text:txt,type_codes:code,unresolved:false,memo:memo,item_status:"대기",round_no:null,options:{}});
-    list.push({t:txt.length>70?txt.slice(0,70)+"…":txt,c:code});
+    items.push({seq:items.length+1,item_text:txt,type_codes:code,unresolved:false,memo:memo,
+      item_status:"대기",round_no:null,
+      options:{착수시점:start,담당:owner,확인할것:chk,필요자료:needs}});
+    list.push({t:txt.length>70?txt.slice(0,70)+"…":txt,c:code,start:start,owner:owner,chk:chk,needs:needs});
   });
   if(!items.length){ bjAutoErr="항목에서 글을 못 읽었습니다. 각 항목에 \"내용\"이 있어야 합니다."; bjRender(); return; }
 
@@ -12672,10 +12859,27 @@ function bjAutoApply(){
   if(served&&/^\d{4}-\d{2}-\d{2}$/.test(served.slice(0,10))&&bjD){ bjD.served_at=served.slice(0,10); }
   else served="";
 
+  /* 문서 전체에 걸리는 것 : 요청리스트 · 재제출 · 안내문 · 법원기한 */
+  var reqs=bjAutoReqs(o["요청리스트"]||o["요청"]||o.requests);
+  var again=bjAutoArr(o["재제출"]||o["재제출4종"]||o.resubmit);
+  var notice=bjAutoField(o,["당사자안내문","안내문","안내","notice"]);
+  var due=bjAutoField(o,["법원제출기한","법원기한","제출기한","court_deadline"]);
+  if(due&&/^\d{4}-\d{2}-\d{2}$/.test(due.slice(0,10))&&bjD){ bjD.court_deadline=due.slice(0,10); }
+  else due="";
+
   bjIt=items;
   bjSel=0; bjIdx=0;
   bjAutoErr="";
-  bjAutoSum={n:items.length,typed:typed,served:served,list:list};
+  bjAutoSum={n:items.length,typed:typed,served:served,due:due,list:list,reqs:reqs,again:again,notice:notice};
+  /* 새로고침해도 남도록 문서에 같이 적어 둔다 (다른 값은 건드리지 않는다) */
+  try{
+    if(bjD){
+      var pack=(bjD.draft_doc&&typeof bjD.draft_doc==="object")?bjD.draft_doc:{};
+      pack.auto={요청리스트:reqs,재제출:again,당사자안내문:notice,만든날:fmt(new Date())};
+      bjD.draft_doc=pack;
+      sbc.from("bj_documents").update({draft_doc:pack}).eq("id",bjD.id).then(function(){},function(){});
+    }
+  }catch(e){}
   bjWay="done";
   bjRender();
   if(typeof toast==="function")toast("항목 "+items.length+"개를 채웠습니다");

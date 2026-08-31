@@ -4751,6 +4751,21 @@ function bjDeadline(n){
   }
   return null;
 }
+/* 2026-08-31 혜림 지적 : 파일 이름에 2026.08.24 라고 적어 두는데 앱은 본문에서 먼저 찾은
+   2026-08-21 을 넣었다. 파일 이름 날짜는 사람이 일부러 적은 것이니 그걸 우선한다. */
+function bjDateFromName(fname){
+  var t=String(fname||"");
+  var m=t.match(/(20\d{2})[.\-_\/](\d{1,2})[.\-_\/](\d{1,2})/);
+  if(!m)m=t.match(/(20\d{2})(\d{2})(\d{2})(?!\d)/);
+  if(!m)return "";
+  var y=+m[1],mo=+m[2],d=+m[3];
+  if(mo<1||mo>12||d<1||d>31)return "";
+  return y+"-"+String(mo).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+}
+/* 문서 종류 첫 추천. 결정문이면 그 이름, 아니면 보정명령 */
+function bjDoctypeGuess(txt,kinds){
+  return (typeof bjDecideKind==="function"&&bjDecideKind(txt,(kinds||[]).join(",")))||"보정명령";
+}
 function bjAutofill(txt){
   var n=bjNospace(txt);
   var mc=n.match(BJ_RE.caseNo),mo=n.match(BJ_RE.court);
@@ -4847,9 +4862,11 @@ async function bjAddFiles(fileList){
         var af=bjAutofill(cl.text);
         var kinds=bjDocKinds(cl.text,af.case_no);
         var noText=bjNospace(cl.text).length<30;
+        var fnDate=bjDateFromName(f.name);
         bjBatch.push({file:f,fname:f.name,text:cl.text,removed:cl.removed,scan:noText,
           case_no:af.case_no,court:af.court,dates:af.dates,dl:af.dl,kinds:kinds,
-          order_date:af.dates[0]||"",arrived:af.dates[0]||fmt(new Date()),confirmed_at:"",
+          fnDate:fnDate, doctype:bjDoctypeGuess(cl.text,kinds),
+          order_date:fnDate||af.dates[0]||"",arrived:fnDate||af.dates[0]||fmt(new Date()),confirmed_at:"",
           client_id:null,client_name:"",owner_id:(me&&!me.isMaster)?me.id:""});
       }catch(e){alert(f.name+" 판독 실패: "+(e.message||e));}
     }
@@ -4917,13 +4934,17 @@ function bjRenderBatch(){
     +'<div><label>사건번호 *</label><input value="'+esc(b.case_no)+'" onchange="bjBatch['+i+'].case_no=this.value.trim();bjMatchClients().then(bjRenderBatch)"></div>'
     +'<div><label>당사자명 *</label><input value="'+esc(b.client_name)+'" onchange="bjBatch['+i+'].client_name=this.value.trim();bjRenderBatch()" placeholder="케이스허브 미연결 시 직접 입력"></div>'
     +'<div><label>관할 법원</label><input value="'+esc(b.court)+'" onchange="bjBatch['+i+'].court=this.value.trim()"></div>'
+    +'<div><label>문서 종류 <span style="font-weight:400;color:#8a94a6">(골라도 되고 직접 쳐도 됩니다)</span></label>'
+      +'<input list="f-doctype-list" value="'+esc(b.doctype||"")+'" placeholder="예: 금지명령" autocomplete="off"'
+      +' onchange="bjBatch['+i+'].doctype=this.value.trim();bjRenderBatch()"></div>'
     +'<div><label>담당 직원</label><select onchange="bjBatch['+i+'].owner_id=this.value">'
       +(me.isMaster?'<option value="">미지정</option>':'')
       +staff.map(function(s){return '<option value="'+esc(s.id)+'"'+(s.id===b.owner_id?' selected':'')+'>'+esc(s.name||s.id)+'</option>';}).join("")+'</select></div>'
     +'<div><label>송달 도착일 *</label><input type="date" value="'+esc(b.arrived)+'" onchange="bjBatch['+i+'].arrived=this.value;bjRenderBatch()"></div>'
     +'<div><label>실제 송달확인일 (기한 계산 기준)</label><div style="display:flex;gap:6px"><input type="date" value="'+esc(b.confirmed_at)+'" onchange="bjBatch['+i+'].confirmed_at=this.value">'
       +'<button class="btn ghost mini" onclick="bjBatch['+i+'].confirmed_at=fmt(new Date());bjRenderBatch()">오늘</button></div>'
-      +'<div class="bj-ref" style="margin-top:5px">서류상 날짜 '+esc(b.dates.slice(0,2).join(", ")||"없음")+' (참고용, 기한 계산에 쓰지 않음)</div></div>'
+      +'<div class="bj-ref" style="margin-top:5px">서류상 날짜 '+esc(b.dates.slice(0,2).join(", ")||"없음")+' (참고용, 기한 계산에 쓰지 않음)'
+      +(b.fnDate?'<br>파일 이름 날짜 '+esc(b.fnDate)+' 를 도착일·명령일자에 넣었습니다':'')+'</div></div>'
     +'<div><label>명령일자 (서류상, 재보정 소환용)</label><input type="date" value="'+esc(b.order_date)+'" onchange="bjBatch['+i+'].order_date=this.value"></div>'
     +'<div><label>기한 (PDF에서 읽음)</label><div style="padding-top:8px">'+bjDlSummary(b)+'</div></div>'
     +'</div>'
@@ -4969,9 +4990,11 @@ async function bjRegisterAll(){
         /* 2026-08-31 : 문서 종류를 "보정명령"으로 못박아 두었더니
            같은 사건의 금지명령이 보정명령과 같은 줄로 취급돼 uq_delivery(사건번호+문서종류+도착일)에 걸렸다.
            결정문이면 그 이름 그대로 넣는다. 목록의 「문서종류」 칸도 이 값을 보여 준다. */
-        var kindGuess=(typeof bjDecideKind==="function"&&bjDecideKind(b.text,(b.kinds||[]).join(",")))||"";
+        /* 화면에서 손으로 고친 문서 종류가 있으면 그것을 그대로 쓴다 */
+        var docType=String(b.doctype||"").trim()||bjDoctypeGuess(b.text,b.kinds);
+        var kindGuess=(typeof bjDecideKind==="function"&&bjDecideKind("",docType))||"";
         var row={client_id:b.client_id||null,case_no:b.case_no,party_name:b.client_name,owner_id:b.owner_id||null,
-          court:b.court||null,doctype:kindGuess||"보정명령",arrived_at:b.arrived,term_days:(kindGuess?null:term),status:"진행중",
+          court:b.court||null,doctype:docType||"보정명령",arrived_at:b.arrived,term_days:(kindGuess?null:term),status:"진행중",
           confirmed:!!b.confirmed_at,confirmed_at:b.confirmed_at||null,checklist:defaultDocs(),log:nlog,
           memo:"보정 판독 자동 등록 · "+b.fname,submit_status:"미제출"};
         /* 2026-08-31 : 한 사건에 송달 기록은 하나만 만들 수 있다(uq_delivery).
@@ -5004,7 +5027,7 @@ async function bjRegisterAll(){
           if(b.dl.rule==="날짜까지"){var mm=b.dl.val.replace(/\s/g,"").match(/(20\d{2})\.(\d{1,2})\.(\d{1,2})/);if(mm)cd=mm[1]+"-"+String(mm[2]).padStart(2,"0")+"-"+String(mm[3]).padStart(2,"0");}
           else cd=fmt(rollFwd(addDays(b.confirmed_at,parseInt(b.dl.val,10))));
         }
-        var doc={delivery_id:deliveryId,case_no:b.case_no,court:b.court||null,doc_type:kindGuess||b.kinds.join(","),
+        var doc={delivery_id:deliveryId,case_no:b.case_no,court:b.court||null,doc_type:docType||b.kinds.join(","),
           served_at:b.confirmed_at||null,order_date:b.order_date||null,court_deadline:cd,
           deadline_source:cd?"문서":null,pdf_path:pdfPath,raw_text:bjMaskRrn(b.text),
           parse_mode:b.scan?"직접입력":null,status:"판독중",assignee:me.name||null};

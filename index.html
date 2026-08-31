@@ -840,6 +840,23 @@
   .bj-waybar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--brand-soft);border:1px solid #E9CDD3;border-radius:8px;padding:9px 12px;margin:10px 0 14px}
   .bj-waybar .wl{font-size:12px;font-weight:800;color:var(--brand)}
   .bj-waybar .wn{font-size:12px;color:var(--muted)}
+  .bj-hand{padding:20px;max-width:860px;margin-bottom:14px}
+  .bh-row{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 10px}
+  .bh-chip{border:1px solid var(--line-d);background:#fff;color:var(--ink-2);border-radius:999px;padding:8px 18px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit}
+  .bh-chip.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  .bh-chip em{font-style:normal;font-size:10.5px;font-weight:800;background:var(--brand-soft);color:var(--brand);border-radius:999px;padding:1px 6px;margin-left:6px}
+  .bh-chip.on em{background:rgba(255,255,255,.25);color:#fff}
+  .bh-desc{font-size:13px;color:var(--muted);line-height:1.6}
+  .bh-kv{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .bh-kv .k{flex:0 0 108px;font-size:13px;font-weight:800;color:var(--ink-2)}
+  .bh-kv .v{flex:1 1 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px}
+  .bh-kv input[type=date]{border:1px solid var(--line-d);border-radius:6px;padding:7px 10px;font-size:13.5px;font-family:inherit}
+  .bh-chk{display:flex;align-items:center;gap:7px;font-size:14px;cursor:pointer}
+  .bh-chk input{width:18px;height:18px;accent-color:var(--brand);cursor:pointer}
+  .bh-paid{font-size:12px;font-weight:800;color:var(--green);background:var(--green-bg);border-radius:999px;padding:2px 10px}
+  .bh-ok{font-size:12.5px;font-weight:800;color:var(--green)}
+  .bh-note-h{font-size:13px;font-weight:800;margin:18px 0 6px}
+  .bh-note{width:100%;min-height:170px;border:1px solid var(--line-d);border-radius:8px;padding:12px;font-size:13px;line-height:1.7;font-family:inherit;background:var(--gray-bg);color:var(--ink)}
   @media(max-width:720px){ .bj-waybar .wn{flex:0 0 100%} }
   @media(max-width:900px){
     .chk-row{flex-wrap:wrap}
@@ -5578,12 +5595,13 @@ function bjRender(){
      })()
     /* 2026-08-30 : 이미 진행된 문서는 2·3 탭으로 바로 열려서 갈림길을 못 본다.
        어느 탭에 있든 여기서 붙여넣기 자동세팅으로 갈 수 있게 한다. */
-    +'<div class="bj-waybar">'
+    +((typeof bjHandling==="function"&&bjHandling()!=="제출")?'':
+     '<div class="bj-waybar">'
       +'<span class="wl">세팅 방식</span>'
       +'<button class="btn ghost mini" onclick="bjWayGo(\'pick\')">✍ 손으로 하기 · 자동 고르기</button>'
       +'<button class="btn primary mini" onclick="bjWayGo(\'paste\')">⚡ 붙여넣기로 자동 세팅</button>'
       +'<span class="wn">Claude가 읽어준 JSON을 붙여넣으면 항목이 한 번에 채워집니다</span>'
-    +'</div>';
+    +'</div>');
   if(bjMode==="read"){
     w.innerHTML=head+bjReadHtml(kinds);
     if(bjView==="pdf"&&!BJ_MOBILE&&bjD.pdf_path)bjPdfMount();
@@ -5620,6 +5638,9 @@ async function bjStepJump(k){
 function bjStepGo(n){bjStep=n;bjRender();}
 function bjKindConfirm(){bjKindOk=true;bjStep=2;bjRender();}
 function bjReadHtml(kinds){
+  /* 2026-08-30 : 전달형(금지명령 등)·납부형(예납금)은 판독 자체가 필요 없다.
+     받은 날짜 기록 + 당사자 안내 한 장으로 끝낸다. */
+  if(typeof bjHandling==="function"&&bjHandling()!=="제출"&&typeof bjHandleHtml==="function")return bjHandleHtml();
   /* 2026-08-30 : 판독을 시작할 때 손으로 할지 붙여넣기로 할지 먼저 고른다 */
   if(bjStep===0&&typeof bjPickHtml==="function")return bjPickHtml();
   var dd=bjDocDue(),calc=bjCalcDue();
@@ -11891,15 +11912,27 @@ function chkBuckets(){
   });
   function bydue(a,b){ return String(a.court_deadline||"").localeCompare(String(b.court_deadline||"")); }
   todo.sort(bydue); over.sort(bydue); soon.sort(bydue); noown.sort(bydue);
-  var neu=(typeof bxRows!=="undefined"&&bxRows?bxRows:[]).filter(function(r){
-    return (typeof bxStage==="function")&&bxStage(r)==="판독 전";
+  var all=(typeof bxRows!=="undefined"&&bxRows?bxRows:[]);
+  function handOf(r){ return (typeof bjHandlingOfRow==="function")?bjHandlingOfRow(r):"제출"; }
+  var notice=[],pay=[];
+  all.forEach(function(r){
+    if(String(r.status||"")==="완료")return;
+    var h=handOf(r);
+    if(h==="전달"&&!r.notified_at)notice.push(r);
+    else if(h==="납부"&&!r.paid_at)pay.push(r);
+  });
+  var neu=all.filter(function(r){
+    return (typeof bxStage==="function")&&bxStage(r)==="판독 전"&&handOf(r)==="제출";
   }).sort(function(a,b){ return String(b.created_at||"").localeCompare(String(a.created_at||"")); });
-  return {todo:todo,over:over,soon:soon,noown:noown,neu:neu};
+  function byd(a,b){ return String(a.court_deadline||"9999").localeCompare(String(b.court_deadline||"9999")); }
+  notice.sort(byd); pay.sort(byd);
+  return {todo:todo,over:over,soon:soon,noown:noown,neu:neu,notice:notice,pay:pay};
 }
 function chkAlertCount(){
   var f=chkFirm,o=chkOwner; chkFirm="";chkOwner="";
   var b=chkBuckets(); chkFirm=f;chkOwner=o;
-  return b.todo.length+b.over.length;
+  var payLate=b.pay.filter(function(r){var n=chkLeft(r.court_deadline);return n!==null&&n<=0;}).length;
+  return b.todo.length+b.over.length+b.notice.length+payLate;
 }
 
 /* ---------- 저장 ---------- */
@@ -12041,6 +12074,37 @@ function chkSec(title, sub, rows, mode, emptyTxt){
   else h+=rows.map(function(r){return chkRow(r,mode);}).join("");
   return h+'</div>';
 }
+/* 전달형·납부형 문서 줄 */
+function chkDocSec(title,sub,rows,mode,emptyTxt){
+  var h='<div class="chk-sec"><div class="chk-h"><h2>'+esc(title)+'<span class="cnt">'+rows.length+'</span></h2>'
+       +'<div class="chk-sub">'+esc(sub)+'</div></div>';
+  if(!rows.length){ h+='<div class="chk-empty">'+esc(emptyTxt)+'</div>'; return h+'</div>'; }
+  h+=rows.map(function(r){
+    var n=chkLeft(r.court_deadline);
+    var cls=(mode==="notice")?"":((n===null)?"":(n<0?"r":(n<=1?"a":"g")));
+    var kind=(typeof bjDecideKind==="function"&&bjDecideKind(r.raw_text))||(mode==="pay"?"예납금 납부":"결정문");
+    var gaps=[];
+    if(!r.served_at)gaps.push("받은 날짜");
+    if(mode==="pay"&&!r.court_deadline)gaps.push("납부 기한");
+    if(!r.notified_at)gaps.push("당사자 안내");
+    if(mode==="pay"&&!r.paid_at)gaps.push("납부 확인");
+    return '<div class="chk-row link" onclick="bjOpen(\''+r.id+'\')">'
+      +'<div class="chk-left '+cls+'">'+esc(mode==="notice"?"기한 없음":chkLeftTxt(n))+'<span class="d">'+esc(String(r.court_deadline||r.served_at||"").slice(0,10)||"—")+'</span></div>'
+      +'<div class="chk-mid">'
+      +'<div class="chk-nm">'+esc(r.client_name||r.case_no||"이름 없음")
+      +'<span class="chk-stage">'+esc(kind)+'</span>'
+      +'<span class="chk-stage">'+(mode==="pay"?"납부형":"전달형")+'</span></div>'
+      +'<div class="chk-cs">'+esc([r.court,r.case_no].filter(Boolean).join(" "))+'</div>'
+      +'<div class="chk-memo">'+esc(mode==="pay"
+          ?"저희가 법원에 낼 서류는 없습니다. 당사자에게 납부하라고 알리고, 납부했는지 확인만 하면 됩니다."
+          :"저희가 법원에 낼 서류가 없습니다. 받은 날짜를 적고 당사자에게 알리면 끝납니다.")+'</div>'
+      +(gaps.length?'<div class="chk-gaps"><span class="gl">채워야 할 것</span>'+gaps.map(function(g){return '<span class="gap">'+esc(g)+'</span>';}).join("")+'</div>'
+                   :'<div class="chk-gaps ok"><span class="gl ok">채울 것 없음</span></div>')
+      +'</div>'
+      +'<div class="chk-act"><span class="chk-go">'+(mode==="pay"?"납부 확인하러 가기 →":"안내하러 가기 →")+'</span></div></div>';
+  }).join("");
+  return h+'</div>';
+}
 function chkNewSec(rows){
   var h='<div class="chk-sec"><div class="chk-h"><h2>새로 온 보정 문서<span class="cnt">'+rows.length+'</span></h2>'
        +'<div class="chk-sub">등록만 되고 아직 판독을 시작하지 않은 문서입니다. 누르면 보정 문서함으로 갑니다</div></div>';
@@ -12089,6 +12153,12 @@ function chkRender(){
   h+=chkSec("오늘과 이번 주 기한",
             "오늘부터 7일 안에 마감인 보정입니다. 미리 무엇이 비었는지 채워 두세요",
             b.soon,"soon","이번 주 안에 마감인 보정이 없습니다");
+  h+=chkDocSec("당사자에게 안내할 것",
+        "금지·중지명령, 개시·인가·면책결정처럼 저희가 법원에 낼 것이 없는 문서입니다. 받은 날짜를 적고 당사자에게 알리면 끝납니다",
+        b.notice,"notice","당사자에게 안내할 문서가 없습니다");
+  h+=chkDocSec("납부 확인할 것",
+        "예납금(송달료·인지대)입니다. 저희가 낼 서류는 없고, 당사자가 기한 안에 납부했는지만 확인하면 됩니다",
+        b.pay,"pay","납부를 확인할 문서가 없습니다");
   h+=chkNewSec(b.neu);
   h+=chkSec("담당자가 안 정해진 것",
             "2주 안에 기한이 있는데 담당자가 비어 있는 사건입니다. 오른쪽에서 골라주세요",
@@ -12161,7 +12231,7 @@ function bjAutoCopyPrompt(){
 function bjPickHtml(){
   if(bjWay==="paste")return bjPasteHtml();
   if(bjWay==="done")return bjDoneHtml();
-  return ''
+  return (typeof bjHandPickerHtml==="function"?bjHandPickerHtml():'')
    +'<div class="sec bj-pick">'
    +  '<div class="bp-t">이 보정을 어떻게 세팅할까요?</div>'
    +  '<div class="bp-s">한 번 고르면 다음 화면부터 그 방식으로 갑니다. 중간에 언제든 바꿀 수 있습니다.</div>'
@@ -12270,6 +12340,218 @@ function bjAutoApply(){
   bjWay="done";
   bjRender();
   if(typeof toast==="function")toast("항목 "+items.length+"개를 채웠습니다");
+}
+
+/* ===== 문서 갈래(제출/전달/납부) : 여기부터 (2026-08-30) ===== */
+/* ==========================================================
+   문서 갈래 3가지 (2026-08-30 혜림 확정)
+     제출 : 우리가 법원에 낸다            → 지금까지 하던 판독 그대로
+     전달 : 우리가 낼 건 없다             → 받은 날짜만 기록 + 당사자 안내
+            (금지·중지명령, 개시·인가·면책결정)
+     납부 : 당사자가 예납금을 낸다        → 안내하고 납부했는지 체크만
+            단, "납부확인서를 제출하라"가 같이 있으면 제출형으로 올린다
+   ========================================================== */
+var BJ_HANDLINGS=["제출","전달","납부"];
+var bjHandBusy=false;
+
+/* 결정문 종류를 글에서 찾아본다 */
+function bjDecideKind(txt){
+  var t=String(txt||"");
+  if(/포괄적\s*금지명령/.test(t))return "포괄적 금지명령";
+  if(/금지명령/.test(t))return "금지명령";
+  if(/중지명령/.test(t))return "중지명령";
+  if(/면책(허가)?\s*결정/.test(t))return "면책결정";
+  if(/인가결정|변제계획.{0,6}인가/.test(t))return "인가결정";
+  if(/개시결정/.test(t))return "개시결정";
+  return "";
+}
+/* 납부확인서 같은 걸 내라고 했는가 */
+function bjWantsProof(txt){
+  var t=String(txt||"");
+  return /(납부확인서|납부증명|영수증|납부내역|납부영수증)/.test(t) && /(제출|첨부|보정)/.test(t);
+}
+function bjIsPayDoc(txt,docType){
+  var t=String(txt||"")+" "+String(docType||"");
+  return /(인지|송달료|예납|예납금|납부명령|빠른경로)/.test(t);
+}
+/* 자동 추천. 사람이 갈림길 화면에서 언제든 바꿀 수 있다 */
+function bjHandlingGuess(){
+  if(!bjD)return "제출";
+  var t=String(bjD.raw_text||"");
+  if(bjWantsProof(t))return "제출";
+  if(bjDecideKind(t))return "전달";
+  if(bjIsPayDoc(t,bjD.doc_type))return "납부";
+  return "제출";
+}
+function bjHandling(){
+  var h=String((bjD&&bjD.handling)||"");
+  return (BJ_HANDLINGS.indexOf(h)>=0)?h:bjHandlingGuess();
+}
+/* 아침 점검처럼 bjD 없이 목록 줄만 있을 때 쓰는 판정 */
+function bjHandlingOfRow(r){
+  if(!r)return "제출";
+  var h=String(r.handling||"");
+  if(BJ_HANDLINGS.indexOf(h)>=0)return h;
+  var t=String(r.raw_text||"");
+  if(bjWantsProof(t))return "제출";
+  if(bjDecideKind(t))return "전달";
+  if(bjIsPayDoc(t,r.doc_type))return "납부";
+  return "제출";
+}
+async function bjSetHandling(h){
+  if(!bjD||BJ_HANDLINGS.indexOf(h)<0)return;
+  bjHandBusy=true; bjRender();
+  try{
+    var patch={handling:h,updated_at:new Date().toISOString()};
+    /* 전달형은 우리가 낼 게 없으니 법원 제출기한을 비운다. 날짜는 기록으로만 남는다 */
+    if(h==="전달"){ patch.court_deadline=null; patch.client_deadline=null; patch.deadline_source="전달형(제출 없음)"; }
+    var r=await sbc.from("bj_documents").update(patch).eq("id",bjD.id);
+    if(r.error)throw r.error;
+    Object.keys(patch).forEach(function(k){ bjD[k]=patch[k]; });
+    if(typeof toast==="function")toast(h+"형으로 두었습니다");
+  }catch(e){ alert("갈래 저장에 실패했습니다."); }
+  finally{ bjHandBusy=false; bjRender(); try{bxLoad(true);}catch(e){} }
+}
+async function bjHandSave(patch,msg){
+  if(!bjD)return false;
+  bjHandBusy=true; bjRender();
+  var ok=false;
+  try{
+    patch.updated_at=new Date().toISOString();
+    var r=await sbc.from("bj_documents").update(patch).eq("id",bjD.id);
+    if(r.error)throw r.error;
+    Object.keys(patch).forEach(function(k){ bjD[k]=patch[k]; });
+    ok=true;
+    if(msg&&typeof toast==="function")toast(msg);
+  }catch(e){ alert("저장에 실패했습니다."); }
+  finally{ bjHandBusy=false; bjRender(); try{bxLoad(true);}catch(e){} }
+  return ok;
+}
+
+/* ---------- 당사자에게 보낼 안내 문구 ---------- */
+function bjHandName(){
+  return (bjDel&&bjDel.name)||(bjD&&bjD.case_no)||"의뢰인";
+}
+function bjNoticeText(){
+  var h=bjHandling(), nm=bjHandName(), firm=(typeof bjSendFirm!=="undefined"&&bjSendFirm)||"법무법인 이준 서초 분사무소";
+  var kind=bjDecideKind(bjD&&bjD.raw_text)||"결정";
+  var got=String((bjD&&bjD.served_at)||"").slice(0,10);
+  if(h==="납부"){
+    var due=String((bjD&&bjD.court_deadline)||"").slice(0,10);
+    return nm+" 님 안녕하세요. "+firm+"입니다.\n\n"
+      +"법원에서 예납금(송달료·인지대) 납부 안내가 왔습니다"+(got?" ("+got+" 받음)":"")+".\n"
+      +(due?"납부 기한은 "+due+"까지입니다.\n":"")
+      +"\n법원에서 안내한 가상계좌로 기한 안에 납부해 주세요. 납부하신 뒤에는 저희에게 알려주시면 됩니다.\n"
+      +"기한을 넘기면 사건이 각하될 수 있으니 꼭 챙겨 주세요.\n\n"
+      +"문의사항 있으시면 언제든 연락 주세요.";
+  }
+  var body={
+    "포괄적 금지명령":"모든 채권자의 강제집행·가압류·추심이 멈춥니다. 채권자에게서 추심 연락이 오면 이 명령을 알려주시고, 그래도 계속되면 저희에게 알려주세요.",
+    "금지명령":"채권자의 강제집행·가압류·추심이 멈춥니다. 채권자에게서 추심 연락이 오면 이 명령을 알려주시고, 그래도 계속되면 저희에게 알려주세요.",
+    "중지명령":"진행 중이던 강제집행·압류 절차가 멈춥니다. 급여압류가 있었다면 회사에도 알려주세요.",
+    "개시결정":"개인회생 절차가 정식으로 시작되었습니다. 이제부터 변제계획에 따른 납입을 시작하셔야 합니다. 납입 방법은 따로 안내드리겠습니다.",
+    "인가결정":"변제계획이 인가되었습니다. 인가된 계획대로 끝까지 납입하시면 남은 빚이 면책됩니다.",
+    "면책결정":"면책 결정이 났습니다. 절차가 마무리되었습니다. 고생 많으셨습니다."
+  }[kind]||"법원 결정문이 도착했습니다. 내용을 확인해 주세요.";
+  return nm+" 님 안녕하세요. "+firm+"입니다.\n\n"
+    +"법원에서 "+kind+"이(가) 나왔습니다"+(got?" ("+got+" 받음)":"")+".\n\n"
+    +body+"\n\n"
+    +"이 건은 저희가 법원에 따로 낼 서류는 없습니다. 안내 목적으로 알려드립니다.\n"
+    +"문의사항 있으시면 언제든 연락 주세요.";
+}
+function bjNoticeCopy(){
+  var t=bjNoticeText();
+  try{ navigator.clipboard.writeText(t); if(typeof toast==="function")toast("안내 문구를 복사했습니다"); }
+  catch(e){ alert(t); }
+}
+
+/* ---------- 갈래 고르는 줄 (갈림길 화면 맨 위) ---------- */
+function bjHandPickerHtml(){
+  var cur=bjHandling(), guess=bjHandlingGuess(), saved=String((bjD&&bjD.handling)||"");
+  var names={"제출":"제출형","전달":"전달형","납부":"납부형"};
+  var desc={
+    "제출":"우리가 법원에 보정서·서류를 낸다. 기한을 계산하고 챙긴다",
+    "전달":"우리가 낼 건 없다. 받은 날짜만 기록하고 당사자에게 알린다",
+    "납부":"당사자가 예납금을 낸다. 우리는 안내하고 납부했는지 확인만 한다"
+  };
+  return '<div class="sec bj-hand">'
+   +'<div class="bp-t">이 문서는 어떤 문서인가요?</div>'
+   +'<div class="bp-s">갈래에 따라 뒤 화면과 기한 처리가 달라집니다.'
+     +(saved?'':' 지금은 <b>'+esc(names[guess])+'</b>으로 자동 추천했습니다. 맞으면 그대로 두세요.')+'</div>'
+   +'<div class="bh-row">'+BJ_HANDLINGS.map(function(h){
+      return '<button class="bh-chip'+(cur===h?" on":"")+'" '+(bjHandBusy?"disabled":"")+' onclick="bjSetHandling(\''+h+'\')">'
+        +esc(names[h])+(guess===h&&!saved?'<em>추천</em>':'')+'</button>';
+     }).join("")+'</div>'
+   +'<div class="bh-desc">'+esc(desc[cur])+'</div>'
+   +(bjWantsProof(bjD&&bjD.raw_text)?'<div class="bj-alert amber">문서에 <b>납부확인서·영수증을 제출하라</b>는 말이 있습니다. 그래서 제출형으로 잡았습니다.</div>':'')
+   +'</div>';
+}
+
+/* ---------- 전달형 · 납부형 전용 한 장 화면 ---------- */
+function bjHandleHtml(){
+  var h=bjHandling();
+  var kind=bjDecideKind(bjD&&bjD.raw_text)||"결정문";
+  var got=String((bjD&&bjD.served_at)||"").slice(0,10);
+  var due=String((bjD&&bjD.court_deadline)||"").slice(0,10);
+  var paid=String((bjD&&bjD.paid_at)||"").slice(0,10);
+  var noti=(bjD&&bjD.notified_at)?String(bjD.notified_at).slice(0,10):"";
+  var s=bjHandPickerHtml();
+  s+='<div class="sec bj-hand">';
+  if(h==="전달"){
+    s+='<div class="bp-t">받은 날짜만 기록하고, 당사자에게 알리면 끝입니다</div>'
+      +'<div class="bp-s">이 문서는 저희가 법원에 낼 것이 없습니다. 그래서 제출 기한을 잡지 않습니다.</div>'
+      +'<div class="bh-kv"><span class="k">문서 종류</span><span class="v"><b>'+esc(kind)+'</b></span></div>'
+      +'<div class="bh-kv"><span class="k">받은 날짜</span><span class="v">'
+        +'<input type="date" value="'+esc(got)+'" '+(bjHandBusy?"disabled":"")+' onchange="bjHandSave({served_at:this.value||null},\'받은 날짜를 기록했습니다\')">'
+        +'<button class="btn ghost mini" onclick="bjHandSave({served_at:fmt(new Date())},\'오늘로 기록했습니다\')">오늘</button></span></div>';
+  }else{
+    s+='<div class="bp-t">당사자가 납부하도록 안내하고, 납부했는지만 확인하면 됩니다</div>'
+      +'<div class="bp-s">저희가 법원에 낼 서류는 없습니다. 다만 납부 기한은 있으니 챙겨야 합니다.</div>'
+      +'<div class="bh-kv"><span class="k">받은 날짜</span><span class="v">'
+        +'<input type="date" value="'+esc(got)+'" '+(bjHandBusy?"disabled":"")+' onchange="bjHandSave({served_at:this.value||null},\'받은 날짜를 기록했습니다\')">'
+        +'<button class="btn ghost mini" onclick="bjHandSave({served_at:fmt(new Date())},\'오늘로 기록했습니다\')">오늘</button></span></div>'
+      +'<div class="bh-kv"><span class="k">납부 기한</span><span class="v">'
+        +'<input type="date" value="'+esc(due)+'" '+(bjHandBusy?"disabled":"")+' onchange="bjHandSave({court_deadline:this.value||null,deadline_source:\'납부형(당사자 납부)\'},\'납부 기한을 기록했습니다\')">'
+        +'<button class="btn ghost mini" onclick="bjPayDue7()">받은 날 + 7일</button></span></div>'
+      +'<div class="bh-kv"><span class="k">납부 확인</span><span class="v">'
+        +'<label class="bh-chk"><input type="checkbox" '+(paid?"checked":"")+' '+(bjHandBusy?"disabled":"")+' onchange="bjPayToggle(this.checked)"> <b>당사자가 납부했습니다</b></label>'
+        +(paid?'<span class="bh-paid">'+esc(paid)+' 납부</span>':'')
+        +'</span></div>';
+  }
+  /* 안내 문구 */
+  s+='<div class="bh-note-h">당사자에게 보낼 안내</div>'
+    +'<textarea class="bh-note" readonly>'+esc(bjNoticeText())+'</textarea>'
+    +'<div class="bp-row">'
+    +  '<button class="btn ghost" onclick="bjNoticeCopy()">안내 문구 복사</button>'
+    +  '<button class="btn primary" '+(bjHandBusy?"disabled":"")+' onclick="bjNoticeDone()">'+(noti?"다시 안내함으로 표시":"당사자에게 안내함")+'</button>'
+    +  (noti?'<span class="bh-ok">'+esc(noti)+' 안내함'+((bjD&&bjD.notified_by)?' · '+esc(bjD.notified_by):'')+'</span>':'<span class="bj-note">아직 안내 전입니다</span>')
+    +'</div>';
+  /* 마무리 */
+  var canFinish=(h==="전달")?!!noti:(!!noti&&!!paid);
+  s+='<div class="bp-row" style="border-top:1px solid var(--line);padding-top:14px;margin-top:16px">'
+    +'<button class="btn primary bj-big" '+(bjHandBusy||!canFinish?"disabled":"")+' onclick="bjHandFinish()">이 문서 마무리</button>'
+    +'<span class="bj-note">'+(canFinish?"누르면 문서함에서 완료로 내려갑니다":(h==="전달"?"당사자에게 안내한 뒤에 누를 수 있습니다":"안내하고 납부 확인까지 되면 누를 수 있습니다"))+'</span>'
+    +'</div>';
+  return s+'</div>';
+}
+function bjPayDue7(){
+  var got=String((bjD&&bjD.served_at)||"").slice(0,10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(got)){ alert("받은 날짜를 먼저 넣어 주세요."); return; }
+  var p=got.split("-"), d=new Date(+p[0],+p[1]-1,+p[2]);
+  d.setDate(d.getDate()+7);
+  bjHandSave({court_deadline:fmt(d),deadline_source:"납부형(받은 날 + 7일)"},"납부 기한을 "+fmt(d)+"로 두었습니다");
+}
+function bjPayToggle(on){
+  bjHandSave({paid_at:on?fmt(new Date()):null}, on?"납부 확인으로 표시했습니다":"납부 확인을 지웠습니다");
+}
+function bjNoticeDone(){
+  var who=(typeof me!=="undefined"&&me&&me.name)?me.name:"";
+  bjHandSave({notified_at:new Date().toISOString(),notified_by:who||null},"안내함으로 표시했습니다");
+}
+async function bjHandFinish(){
+  if(!confirm("이 문서를 마무리할까요?\n\n문서함에서 완료로 내려가고, 아침 점검 목록에서도 빠집니다."))return;
+  var ok=await bjHandSave({status:"완료"},"마무리했습니다");
+  if(ok)showView("bjbox");
 }
 
 </script>

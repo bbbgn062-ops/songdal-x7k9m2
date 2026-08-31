@@ -4937,8 +4937,12 @@ async function bjRegisterAll(){
         /* 2) 송달 기록 (songdal.deliveries) */
         var term=bjTermFrom(b);
         var nlog=[{t:fmt(new Date()),m:"보정 PDF 등록+판독 ("+me.name+")"}];
+        /* 2026-08-31 : 문서 종류를 "보정명령"으로 못박아 두었더니
+           같은 사건의 금지명령이 보정명령과 같은 줄로 취급돼 uq_delivery(사건번호+문서종류+도착일)에 걸렸다.
+           결정문이면 그 이름 그대로 넣는다. 목록의 「문서종류」 칸도 이 값을 보여 준다. */
+        var kindGuess=(typeof bjDecideKind==="function"&&bjDecideKind(b.text,(b.kinds||[]).join(",")))||"";
         var row={client_id:b.client_id||null,case_no:b.case_no,party_name:b.client_name,owner_id:b.owner_id||null,
-          court:b.court||null,doctype:"보정명령",arrived_at:b.arrived,term_days:term,status:"진행중",
+          court:b.court||null,doctype:kindGuess||"보정명령",arrived_at:b.arrived,term_days:(kindGuess?null:term),status:"진행중",
           confirmed:!!b.confirmed_at,confirmed_at:b.confirmed_at||null,checklist:defaultDocs(),log:nlog,
           memo:"보정 판독 자동 등록 · "+b.fname,submit_status:"미제출"};
         /* 2026-08-31 : 한 사건에 송달 기록은 하나만 만들 수 있다(uq_delivery).
@@ -4946,6 +4950,11 @@ async function bjRegisterAll(){
            이럴 땐 새로 만들지 말고 이미 있는 송달 기록에 문서만 붙인다. */
         var deliveryId=null;
         var ins=await sd().from("deliveries").insert(row).select("id");
+        /* 처리기한 칸을 비우지 못하는 DB면 원래대로 넣고 다시 시도한다 */
+        if(ins.error&&row.term_days===null&&/not.?null/i.test(String(ins.error.message||""))){
+          row.term_days=term;
+          ins=await sd().from("deliveries").insert(row).select("id");
+        }
         if(ins.error){
           var dup=(String(ins.error.code||"")==="23505")||/duplicate key|unique constraint/i.test(String(ins.error.message||""));
           if(!dup)throw ins.error;
@@ -4966,7 +4975,7 @@ async function bjRegisterAll(){
           if(b.dl.rule==="날짜까지"){var mm=b.dl.val.replace(/\s/g,"").match(/(20\d{2})\.(\d{1,2})\.(\d{1,2})/);if(mm)cd=mm[1]+"-"+String(mm[2]).padStart(2,"0")+"-"+String(mm[3]).padStart(2,"0");}
           else cd=fmt(rollFwd(addDays(b.confirmed_at,parseInt(b.dl.val,10))));
         }
-        var doc={delivery_id:deliveryId,case_no:b.case_no,court:b.court||null,doc_type:b.kinds.join(","),
+        var doc={delivery_id:deliveryId,case_no:b.case_no,court:b.court||null,doc_type:kindGuess||b.kinds.join(","),
           served_at:b.confirmed_at||null,order_date:b.order_date||null,court_deadline:cd,
           deadline_source:cd?"문서":null,pdf_path:pdfPath,raw_text:bjMaskRrn(b.text),
           parse_mode:b.scan?"직접입력":null,status:"판독중",assignee:me.name||null};
@@ -12704,7 +12713,17 @@ function bjHandName(){
 var BJ_DECIDE_KINDS=["금지명령","포괄적 금지명령","중지명령","개시결정","인가결정","면책결정"];
 async function bjSetKind(k){
   if(!bjD)return;
-  await bjHandSave({doc_type:k},k+"으로 두었습니다");
+  var ok=await bjHandSave({doc_type:k},k+"으로 두었습니다");
+  if(!ok||!bjD.delivery_id)return;
+  /* 송달문서 목록(deliveries)의 「문서종류」 칸도 같이 고친다.
+     결정문은 우리가 낼 게 없으니 처리기한도 비운다.
+     같은 사건에 같은 종류·같은 도착일 줄이 이미 있으면 DB가 막는데, 그건 그냥 넘어간다 */
+  try{
+    var up=await sd().from("deliveries").update({doctype:k,term_days:null}).eq("id",bjD.delivery_id).select("id");
+    if(up.error&&/not.?null/i.test(String(up.error.message||"")))
+      await sd().from("deliveries").update({doctype:k}).eq("id",bjD.delivery_id);
+    if(typeof refreshAll==="function")refreshAll();
+  }catch(e){}
 }
 function bjKindPickHtml(cur){
   return '<div class="bh-kinds"><span class="k">결정 종류</span>'
@@ -12896,7 +12915,19 @@ async function bjHandFinish(){
     :"이 문서를 마무리할까요?\n\n문서함에서 완료로 내려가고, 아침 점검 목록에서도 빠집니다.";
   if(!confirm(msg))return;
   var ok=await bjHandSave({status:wait?"진행중":"완료"}, wait?"납부 확인 대기로 넘겼습니다":"마무리했습니다");
-  if(ok)showView("bjbox");
+  /* 2026-08-31 : 문서만 완료로 두면 송달문서 목록에는 계속 「진행중」으로 남는다.
+     이 송달에 걸린 다른 문서가 다 끝났으면 송달 줄도 처리완료로 내린다 */
+  if(ok&&!wait&&bjD&&bjD.delivery_id){
+    try{
+      var oth=await sbc.from("bj_documents").select("id,status").eq("delivery_id",bjD.delivery_id);
+      var open=(oth.data||[]).filter(function(x){return x.id!==bjD.id&&String(x.status||"")!=="완료";});
+      if(!open.length){
+        await sd().from("deliveries").update({status:"처리완료"}).eq("id",bjD.delivery_id);
+        if(typeof toast==="function")toast("송달문서 목록에서도 처리완료로 내렸습니다");
+      }
+    }catch(e){}
+  }
+  if(ok){ try{await refreshAll();}catch(e){} showView("bjbox"); }
 }
 
 </script>

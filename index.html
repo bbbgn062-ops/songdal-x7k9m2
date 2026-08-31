@@ -5387,7 +5387,9 @@ async function bjDlPdf(){
   try{
     /* 2026-08-31 : a.download 는 다른 서버(Supabase) 주소에는 안 먹어서 창만 열렸다.
        파일을 실제로 받아서(blob) 내 컴퓨터에 저장시킨다. 이름도 알아보기 쉽게 바꾼다. */
+    var dnum=String(bjD.order_date||bjD.served_at||bjD.created_at||"").slice(0,10).replace(/-/g,".");
     var nm=[(bjD.case_no||"사건번호"),
+            dnum,
             (typeof bjDecideKind==="function"?(bjDecideKind(bjD.raw_text,bjD.doc_type)||bjD.doc_type||"결정문"):(bjD.doc_type||"결정문")),
             ((typeof bjHandName==="function"?bjHandName():"")||"")]
            .filter(Boolean).join("_").replace(/[\\/:*?"<>|]/g,"")+".pdf";

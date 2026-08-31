@@ -1523,6 +1523,11 @@
 .bh-keep input[type=date]{padding:5px 8px;border:1px solid #D8D3CC;border-radius:7px;font-size:12.5px}
 .bh-keep .n{font-size:12px;color:#8A8078}
 
+/* 아침 점검 납부 확인 체크 (2026-08-31) */
+.chk-paychk{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid #C9B7BD;border-radius:8px;background:#fff;font-size:12.5px;cursor:pointer;margin-bottom:6px}
+.chk-paychk b{font-weight:800;color:#3A342E}
+.chk-paychk input{width:16px;height:16px}
+
 </style>
 </head>
 <body>
@@ -12028,6 +12033,19 @@ function chkSetPhone(id,v){
   if(!v)return;
   chkSave(id,{phone:v},"연락처를 넣었습니다");
 }
+/* 납부 확인 체크 (2026-08-31)
+   판독할 때는 안내만 하고, 당사자가 낸 뒤 여기서 체크한다. 체크하면 그 문서가 완료된다 */
+async function chkPaid(docId,on){
+  try{
+    var patch=on
+      ?{paid_at:(typeof fmt==="function"?fmt(new Date()):new Date().toISOString().slice(0,10)),status:"완료",updated_at:new Date().toISOString()}
+      :{paid_at:null,status:"진행중",updated_at:new Date().toISOString()};
+    var r=await sbc.from("bj_documents").update(patch).eq("id",docId);
+    if(r.error)throw r.error;
+    if(typeof toast==="function")toast(on?"납부 확인했습니다. 이 문서는 완료입니다":"납부 확인을 지웠습니다");
+    await chkEnter(true);
+  }catch(e){ alert("납부 확인 저장에 실패했습니다.\n\n"+((e&&(e.message||e.hint||e.details))||e)); }
+}
 /* 기한 바꾸기 (연장받았을 때) */
 function chkSetDue(id,v){
   v=String(v||"").trim();
@@ -12144,12 +12162,14 @@ function chkDocSec(title,sub,rows,mode,emptyTxt){
   h+=rows.map(function(r){
     var n=chkLeft(r.court_deadline);
     var cls=(mode==="notice")?"":((n===null)?"":(n<0?"r":(n<=1?"a":"g")));
-    var kind=(typeof bjDecideKind==="function"&&bjDecideKind(r.raw_text))||(mode==="pay"?"예납금 납부":"결정문");
+    var kind=(typeof bjDecideKind==="function"&&bjDecideKind(r.raw_text,r.doc_type))||(mode==="pay"?"예납금 납부":"결정문");
     var gaps=[];
     if(!r.served_at)gaps.push("받은 날짜");
     if(mode==="pay"&&!r.court_deadline)gaps.push("납부 기한");
     if(!r.notified_at)gaps.push("당사자 안내");
     if(mode==="pay"&&!r.paid_at)gaps.push("납부 확인");
+    /* 금지·중지명령은 받은 날짜를 확인할 일이 없다 (2026-08-31 혜림) */
+    if(typeof bjIsBanKind==="function"&&bjIsBanKind(kind))gaps=gaps.filter(function(g){return g!=="받은 날짜";});
     return '<div class="chk-row link" onclick="bjOpen(\''+r.id+'\')">'
       +'<div class="chk-left '+cls+'">'+esc(mode==="notice"?"기한 없음":chkLeftTxt(n))+'<span class="d">'+esc(String(r.court_deadline||r.served_at||"").slice(0,10)||"—")+'</span></div>'
       +'<div class="chk-mid">'
@@ -12163,7 +12183,11 @@ function chkDocSec(title,sub,rows,mode,emptyTxt){
       +(gaps.length?'<div class="chk-gaps"><span class="gl">채워야 할 것</span>'+gaps.map(function(g){return '<span class="gap">'+esc(g)+'</span>';}).join("")+'</div>'
                    :'<div class="chk-gaps ok"><span class="gl ok">채울 것 없음</span></div>')
       +'</div>'
-      +'<div class="chk-act"><span class="chk-go">'+(mode==="pay"?"납부 확인하러 가기 →":"안내하러 가기 →")+'</span></div></div>';
+      +'<div class="chk-act">'
+      +(mode==="pay"
+        ?'<label class="chk-paychk" onclick="event.stopPropagation()"><input type="checkbox" '+(r.paid_at?"checked":"")+' onchange="chkPaid(\''+r.id+'\',this.checked)"> <b>납부했습니다</b></label>'
+        :'')
+      +'<span class="chk-go">'+(mode==="pay"?"문서 열기 →":"안내하러 가기 →")+'</span></div></div>';
   }).join("");
   return h+'</div>';
 }
@@ -12216,10 +12240,10 @@ function chkRender(){
             "오늘부터 7일 안에 마감인 보정입니다. 미리 무엇이 비었는지 채워 두세요",
             b.soon,"soon","이번 주 안에 마감인 보정이 없습니다");
   h+=chkDocSec("당사자에게 안내할 것",
-        "금지·중지명령, 개시·인가·면책결정처럼 저희가 법원에 낼 것이 없는 문서입니다. 받은 날짜를 적고 당사자에게 알리면 끝납니다",
+        "금지·중지명령, 개시·인가·면책결정처럼 저희가 법원에 낼 것이 없는 문서입니다. 안내 문구와 결정문을 당사자에게 보내면 끝납니다",
         b.notice,"notice","당사자에게 안내할 문서가 없습니다");
   h+=chkDocSec("납부 확인할 것",
-        "예납금(송달료·인지대)입니다. 저희가 낼 서류는 없고, 당사자가 기한 안에 납부했는지만 확인하면 됩니다",
+        "예납금(송달료·인지대)입니다. 안내는 판독할 때 이미 나갔습니다. 여기서는 당사자가 냈는지만 체크하면 그 문서가 완료됩니다",
         b.pay,"pay","납부를 확인할 문서가 없습니다");
   h+=chkNewSec(b.neu);
   h+=chkSec("담당자가 안 정해진 것",
@@ -12563,8 +12587,9 @@ var BJ_HANDLINGS=["제출","전달","납부"];
 var bjHandBusy=false;
 
 /* 결정문 종류를 글에서 찾아본다 */
-function bjDecideKind(txt){
-  var t=String(txt||"");
+function bjDecideKind(txt,docType){
+  /* 2026-08-31 : 판독 전에는 raw_text 가 비어 있다. 그때는 문서 종류 이름만 보고도 알아채야 한다 */
+  var t=String(txt||"")+" "+String(docType||"");
   if(/포괄적\s*금지명령/.test(t))return "포괄적 금지명령";
   if(/금지명령/.test(t))return "금지명령";
   if(/중지명령/.test(t))return "중지명령";
@@ -12587,7 +12612,7 @@ function bjHandlingGuess(){
   if(!bjD)return "제출";
   var t=String(bjD.raw_text||"");
   if(bjWantsProof(t))return "제출";
-  if(bjDecideKind(t))return "전달";
+  if(bjDecideKind(t,bjD.doc_type))return "전달";
   if(bjIsPayDoc(t,bjD.doc_type))return "납부";
   return "제출";
 }
@@ -12602,7 +12627,7 @@ function bjHandlingOfRow(r){
   if(BJ_HANDLINGS.indexOf(h)>=0)return h;
   var t=String(r.raw_text||"");
   if(bjWantsProof(t))return "제출";
-  if(bjDecideKind(t))return "전달";
+  if(bjDecideKind(t,r.doc_type))return "전달";
   if(bjIsPayDoc(t,r.doc_type))return "납부";
   return "제출";
 }
@@ -12678,7 +12703,7 @@ function bjBanNoticeText(nm,firm,kind){
 }
 function bjNoticeText(){
   var h=bjHandling(), nm=bjHandName(), firm=(typeof bjSendFirm!=="undefined"&&bjSendFirm)||"법무법인 이준 서초 분사무소";
-  var kind=bjDecideKind(bjD&&bjD.raw_text)||"결정";
+  var kind=bjDecideKind(bjD&&bjD.raw_text,bjD&&bjD.doc_type)||"결정";
   var got=String((bjD&&bjD.served_at)||"").slice(0,10);
   if(h==="납부"){
     var due=String((bjD&&bjD.court_deadline)||"").slice(0,10);
@@ -12736,7 +12761,7 @@ function bjHandPickerHtml(){
 /* ---------- 전달형 · 납부형 전용 한 장 화면 ---------- */
 function bjHandleHtml(){
   var h=bjHandling();
-  var kind=bjDecideKind(bjD&&bjD.raw_text)||"결정문";
+  var kind=bjDecideKind(bjD&&bjD.raw_text,bjD&&bjD.doc_type)||"결정문";
   var got=String((bjD&&bjD.served_at)||"").slice(0,10);
   var due=String((bjD&&bjD.court_deadline)||"").slice(0,10);
   var paid=String((bjD&&bjD.paid_at)||"").slice(0,10);
@@ -12780,10 +12805,12 @@ function bjHandleHtml(){
       +'<div class="bh-kv"><span class="k">납부 기한</span><span class="v">'
         +'<input type="date" value="'+esc(due)+'" '+(bjHandBusy?"disabled":"")+' onchange="bjHandSave({court_deadline:this.value||null,deadline_source:\'수동\'},\'납부 기한을 기록했습니다\')">'
         +'<button class="btn ghost mini" onclick="bjPayDue7()">받은 날 + 7일</button></span></div>'
-      +'<div class="bh-kv"><span class="k">납부 확인</span><span class="v">'
-        +'<label class="bh-chk"><input type="checkbox" '+(paid?"checked":"")+' '+(bjHandBusy?"disabled":"")+' onchange="bjPayToggle(this.checked)"> <b>당사자가 납부했습니다</b></label>'
-        +(paid?'<span class="bh-paid">'+esc(paid)+' 납부</span>':'')
-        +'</span></div>';
+      /* 2026-08-31 혜림 지적 : 판독하는 지금은 당사자가 냈는지 알 수가 없다.
+         지금은 안내만 하고, 납부 확인은 나중에 아침 점검 보드에서 체크한다. */
+      +(paid
+        ?'<div class="bh-kv"><span class="k">납부 확인</span><span class="v"><span class="bh-paid">'+esc(paid)+' 납부 확인됨</span> <button class="btn ghost mini" onclick="bjPayToggle(false)">취소</button></span></div>'
+        :'<div class="bh-keep"><span class="k">납부 확인은 지금 하지 않습니다</span>'
+          +'<span class="n">당사자가 낸 뒤에 아침 점검 보드의 「납부 확인할 것」에서 체크하면 그때 이 문서가 완료됩니다</span></div>');
   }
   /* 안내 문구 */
   s+='<div class="bh-note-h">당사자에게 보낼 안내</div>'
@@ -12794,11 +12821,19 @@ function bjHandleHtml(){
     +  (noti?'<span class="bh-ok">'+esc(noti)+' 안내함'+((bjD&&bjD.notified_by)?' · '+esc(bjD.notified_by):'')+'</span>':'<span class="bj-note">아직 안내 전입니다</span>')
     +'</div>';
   /* 마무리 */
-  var canFinish=(h==="전달")?!!noti:(!!noti&&!!paid);
+  /* 전달형 : 안내하면 끝. 납부형 : 안내까지만 하고 「납부 확인 대기」로 넘긴다 (납부 확인이 되면 그때 완료) */
+  var canFinish=!!noti;
+  var payWait=(h==="납부"&&!paid);
   s+='<div class="bp-row" style="border-top:1px solid var(--line);padding-top:14px;margin-top:16px">'
-    +'<button class="btn primary bj-big" '+(bjHandBusy||!canFinish?"disabled":"")+' onclick="bjHandFinish()">이 문서 마무리</button>'
-    +'<span class="bj-note">'+(canFinish?"누르면 문서함에서 완료로 내려갑니다":(h==="전달"?"당사자에게 안내한 뒤에 누를 수 있습니다":"안내하고 납부 확인까지 되면 누를 수 있습니다"))+'</span>'
-    +'</div>';
+    +'<button class="btn primary bj-big" '+(bjHandBusy||!canFinish?"disabled":"")+' onclick="bjHandFinish()">'
+      +(payWait?"안내 끝냄 (납부 확인 대기로)":"이 문서 마무리")+'</button>'
+    +'<span class="bj-note">'
+      +(!canFinish
+        ?"당사자에게 안내한 뒤에 누를 수 있습니다"
+        :(payWait
+          ?"판독은 여기서 끝납니다. 아침 점검 보드 「납부 확인할 것」에 남아 있다가, 납부를 확인하면 그때 완료됩니다"
+          :"누르면 문서함에서 완료로 내려갑니다"))
+    +'</span></div>';
   return s+'</div>';
 }
 function bjPayDue7(){
@@ -12816,8 +12851,13 @@ function bjNoticeDone(){
   bjHandSave({notified_at:new Date().toISOString(),notified_by:who||null},"안내함으로 표시했습니다");
 }
 async function bjHandFinish(){
-  if(!confirm("이 문서를 마무리할까요?\n\n문서함에서 완료로 내려가고, 아침 점검 목록에서도 빠집니다."))return;
-  var ok=await bjHandSave({status:"완료"},"마무리했습니다");
+  /* 납부형인데 아직 납부 확인 전이면 완료로 내리지 않는다. 내려버리면 아침 점검에서 사라져 확인을 놓친다 */
+  var wait=(bjHandling()==="납부"&&!(bjD&&bjD.paid_at));
+  var msg=wait
+    ?"판독을 끝내고 「납부 확인 대기」로 넘길까요?\n\n· 지금은 완료로 내리지 않습니다\n· 아침 점검 보드 「납부 확인할 것」에 계속 보입니다\n· 거기서 납부를 확인하면 그때 완료됩니다"
+    :"이 문서를 마무리할까요?\n\n문서함에서 완료로 내려가고, 아침 점검 목록에서도 빠집니다.";
+  if(!confirm(msg))return;
+  var ok=await bjHandSave({status:wait?"진행중":"완료"}, wait?"납부 확인 대기로 넘겼습니다":"마무리했습니다");
   if(ok)showView("bjbox");
 }
 

@@ -1491,6 +1491,38 @@
 .wdpaper{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;font-size:13px;
   line-height:2;white-space:pre-wrap;word-break:break-word;max-height:52vh;overflow:auto}
 .wdpaper.sm{font-size:12.5px;line-height:1.8;padding:12px 14px}
+/* 기한 연장 도우미 (2026-08-31) */
+.ext-box,.ext-term{margin-top:10px;padding:10px 12px;border:1px solid #E4DED6;border-radius:10px;background:#FBFAF8}
+.ext-hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.ext-hd b{font-size:13px;color:var(--brand)}
+.ext-rule{font-size:12px;color:#6B6259}
+.ext-btns{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ext-btns input[type=date]{padding:6px 8px;border:1px solid #D8D3CC;border-radius:8px;font-size:13px}
+.ext-b{padding:6px 10px;border:1px solid #C9B7BD;border-radius:8px;background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:#3A342E}
+.ext-b i{font-style:normal;font-weight:500;color:#8A8078;font-size:11px;margin-left:4px}
+.ext-b:hover{background:#F6EDEF;border-color:var(--brand)}
+.ext-cap{font-size:12px;color:#8A8078}
+.ext-base{margin-top:6px;font-size:12px;color:#8A8078}
+.ext-j{margin-top:8px;padding:7px 10px;border-radius:8px;font-size:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:baseline}
+.ext-j b{font-size:12px}
+.ext-j.ok{background:#E9F3EC;color:#2E7D4F}
+.ext-j.amber{background:#FFF4E0;color:#8A6100}
+.ext-j.red{background:#FDE7EA;color:#9B1B33}
+.ext-j.gray{background:#F1EEEA;color:#6B6259}
+.ext-call{margin-top:8px}
+.ext-lk{font-size:12px;color:var(--brand);cursor:pointer;text-decoration:underline}
+.ext-ta{width:100%;min-height:120px;margin-top:8px;padding:9px 10px;border:1px solid #D8D3CC;border-radius:8px;font-size:12.5px;line-height:1.65;background:#fff;resize:vertical}
+.ext-tip{margin-top:6px;font-size:12px;color:#6B6259;line-height:1.6}
+
+/* 금지·중지명령 보내기 화면 (2026-08-31) */
+.bh-steps{margin:10px 0 12px;display:flex;flex-direction:column;gap:6px}
+.bh-st{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:#3A342E;line-height:1.6}
+.bh-st b{flex:none;width:22px;height:22px;border-radius:999px;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
+.bh-keep{margin-top:12px;padding:9px 12px;border:1px dashed #D8D3CC;border-radius:9px;background:#FBFAF8;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bh-keep .k{font-size:12.5px;color:#6B6259;font-weight:700}
+.bh-keep input[type=date]{padding:5px 8px;border:1px solid #D8D3CC;border-radius:7px;font-size:12.5px}
+.bh-keep .n{font-size:12px;color:#8A8078}
+
 </style>
 </head>
 <body>
@@ -5216,6 +5248,20 @@ async function bjOpenPdf(){
   }catch(e){alert("PDF 열기 실패: "+(e.message||e)+" (SQL L1의 orders 정책 실행 여부 확인)");}
   finally{busy(false);}
 }
+/* 결정문 파일 내려받기 (카톡에 첨부해서 보내려고) 2026-08-31 */
+async function bjDlPdf(){
+  if(!bjD||!bjD.pdf_path){alert("원본 파일이 없습니다.");return;}
+  busy(true);
+  try{
+    var r=await sbc.storage.from("bojeong").createSignedUrl(bjD.pdf_path,600);
+    if(r.error)throw r.error;
+    var a=document.createElement("a");
+    a.href=r.data.signedUrl; a.download=String(bjD.pdf_path).split("/").pop();
+    document.body.appendChild(a); a.click(); a.remove();
+    if(typeof toast==="function")toast("결정문을 내려받았습니다");
+  }catch(e){alert("내려받기 실패: "+(e.message||e));}
+  finally{busy(false);}
+}
 async function bjDeleteDoc(alsoRestart){
   if(!bjD)return;
   var msg=alsoRestart
@@ -7283,6 +7329,16 @@ function bjRoundEditHtml(){
     if(!cd)h+='<div class="bj-alert red">법원 제출기한이 없습니다. 직접 넣어야 확정할 수 있습니다.</div>';
     if(cd&&courtLeft!=null&&courtLeft<warnLt)h+='<div class="bj-alert amber">법원 기한이 '+courtLeft+'일밖에 남지 않았습니다. 여유일을 줄여 안내 마감을 확보하세요.</div>';
     if(cli&&parseD(cli)<=today0())h+='<div class="bj-alert red">안내 마감이 오늘이거나 지났습니다. 여유일을 줄이세요.</div>';
+    /* 2026-08-31 : 기한 연장·기일지정 도우미 */
+    if(typeof extBoxHtml==="function"){
+      var _ecourt=(bjD.court||bjD.case_no||(bjCli&&bjCli.case_no)||"");
+      var _ebase=String(bjD.court_deadline||cd||"").slice(0,10);
+      if(_ebase){
+        h+=extBoxHtml({where:"round",id:bjD.id,court:_ecourt,base:_ebase,cur:String(cd||"").slice(0,10),
+                       name:bjHandName(),caseNo:(bjD.case_no||"")});
+        h+=extTermHtml(_ecourt,_ebase,bjD.id,bjHandName(),(bjD.case_no||""));
+      }
+    }
     h+='</div>';
   }
   h+='</div>';
@@ -12063,6 +12119,12 @@ function chkRow(c,mode){
      +   (docs.length?'<button class="btn ghost chk-ok" onclick="showView(\'bjbox\')">보정 문서 보기</button>'
                      :'<button class="btn ghost chk-ok" onclick="showView(\'bjbox\')">보정 문서 등록</button>')
      + '</div>';
+    /* 2026-08-31 : 기한을 늘려 잡을 때 며칠이 무난한지 법원별로 알려 준다 */
+    if(c.court_deadline&&typeof extBoxHtml==="function"){
+      if(!extBase[id])extBase[id]=String(c.court_deadline).slice(0,10);
+      h+=extBoxHtml({where:"chk",id:id,court:(c.court||c.case_no||""),base:extBase[id],
+                     cur:String(c.court_deadline||"").slice(0,10),name:c.name,caseNo:(c.case_no||"")});
+    }
   }
   h+= '</div></div>';
   return h;
@@ -12342,6 +12404,152 @@ function bjAutoApply(){
   if(typeof toast==="function")toast("항목 "+items.length+"개를 채웠습니다");
 }
 
+
+/* ===== 보정기한 연장 · 기일지정 도우미 (2026-08-31 혜림 지시) =====
+   암묵적 상한 : 연장은 4주(28일)를 넘기지 않는다
+   법원별 통상 : 서울 1주~10일 / 수원 14일 / 그 외 지방 2~3주
+   특이사항 있는 사건은 재판부와 통화해서 융통성 있게 맞춘다
+   ================================================================= */
+var EXT_MAX_DAYS=28;
+var EXT_RULES=[
+  {re:/서울/, name:"서울", min:7,  max:10, note:"서울은 보통 1주에서 10일까지 받아 줍니다"},
+  {re:/수원/, name:"수원", min:14, max:14, note:"수원은 보통 14일로 맞춥니다"}
+];
+var EXT_DEFAULT={name:"그 외 지방", min:14, max:21, note:"지방은 보통 2주에서 3주까지 받아 줍니다"};
+var extBase={};   /* 사건별로 "원래 기한"을 기억해 둔다. 화면에서 날짜를 바꿔도 기준이 흔들리지 않게 */
+var extOpen={};   /* 재판부 통화 대본 펼침 상태 */
+var extTerm={};   /* 기일지정용으로 고른 날짜 */
+
+/* 아무 글에서나 법원 이름만 뽑아낸다. clients.court 가 비어 있어도 사건번호 앞에 붙어 있다 */
+function extCourtFrom(s){
+  var t=String(s||"");
+  var m=t.match(/([가-힣]{2,6}(?:회생법원|지방법원))(?:\s*[가-힣]{2,4}지원)?/);
+  return m?m[0]:"";
+}
+function extRuleFor(s){
+  var c=extCourtFrom(s)||String(s||"");
+  for(var i=0;i<EXT_RULES.length;i++)if(EXT_RULES[i].re.test(c))return EXT_RULES[i];
+  return EXT_DEFAULT;
+}
+function extISO(d){
+  if(!d)return "";
+  var m=("0"+(d.getMonth()+1)).slice(-2), dd=("0"+d.getDate()).slice(-2);
+  return d.getFullYear()+"-"+m+"-"+dd;
+}
+function extAddDays(baseISO,n){
+  var b=parseD(baseISO)||today0();
+  var d=new Date(b.getFullYear(),b.getMonth(),b.getDate()+n);
+  return extISO(d);
+}
+function extDiff(fromISO,toISO){
+  var a=parseD(fromISO), b=parseD(toISO);
+  if(!a||!b)return null;
+  return Math.round((b-a)/86400000);
+}
+/* 2026-09-10 을 "2026. 9. 10." 으로. 보정서에 그대로 붙여 쓰는 모양 */
+function extKorDate(iso){
+  var d=parseD(iso); if(!d)return "";
+  return d.getFullYear()+". "+(d.getMonth()+1)+". "+d.getDate()+".";
+}
+/* 기준일과 법원을 주면 언제까지가 무난한지 계산한다 */
+function extSuggest(courtStr,baseISO){
+  var r=extRuleFor(courtStr);
+  var base=baseISO||extISO(today0());
+  return {rule:r, base:base,
+          from:extAddDays(base,r.min), to:extAddDays(base,r.max),
+          cap:extAddDays(base,EXT_MAX_DAYS)};
+}
+/* 고른 날짜가 무난한지 한 줄로 알려 준다 */
+function extJudge(courtStr,baseISO,pickISO){
+  var s=extSuggest(courtStr,baseISO);
+  var n=extDiff(s.base,pickISO);
+  if(n===null)return null;
+  if(n<=0)return {lv:"gray", t:"연장 아님", m:"고른 날짜가 원래 기한보다 앞이거나 같습니다"};
+  if(n>EXT_MAX_DAYS)return {lv:"red", t:"4주 초과 ("+n+"일)", m:"암묵적 상한인 4주(28일)를 넘습니다. 이대로 적으면 잘 안 받아 줍니다. 재판부와 먼저 통화하세요"};
+  if(n<s.rule.min)return {lv:"gray", t:"짧게 잡음 ("+n+"일)", m:"더 필요하면 "+s.to+"까지는 무난합니다"};
+  if(n<=s.rule.max)return {lv:"ok", t:"적정 ("+n+"일)", m:s.rule.name+" 기준으로 무난한 범위입니다"};
+  return {lv:"amber", t:"통상보다 김 ("+n+"일)", m:s.rule.name+"은 보통 "+s.rule.max+"일까지입니다. 사유가 있으면 재판부와 통화해 두는 편이 안전합니다"};
+}
+/* 재판부에 전화할 때 읽을 대본 */
+function extCallText(name,caseNo,baseISO,pickISO,why){
+  return "안녕하세요. "+(caseNo||"사건번호")+" 채무자 "+(name||"○○○")+" 사건 대리인 법무법인 이준입니다.\n\n"
+    +"보정 기한이 "+(baseISO||"○○○○-○○-○○")+"까지인데, "+(why||"자료 수집이 늦어져서")+" 기한 안에 맞추기 어렵습니다.\n"
+    +(pickISO?(pickISO+"까지 기한을 늘려 주실 수 있는지 여쭙습니다.\n"):"언제까지 가능한지 여쭙습니다.\n")
+    +"\n(통화 뒤 꼭 남길 것)\n"
+    +"· 통화한 날짜와 시간\n"
+    +"· 통화한 분 (재판부 · 참여관 성함)\n"
+    +"· 받은 답 (며칠까지 · 보정서에 적어도 되는지)\n"
+    +"· 서면으로 따로 내야 하는지";
+}
+function extCopy(t,msg){
+  try{ navigator.clipboard.writeText(t); if(typeof toast==="function")toast(msg||"복사했습니다"); }
+  catch(e){ alert(t); }
+}
+/* 날짜 고르기 (부르는 화면마다 넣는 곳이 다르다) */
+function extPick(where,id,iso){
+  if(where==="chk"&&typeof chkSetDue==="function")chkSetDue(id,iso);
+  else if(where==="round"){ if(typeof bjRound!=="undefined"&&bjRound){bjRound.court_deadline=iso; if(typeof bjRender==="function")bjRender();} }
+  else if(where==="term"){ extTerm[id]=iso; if(typeof bjRender==="function")bjRender(); }
+}
+function extToggle(k){ extOpen[k]=!extOpen[k]; if(typeof chkRender==="function"&&String(k).indexOf("chk:")===0)chkRender(); else if(typeof bjRender==="function")bjRender(); }
+
+/* ---------- 연장 추천 상자 (아침 점검 · 보정서 화면 공용) ---------- */
+function extBoxHtml(opt){
+  /* opt = {where,id,court,base,cur,name,caseNo} */
+  var where=opt.where, id=opt.id;
+  var base=opt.base||extISO(today0());
+  var s=extSuggest(opt.court,base);
+  var j=opt.cur?extJudge(opt.court,base,opt.cur):null;
+  var key=where+":"+id;
+  var h='<div class="ext-box">'
+   + '<div class="ext-hd"><b>기한 연장 얼마나?</b>'
+   +   '<span class="ext-rule">'+esc(extCourtFrom(opt.court)||s.rule.name)+' · '+esc(s.rule.note)+'</span></div>'
+   + '<div class="ext-btns">'
+   +   '<button class="ext-b" onclick="extPick(\''+where+'\',\''+id+'\',\''+s.from+'\')">'+s.from+' <i>'+s.rule.min+'일</i></button>'
+   +   (s.rule.max!==s.rule.min?'<button class="ext-b" onclick="extPick(\''+where+'\',\''+id+'\',\''+s.to+'\')">'+s.to+' <i>'+s.rule.max+'일</i></button>':'')
+   +   '<span class="ext-cap">4주 상한 '+s.cap+'</span>'
+   + '</div>'
+   + '<div class="ext-base">기준은 원래 기한 '+esc(base)+' 입니다</div>';
+  if(j)h+='<div class="ext-j '+j.lv+'"><b>'+esc(j.t)+'</b><span>'+esc(j.m)+'</span></div>';
+  h+= '<div class="ext-call">'
+   +   '<span class="ext-lk" onclick="extToggle(\''+key+'\')">'+(extOpen[key]?"통화 대본 접기":"특이사항이면 재판부와 통화 ▾")+'</span>';
+  if(extOpen[key]){
+    var t=extCallText(opt.name,opt.caseNo,base,opt.cur||s.to,"");
+    h+='<textarea class="ext-ta" readonly>'+esc(t)+'</textarea>'
+     + '<button class="btn ghost mini" onclick="extCopy(extCallText('+JSON.stringify(String(opt.name||"")).replace(/"/g,"&quot;")+','+JSON.stringify(String(opt.caseNo||"")).replace(/"/g,"&quot;")+',\''+base+'\',\''+(opt.cur||s.to)+'\',\'\'),\'통화 대본을 복사했습니다\')">통화 대본 복사</button>'
+     + '<div class="ext-tip">표에 없는 사정(입원·해외·자료 발급 지연 등)이 있으면 날짜를 혼자 정하지 말고 재판부에 먼저 물어보세요. 통화로 받은 답은 반드시 메모에 남기세요.</div>';
+  }
+  h+= '</div></div>';
+  return h;
+}
+
+/* ---------- 보정서 하단에 넣을 기일지정 문구 ---------- */
+function extTermText(name,caseNo,pickISO){
+  return "채무자 "+(name||"○○○")+" ("+(caseNo||"사건번호")+")\n\n"
+    +"위 보정명령에 대하여 채무자는 관련 자료를 수집하고 있으나 기한 내 제출이 어려운 사정이 있으므로,\n"
+    +"부득이 "+extKorDate(pickISO)+"까지 보정서를 제출할 수 있도록 기일을 지정하여 주시기 바랍니다.";
+}
+function extTermHtml(courtStr,baseISO,docId,name,caseNo){
+  var s=extSuggest(courtStr,baseISO);
+  var cur=extTerm[docId]||s.to;
+  var j=extJudge(courtStr,baseISO,cur);
+  var h='<div class="ext-term">'
+   + '<div class="ext-hd"><b>보정서 하단 기일지정 문구</b>'
+   +   '<span class="ext-rule">언제까지 내겠다고 적을 때 씁니다</span></div>'
+   + '<div class="ext-btns">'
+   +   '<input type="date" value="'+esc(cur)+'" onchange="extPick(\'term\',\''+docId+'\',this.value)">'
+   +   '<button class="ext-b" onclick="extPick(\'term\',\''+docId+'\',\''+s.from+'\')">'+s.from+'</button>'
+   +   (s.rule.max!==s.rule.min?'<button class="ext-b" onclick="extPick(\'term\',\''+docId+'\',\''+s.to+'\')">'+s.to+'</button>':'')
+   +   '<span class="ext-cap">4주 상한 '+s.cap+'</span>'
+   + '</div>';
+  if(j)h+='<div class="ext-j '+j.lv+'"><b>'+esc(j.t)+'</b><span>'+esc(j.m)+'</span></div>';
+  h+= '<textarea class="ext-ta" readonly>'+esc(extTermText(name,caseNo,cur))+'</textarea>'
+   +  '<button class="btn ghost mini" onclick="extCopy(extTermText('+JSON.stringify(String(name||"")).replace(/"/g,"&quot;")+','+JSON.stringify(String(caseNo||"")).replace(/"/g,"&quot;")+',\''+cur+'\'),\'기일지정 문구를 복사했습니다\')">기일지정 문구 복사</button>'
+   + '</div>';
+  return h;
+}
+/* ===== 연장 도우미 끝 ===== */
+
 /* ===== 문서 갈래(제출/전달/납부) : 여기부터 (2026-08-30) ===== */
 /* ==========================================================
    문서 갈래 3가지 (2026-08-30 혜림 확정)
@@ -12404,12 +12612,15 @@ async function bjSetHandling(h){
   try{
     var patch={handling:h,updated_at:new Date().toISOString()};
     /* 전달형은 우리가 낼 게 없으니 법원 제출기한을 비운다. 날짜는 기록으로만 남는다 */
-    if(h==="전달"){ patch.court_deadline=null; patch.client_deadline=null; patch.deadline_source="전달형(제출 없음)"; }
+    /* 2026-08-31 : deadline_source 는 '계산'·'문서'·'수동' 셋만 허용된다(DB 제약).
+       전에 "전달형(제출 없음)" 이라는 없는 값을 넣어서 전달형 클릭이 통째로 실패했다.
+       전달형은 기한 자체가 없으므로 출처도 비운다. */
+    if(h==="전달"){ patch.court_deadline=null; patch.client_deadline=null; patch.deadline_source=null; }
     var r=await sbc.from("bj_documents").update(patch).eq("id",bjD.id);
     if(r.error)throw r.error;
     Object.keys(patch).forEach(function(k){ bjD[k]=patch[k]; });
     if(typeof toast==="function")toast(h+"형으로 두었습니다");
-  }catch(e){ alert("갈래 저장에 실패했습니다."); }
+  }catch(e){ alert("갈래 저장에 실패했습니다.\n\n"+((e&&(e.message||e.hint||e.details))||e)); }
   finally{ bjHandBusy=false; bjRender(); try{bxLoad(true);}catch(e){} }
 }
 async function bjHandSave(patch,msg){
@@ -12439,6 +12650,32 @@ function bjJosaIGa(w){
 function bjHandName(){
   return (bjDel&&bjDel.name)||(bjD&&bjD.case_no)||"의뢰인";
 }
+/* 금지명령 · 포괄적 금지명령 · 중지명령 : 안내문구 + 결정문만 보내면 끝나는 갈래 (2026-08-31) */
+function bjIsBanKind(kind){ return /금지명령|중지명령/.test(String(kind||"")); }
+/* 2026-08-31 혜림 지시 : 금지명령 안내는 아래 문구로 고정한다.
+   받은 날짜는 넣지 않는다. 당사자가 읽고 바로 이해하도록 토막을 나눴다. */
+function bjBanNoticeText(nm,firm,kind){
+  var all=(kind==="포괄적 금지명령");
+  return nm+" 님 안녕하세요. "+firm+"입니다.\n\n"
+   +"법원에서 "+kind+" 결정이 나왔습니다. 결정문 함께 보내드립니다.\n\n"
+   +"[1] "+kind+"이 무엇인가요\n"
+   +(kind==="중지명령"
+      ?"이미 진행 중이던 강제집행 · 압류 절차를 멈추게 하는 결정입니다.\n"
+      :"채권자가 강제집행 · 가압류 · 추심을 하지 못하도록 법원이 막아 주는 결정입니다.\n")
+   +(all?"모든 채권자에게 한꺼번에 적용됩니다.\n":"")
+   +"\n[2] 언제부터 효력이 생기나요\n"
+   +"결정이 난 날이 아니라, 채권자 쪽이 이 결정문을 송달받는 때부터 효력이 생깁니다.\n"
+   +"\n[3] 그런데 왜 바로 멈추지 않나요\n"
+   +"저희 사무실은 전자송달이라 결정문을 바로 확인합니다.\n"
+   +"채권자들은 법원에서 우편으로 따로 받습니다.\n"
+   +"그래서 결정이 난 뒤에도 1~2주 정도 더 걸릴 수 있습니다.\n"
+   +"이 기간에는 추심 연락이 계속 올 수 있으니 참고 부탁드립니다.\n"
+   +"\n[4] 그동안 어떻게 하시면 되나요\n"
+   +"추심 연락이 오면 법원에서 "+kind+" 결정을 받았다고 알려 주세요.\n"
+   +"그래도 계속되면 저희에게 알려 주시면 됩니다.\n"
+   +"\n채권자에게 보내는 우편은 법원에서 직접 발송하는 부분이라 일정 기간이 더 걸립니다.\n"
+   +"문의사항 있으시면 언제든 연락 주세요. 감사합니다.";
+}
 function bjNoticeText(){
   var h=bjHandling(), nm=bjHandName(), firm=(typeof bjSendFirm!=="undefined"&&bjSendFirm)||"법무법인 이준 서초 분사무소";
   var kind=bjDecideKind(bjD&&bjD.raw_text)||"결정";
@@ -12452,6 +12689,8 @@ function bjNoticeText(){
       +"기한을 넘기면 사건이 각하될 수 있으니 꼭 챙겨 주세요.\n\n"
       +"문의사항 있으시면 언제든 연락 주세요.";
   }
+  /* 금지명령은 혜림이 정한 문구로 따로 나간다 (2026-08-31) */
+  if(bjIsBanKind(kind))return bjBanNoticeText(nm,firm,kind);
   var body={
     "포괄적 금지명령":"모든 채권자의 강제집행·가압류·추심이 멈춥니다. 채권자에게서 추심 연락이 오면 이 명령을 알려주시고, 그래도 계속되면 저희에게 알려주세요.",
     "금지명령":"채권자의 강제집행·가압류·추심이 멈춥니다. 채권자에게서 추심 연락이 오면 이 명령을 알려주시고, 그래도 계속되면 저희에게 알려주세요.",
@@ -12504,7 +12743,28 @@ function bjHandleHtml(){
   var noti=(bjD&&bjD.notified_at)?String(bjD.notified_at).slice(0,10):"";
   var s=bjHandPickerHtml();
   s+='<div class="sec bj-hand">';
-  if(h==="전달"){
+  if(h==="전달"&&bjIsBanKind(kind)){
+    /* 2026-08-31 혜림 지시 : 금지·중지명령은 받은 날짜를 확인할 일이 없다.
+       안내 문구와 결정문만 보내면 끝. 날짜와 원본은 우리 쪽 보관용으로만 남긴다. */
+    s+='<div class="bp-t">안내 문구와 결정문만 보내면 끝입니다</div>'
+      +'<div class="bp-s">법원에 낼 것이 없습니다. 받은 날짜와 원본 문서는 저희 기록으로만 남기니 따로 확인하지 않으셔도 됩니다.</div>'
+      +'<div class="bh-kv"><span class="k">문서 종류</span><span class="v"><b>'+esc(kind)+'</b></span></div>'
+      +'<div class="bh-steps">'
+      +  '<div class="bh-st"><b>1</b><span>아래 안내 문구를 복사해서 당사자에게 보냅니다</span></div>'
+      +  '<div class="bh-st"><b>2</b><span>'+esc(kind)+' 결정문 파일을 같이 보냅니다</span></div>'
+      +  '<div class="bh-st"><b>3</b><span>다 보냈으면 [당사자에게 안내함]을 누릅니다</span></div>'
+      +'</div>'
+      +'<div class="bp-row">'
+      +  ((bjD&&bjD.pdf_path)
+          ?'<button class="btn ghost" onclick="bjOpenPdf()">결정문 열기</button>'
+           +'<button class="btn primary" onclick="bjDlPdf()">결정문 내려받기</button>'
+           +'<span class="bj-note">내려받아서 카톡에 첨부해 보내시면 됩니다</span>'
+          :'<span class="bj-note">원본 파일이 없습니다. 전자소송에서 받은 결정문 PDF를 보정 문서함에 올려 주세요</span>')
+      +'</div>'
+      +'<div class="bh-keep"><span class="k">기록용 · 받은 날짜</span>'
+        +'<input type="date" value="'+esc(got)+'" '+(bjHandBusy?"disabled":"")+' onchange="bjHandSave({served_at:this.value||null},\'받은 날짜를 기록했습니다\')">'
+        +'<span class="n">확인하실 필요는 없습니다. 나중에 찾아볼 때 쓰려고 보관만 합니다</span></div>';
+  }else if(h==="전달"){
     s+='<div class="bp-t">받은 날짜만 기록하고, 당사자에게 알리면 끝입니다</div>'
       +'<div class="bp-s">이 문서는 저희가 법원에 낼 것이 없습니다. 그래서 제출 기한을 잡지 않습니다.</div>'
       +'<div class="bh-kv"><span class="k">문서 종류</span><span class="v"><b>'+esc(kind)+'</b></span></div>'
@@ -12518,7 +12778,7 @@ function bjHandleHtml(){
         +'<input type="date" value="'+esc(got)+'" '+(bjHandBusy?"disabled":"")+' onchange="bjHandSave({served_at:this.value||null},\'받은 날짜를 기록했습니다\')">'
         +'<button class="btn ghost mini" onclick="bjHandSave({served_at:fmt(new Date())},\'오늘로 기록했습니다\')">오늘</button></span></div>'
       +'<div class="bh-kv"><span class="k">납부 기한</span><span class="v">'
-        +'<input type="date" value="'+esc(due)+'" '+(bjHandBusy?"disabled":"")+' onchange="bjHandSave({court_deadline:this.value||null,deadline_source:\'납부형(당사자 납부)\'},\'납부 기한을 기록했습니다\')">'
+        +'<input type="date" value="'+esc(due)+'" '+(bjHandBusy?"disabled":"")+' onchange="bjHandSave({court_deadline:this.value||null,deadline_source:\'수동\'},\'납부 기한을 기록했습니다\')">'
         +'<button class="btn ghost mini" onclick="bjPayDue7()">받은 날 + 7일</button></span></div>'
       +'<div class="bh-kv"><span class="k">납부 확인</span><span class="v">'
         +'<label class="bh-chk"><input type="checkbox" '+(paid?"checked":"")+' '+(bjHandBusy?"disabled":"")+' onchange="bjPayToggle(this.checked)"> <b>당사자가 납부했습니다</b></label>'
@@ -12546,7 +12806,7 @@ function bjPayDue7(){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(got)){ alert("받은 날짜를 먼저 넣어 주세요."); return; }
   var p=got.split("-"), d=new Date(+p[0],+p[1]-1,+p[2]);
   d.setDate(d.getDate()+7);
-  bjHandSave({court_deadline:fmt(d),deadline_source:"납부형(받은 날 + 7일)"},"납부 기한을 "+fmt(d)+"로 두었습니다");
+  bjHandSave({court_deadline:fmt(d),deadline_source:"수동"},"납부 기한을 "+fmt(d)+"로 두었습니다");
 }
 function bjPayToggle(on){
   bjHandSave({paid_at:on?fmt(new Date()):null}, on?"납부 확인으로 표시했습니다":"납부 확인을 지웠습니다");

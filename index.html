@@ -1664,9 +1664,15 @@
           <div><label>당사자명 *</label><input id="f-name" placeholder="예: 홍길동"></div>
           <div><label>담당 직원</label><select id="f-owner"></select></div>
           <div><label>관할 법원 *</label><input id="f-court" placeholder="예: 서울회생법원"></div>
-          <div><label>문서 종류</label><select id="f-doctype">
-            <option>보정명령</option><option>개시결정</option><option>송달료 납부명령</option>
-            <option>변제계획 인가결정</option><option>기타 결정·명령</option><option>미확인</option></select></div>
+          <div><label>문서 종류 <span style="font-weight:400;color:#8a94a6">(골라도 되고 직접 쳐도 됩니다)</span></label>
+            <input id="f-doctype" list="f-doctype-list" placeholder="예: 금지명령" autocomplete="off">
+            <datalist id="f-doctype-list">
+              <option>보정명령</option><option>보정권고</option>
+              <option>금지명령</option><option>포괄적 금지명령</option><option>중지명령</option>
+              <option>개시결정</option><option>변제계획 인가결정</option><option>면책결정</option>
+              <option>송달료 납부명령</option><option>채권자목록수정신청서</option>
+              <option>기타 결정·명령</option><option>미확인</option>
+            </datalist></div>
           <div><label>송달 도착일 <span style="font-weight:400;color:#8a94a6">(나중에 입력 가능)</span></label><input id="f-date" type="date"></div>
           <div><label>문서 처리기한 (확인일부터)</label><select id="f-term" onchange="onTermChange()">
             <option value="7">7일</option><option value="14" selected>14일</option><option value="21">21일</option>

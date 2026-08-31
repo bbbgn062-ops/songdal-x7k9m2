@@ -5011,7 +5011,15 @@ async function bjRegisterAll(){
             var nm0=String(b.client_name||"").replace(/\s/g,"");
             var hit=prows.filter(function(x){return String(x.party_name||"").replace(/\s/g,"")===nm0;});
             var pick=hit.length?hit[0]:prows[0];
-            if(pick){ deliveryId=pick.id; bjReused.push(b.fname); }
+            if(pick){
+              deliveryId=pick.id; bjReused.push(b.fname);
+              /* 줄 하나에 문서가 여러 개 쌓이므로, 목록에 보일 대표값은
+                 「기한을 챙겨야 하는 쪽」이 이긴다. 보정명령이 들어오면 결정문 위로 올린다.
+                 (금지명령을 먼저 등록하고 보정명령을 나중에 얹어도 기한이 살아 있게) */
+              if(!kindGuess){
+                try{ await sd().from("deliveries").update({doctype:docType,arrived_at:b.arrived,term_days:term}).eq("id",deliveryId); }catch(e){}
+              }
+            }
           }
         }catch(e){}
         var ins=deliveryId?{data:[{id:deliveryId}]}:await sd().from("deliveries").insert(row).select("id");

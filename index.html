@@ -2783,6 +2783,7 @@ var rcRows=[],rcFileName="",rcTab="new",rcOnlyBj=false,rcSel={},rcCli=null,rcBus
 var rcFirm="";        /* 화면에서 고른 소속 사무소. 안 고르면 대조를 시작하지 않는다 */
 var rcOffices=[];     /* offices 표 [{id,name}] */
 var rcDropped=0;      /* 우리 명단에 없어서 화면에서 뺀 줄 수 (저장도 하지 않는다) */
+var rcDup=0;          /* 엑셀에 똑같은 줄이 겹쳐 있어 한 줄로 합친 개수 */
 var RC_URGENT_WORDS=["기일변경"];  /* 즉시 안내 낱말. 나중에 설정 화면에서 늘릴 수 있게 배열 */
 var rcIntake="";      /* 접수 유형 거르기 : ""=모두 / "전체" / "보정만" */
 
@@ -2974,6 +2975,13 @@ async function rcLoadClients(){
    ①문서 종류가 같고(앞 네 글자가 서로 겹치면 같은 종류로 본다) ②발송일자도 같아야 같은 문서다.
    ★우리 기록에 문서 종류가 비어 있으면 종류로 가릴 수 없으므로 발송일자만 같으면 같은 것으로 본다
      (중복으로 한 줄 더 만드는 것보다는 안전한 쪽). */
+/* 서버가 "이미 있는 문서"라고 거절했을 때인지 가린다.
+   deliveries 에는 uq_delivery(사건번호+문서종류+발송일자) 유니크 규칙이 걸려 있어
+   같은 문서를 두 번 넣으려 하면 이 오류가 난다. */
+function rcIsDupErr(e){
+  var m=String((e&&e.message)||"")+" "+String((e&&e.details)||"");
+  return String((e&&e.code)||"")==="23505" || m.indexOf("duplicate key")>=0 || m.indexOf("uq_delivery")>=0;
+}
 function rcSameDoc(c,x){
   var a=String((c&&c.doctype)||"").replace(/\s/g,"");
   var b=String((x&&x.doc)||"").replace(/\s/g,"");
@@ -3024,7 +3032,19 @@ function rcMatch(){
     });
   });
   rcDropped=dropped;
-  return res;
+  /* ★2026-09-01 : 전자소송 엑셀은 한 문서를 여러 줄로 주는 일이 흔하다
+     (한 사건에 받는 사람이 여럿이면 줄이 그만큼 늘어난다).
+     실측 2026-09-01 파일 = 74줄 중 5줄이 완전 중복(4묶음).
+     합치지 않으면 체크 한 번에 같은 문서가 두 번 저장되려 해서
+     서버의 uq_delivery 유니크 규칙에 걸려 등록이 통째로 실패한다. */
+  var seenRow={}, oneEach=[];
+  rcDup=0;
+  res.forEach(function(r){
+    var rk=rcKey(r);
+    if(seenRow[rk]){ seenRow[rk].dupN++; rcDup++; return; }
+    r.dupN=1; seenRow[rk]=r; oneEach.push(r);
+  });
+  return oneEach;
 }
 
 function rcRender(){
@@ -3101,6 +3121,7 @@ function rcRender(){
   h+='<div class="bj-alert" style="margin:10px 0">엑셀 <b>'+rcRows.length+'건</b>을 읽었습니다. '
     +'우리 명단과 맞는 것은 <b>'+L.length+'건</b>입니다. '
     +'나머지 <b>'+rcDropped+'건</b>은 우리 사건이 아니어서 화면에서 뺐습니다(서버에 저장하지 않습니다).'
+    +(rcDup?'<br>★엑셀에 <b>똑같은 줄이 '+rcDup+'개</b> 더 있어 한 줄로 합쳤습니다. 한 사건에 받는 사람이 여럿이면 전자소송이 같은 문서를 여러 줄로 줍니다. 문서는 하나이므로 한 번만 등록하면 됩니다.':'')
     +'<br>우리 것 '+L.length+'건의 접수 유형 : <b>전체사건 '+nAll+'건</b> · <b>보정만 '+nBjOnly+'건</b>'
     +(nNoType?' · 유형 미정 '+nNoType+'건':'')
     +(nCourtDiff?'<br>그중 <b>'+nCourtDiff+'건</b>은 케이스허브에 <b>법원 이름이 비어 있어</b> 사건번호만으로 찾았습니다. 케이스허브에서 법원을 채우면 더 정확해집니다.':'')
@@ -3209,7 +3230,8 @@ function rcRow(r,showLeft){
     +'<td>'+st+'</td>'
     +'<td class="mono">'+esc(r.x.caseno)
       +(r.urgent?' <span class="rc-tag" style="background:#DC2626;color:#fff">즉시 안내</span>':'')
-      +(r.bj?' <span class="rc-tag">보정</span>':'')+'</td>'
+      +(r.bj?' <span class="rc-tag">보정</span>':'')
+      +(r.dupN>1?' <span class="rc-tag" style="background:#E8EEF7;color:#2B4570">엑셀 '+r.dupN+'줄</span>':'')+'</td>'
     +'<td>'+esc(r.x.court)+(r.x.part?'<div class="bj-note">'+esc(r.x.part)+'</div>':'')+'</td>'
     +'<td>'+esc(r.x.doc)+'</td>'
     +'<td class="mono">'+esc(r.x.sent||"-")+'</td>'
@@ -3334,6 +3356,18 @@ async function rcRegister(){
     function rcRowKey(court,caseno,doc,date){
       return rcCourtKey(court)+"|"+rcNormCase(caseno)+"|"+String(doc||"").replace(/\s/g,"")+"|"+String(date||"").slice(0,10);
     }
+    /* ★2026-09-01 : 서버 유니크 규칙 uq_delivery = 사건번호 + 문서종류 + 발송일자.
+       엑셀에 같은 문서가 여러 줄로 들어 있으면 그 세 칸이 똑같아서
+       한 번의 등록 안에 겹치는 줄이 둘 이상 생기고, 그러면 등록이 통째로 실패했다
+       ("등록 실패: duplicate key value violates unique constraint uq_delivery").
+       화면에서 이미 한 줄로 합쳤지만, 저장 직전에 한 번 더 같은 열쇠로 줄인다. */
+    var dupInFile=0, seenUq={}, uniqRows=[];
+    rows.forEach(function(w){
+      var uk=rcNormCase(w.case_no)+"|"+String(w.doctype||"").replace(/\s/g,"")+"|"+String(w.arrived_at||"").slice(0,10);
+      if(seenUq[uk]){ dupInFile++; return; }
+      seenUq[uk]=true; uniqRows.push(w);
+    });
+    rows=uniqRows;
     var nos=[];
     rows.forEach(function(w){ if(w.case_no&&nos.indexOf(w.case_no)<0)nos.push(w.case_no); });
     var already={};
@@ -3351,23 +3385,33 @@ async function rcRegister(){
         return true;
       });
     }
-    if(!rows.length){
-      rcSel={};
-      await refreshAll();
-      showView("recon");
-      rcRender();
-      alert("고른 "+skipped+"건은 그 사이 다른 사람이 이미 등록했습니다.\n새로 넣은 것은 없습니다.");
-      return;
+    /* ★서버가 그래도 "이미 있다"고 거절하면(담당자 계정은 남의 담당 사건이 안 보여서
+       화면에는 '아직 안 등록'으로 나올 수 있다) 한 건씩 넣어 그 건만 건너뛴다.
+       한 줄 때문에 나머지 전부가 날아가지 않게 하는 것이 핵심이다. */
+    var savedN=0, dupServer=0;
+    if(rows.length){
+      var ins=await sd().from("deliveries").insert(rows);
+      if(!ins.error){ savedN=rows.length; }
+      else if(rcIsDupErr(ins.error)){
+        for(var ri=0;ri<rows.length;ri++){
+          var one=await sd().from("deliveries").insert([rows[ri]]);
+          if(!one.error){ savedN++; }
+          else if(rcIsDupErr(one.error)){ dupServer++; }
+          else throw one.error;
+        }
+      }else throw ins.error;
     }
-    var ins=await sd().from("deliveries").insert(rows);
-    if(ins.error)throw ins.error;
     rcSel={};
     await refreshAll();
     showView("recon");
     rcRender();
-    alert(rows.length+"건을 등록했습니다."
-      +(skipped?"\n"+skipped+"건은 그 사이 다른 사람이 이미 등록해서 건너뛰었습니다.":"")
-      +(nDiff?"\n사무소·법원이 다른 건은 송달문서 목록에서 확인해 주세요.":""));
+    var msg=[];
+    msg.push(savedN?(savedN+"건을 송달 목록에 등록했습니다."):"새로 등록한 것은 없습니다.");
+    if(dupInFile)msg.push("· 엑셀에 같은 문서가 겹쳐 있던 "+dupInFile+"줄은 하나로 합쳤습니다.");
+    if(skipped)msg.push("· "+skipped+"건은 그 사이 다른 사람이 이미 등록해서 건너뛰었습니다.");
+    if(dupServer)msg.push("· "+dupServer+"건은 이미 등록돼 있는 문서라 건너뛰었습니다.\n  담당자가 다른 직원이면 내 화면에 안 보여서 '아직 안 등록'으로 나옵니다.\n  관리자에게 그 사건의 담당자를 확인해 달라고 하세요.");
+    if(nDiff)msg.push("· 사무소·법원이 우리 기록과 다른 건은 송달문서 목록에서 확인해 주세요.");
+    alert(msg.join("\n"));
   }catch(e){
     alert("등록 실패: "+(e.message||e));
   }finally{rcBusy=false;busy(false);}

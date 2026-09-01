@@ -1749,7 +1749,7 @@
         <div class="toolbar">
           <input id="q" placeholder="사건번호·이름 검색" oninput="render()" style="min-width:200px;">
           <select id="fltOwner" onchange="render()"><option value="">담당자 전체</option></select>
-          <select id="fltStatus" onchange="render()"><option value="">상태 전체</option><option>진행중</option><option>처리완료</option><option value="미확인">송달 미확인만</option></select>
+          <select id="fltStatus" onchange="render()"><option value="">상태 전체</option><option>진행중</option><option>기한보류</option><option>처리완료</option><option value="미확인">송달 미확인만</option></select>
           <div class="spacer"></div>
           <button class="btn ghost mini" onclick="exportCSV()">엑셀(CSV) 내보내기</button>
           <label class="btn ghost mini" style="margin:0;">가져오기<input type="file" accept=".csv" onchange="importCSV(event)" style="display:none;"></label>
@@ -1878,11 +1878,18 @@ function badgeClass(days,done){if(done)return"done";if(days<=0)return"r";if(days
 function badgeText(days,done){if(done)return"완료";if(days<0)return"D+"+(-days);if(days===0)return"D-day";return"D-"+days;}
 function procBadge(c){
   if(c.status==="처리완료")return '<span class="dd done">완료</span>';
+  if(isHold(c))return '<span class="dd done" style="background:#EEF1F6;color:#2B4570">기한 보류</span>';
   const pd=procLeft(c);
   if(pd===null)return '<span class="dd done">확인 전</span>';
   return '<span class="dd '+badgeClass(pd,false)+'">처리 '+badgeText(pd,false)+'</span>';
 }
-function isUnconfDanger(c){const d=confLeft(c);return !c.confirmed&&c.status!=="처리완료"&&d!==null&&d<0;}
+/* ★2026-09-01 혜림 지시 : 채권자 금액·명의·계좌만 바뀌는 문서는 지금 당장 할 일이 없다.
+   나중에 보정명령이 오면 그때 한꺼번에 처리하므로 '기한 보류'로 두고 기한 계산에서 뺀다.
+   보류 건은 처리기한·급건·달력·오늘 할 일에 안 나오고, 송달문서 목록에는 남는다. */
+function isHold(c){ return c&&c.status==="기한보류"; }
+/* 기한을 세지 않는 상태 = 처리완료 + 기한보류 */
+function isOffDeadline(c){ return c&&(c.status==="처리완료"||c.status==="기한보류"); }
+function isUnconfDanger(c){const d=confLeft(c);return !c.confirmed&&!isOffDeadline(c)&&d!==null&&d<0;}
 function confChip(c){
   if(c.confirmed)return '<span class="chip ok">송달확인 완료</span>';
   const d=confLeft(c);
@@ -2980,7 +2987,25 @@ async function rcLoadClients(){
    그 밖의 문서는 골라도 되고 안 골라도 된다(안 고르면 7일).
    낱말을 늘리려면 RC_DUE_WORDS 배열만 손보면 된다. */
 var RC_DUE_WORDS=["보정권고","보정명령"];
+/* ★2026-09-01 혜림 지시 : 채권자 금액·명의·계좌만 바뀌는 문서는 지금 낼 것이 없다.
+   나중에 보정명령이 왔을 때 한꺼번에 처리하므로 '기한 보류'로 두기를 권한다.
+   낱말을 늘리려면 이 배열만 손보면 된다. */
+var RC_HOLD_WORDS=["채권명의변경","채권자명의변경","채권자변경","명의변경","계좌번호신고","계좌신고","계좌번호","대위변제","채권액변경","금액변경"];
 var rcDue={};   /* rcKey → {sel:"" | "7" | "14" | "date", date:"YYYY-MM-DD"} */
+function rcLikelyHold(doc){
+  var t=String(doc||"").replace(/\s/g,"");
+  if(rcNeedDue(doc))return false;                 /* 보정권고·보정명령은 보류 대상이 아니다 */
+  for(var i=0;i<RC_HOLD_WORDS.length;i++){ if(t.indexOf(RC_HOLD_WORDS[i])>=0)return true; }
+  return false;
+}
+function rcIsHoldSel(k){ var d=rcDue[k]; return !!(d&&d.sel==="hold"); }
+function rcDueHoldAll(){
+  var L=rcMatch().filter(function(r){return r.state==="new"&&rcSel[rcKey(r)];});
+  L.forEach(function(r){
+    if(rcLikelyHold(r.x.doc)){ var k=rcKey(r); rcDue[k]=rcDue[k]||{sel:"",date:""}; rcDue[k].sel="hold"; rcDue[k].date=""; }
+  });
+  rcDueRender();
+}
 function rcNeedDue(doc){
   var t=String(doc||"").replace(/\s/g,"");
   for(var i=0;i<RC_DUE_WORDS.length;i++){ if(t.indexOf(RC_DUE_WORDS[i])>=0)return true; }
@@ -2989,7 +3014,7 @@ function rcNeedDue(doc){
 /* 고른 것을 며칠짜리 처리기한으로 볼지. 안 골랐으면 null */
 function rcDueDays(k){
   var d=rcDue[k];
-  if(!d||!d.sel)return null;
+  if(!d||!d.sel||d.sel==="hold")return null;
   if(d.sel==="date"){
     if(!d.date)return null;
     var t=parseD(d.date);
@@ -3032,14 +3057,19 @@ function rcDueRender(){
   }
   var need=L.filter(function(r){return rcNeedDue(r.x.doc);});
   var miss=need.filter(function(r){return rcDueDays(rcKey(r))===null;});
-  var opts=[["","선택 안 함 (7일)"],["date","마감 날짜로 정하기"],["7","7일"],["10","10일"],["14","14일"],["20","20일"],["30","30일"],["60","60일"]];
+  var optsBase=[["","선택 안 함 (7일)"],["date","마감 날짜로 정하기"],["7","7일"],["10","10일"],["14","14일"],["20","20일"],["30","30일"],["60","60일"]];
+  var optsHold=optsBase.concat([["hold","기한 보류 (나중에 보정 올 때 같이)"]]);
+  var nHold=L.filter(function(r){return rcLikelyHold(r.x.doc);}).length;
   var rows=L.map(function(r){
     var k=rcKey(r), must=rcNeedDue(r.x.doc), d=rcDue[k]||{sel:"",date:""}, n=rcDueDays(k);
+    var hold=(d.sel==="hold");
+    var opts=must?optsBase:optsHold;
     var due=(n===null)?null:rollFwd(addDays(fmt(today0()),n));
     var kj=JSON.stringify(k).replace(/"/g,"&quot;");
     return '<tr'+(must&&n===null?' style="background:#FDECEC"':'')+'>'
       +'<td style="padding:7px 8px;white-space:nowrap">'
-        +(must?'<span class="chip bad" style="font-size:10px;padding:1px 6px">날짜 필수</span>':'<span class="bj-note" style="font-size:11px">선택</span>')+'</td>'
+        +(must?'<span class="chip bad" style="font-size:10px;padding:1px 6px">날짜 필수</span>'
+              :(rcLikelyHold(r.x.doc)?'<span class="chip" style="font-size:10px;padding:1px 6px;background:#EEF1F6;color:#2B4570">보류 추천</span>':'<span class="bj-note" style="font-size:11px">선택</span>'))+'</td>'
       +'<td style="padding:7px 8px"><b>'+esc(r.cli?r.cli.name:"")+'</b><div class="bj-note" style="font-size:11px">'+esc(r.x.caseno)+'</div></td>'
       +'<td style="padding:7px 8px">'+esc(r.x.doc)+'<div class="bj-note" style="font-size:11px">발송 '+esc(r.x.sent||"-")+'</div></td>'
       +'<td style="padding:7px 8px;white-space:nowrap">'
@@ -3049,14 +3079,16 @@ function rcDueRender(){
         +(d.sel==="date"?' <input type="date" value="'+esc(d.date)+'" onchange="rcDueSet('+kj+',\'date\',this.value)" style="width:auto;padding:4px 6px;font-size:12px'+((must&&!d.date)?';border:2px solid #DC2626':'')+'">':'')
         +'</td>'
       +'<td style="padding:7px 8px;white-space:nowrap;font-size:12px">'
-        +(due?('<b>'+fmt(due)+'</b>'):'<span class="bj-note">미정 (7일로 등록)</span>')+'</td>'
+        +(hold?'<b style="color:#2B4570">기한 보류</b>':(due?('<b>'+fmt(due)+'</b>'):'<span class="bj-note">미정 (7일로 등록)</span>'))+'</td>'
       +'</tr>';
   }).join("");
   w.innerHTML='<div style="background:#fff;border-radius:12px;width:min(1040px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden">'
     +'<div style="padding:14px 16px;border-bottom:1px solid #eee">'
       +'<div style="font-weight:800;font-size:15.5px">등록 전 · 처리기한 정하기 <span class="bj-note" style="font-weight:400">'+L.length+'건</span></div>'
       +'<div class="bj-note" style="margin-top:4px">보정권고·보정명령은 법원이 준 기한이 건마다 다르므로 <b>마감 날짜를 반드시 넣어야</b> 등록됩니다(빨간 칸). 나머지 문서는 안 골라도 되고, 그 경우 7일로 들어갑니다.<br>'
+      +'채권자 금액·명의·계좌만 바뀌는 문서는 지금 낼 것이 없으므로 <b>기한 보류</b>로 두면 기한 계산·급건·달력에서 빠집니다. 나중에 보정명령이 오면 그때 함께 처리하면 됩니다.<br>'
       +'송달 확인일은 오늘(<b>'+fmt(today0())+'</b>)로 자동 입력되고, 처리기한은 <b>오늘 + 고른 일수</b>입니다. 그날이 주말·공휴일이면 다음 영업일로 밀립니다.</div>'
+      +(nHold?'<div style="margin-top:8px"><button class="btn ghost mini" onclick="rcDueHoldAll()">금액·명의·계좌 변경류 '+nHold+'건을 한 번에 기한 보류로</button></div>':'')
     +'</div>'
     +'<div style="flex:1;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'
       +'<thead><tr style="position:sticky;top:0;background:#faf8f6">'
@@ -3507,6 +3539,7 @@ async function rcRegister(){
     if(rows.length){
       var ins=await sd().from("deliveries").insert(rows);
       if(!ins.error){ savedN=rows.length; }
+      else if(isStatusRuleErr(ins.error)){ throw new Error("서버가 아직 '기한보류' 상태를 받지 않습니다. SQL_송달앱_기한보류_허용_20260901.sql 을 한 번 실행한 뒤 다시 등록해 주세요."); }
       else if(rcIsDupErr(ins.error)){
         for(var ri=0;ri<rows.length;ri++){
           var one=await sd().from("deliveries").insert([rows[ri]]);
@@ -3749,7 +3782,7 @@ function calItems(){
 
   /* 2) 송달 사건 : 처리기한 · 송달간주일 · 추후제출 */
   (cases||[]).forEach(function(c){
-    if(c.status==="처리완료")return;
+    if(isOffDeadline(c))return;                     /* ★기한 보류 건은 달력에 올리지 않는다 */
     var cl=(c.client_id&&calCli&&calCli[c.client_id])||calCliOf(c.court,c.caseno);
     var base={
       name:c.name||(cl&&cl.name)||"이름 없음", caseno:c.caseno||"", court:c.court||"",
@@ -4518,12 +4551,21 @@ async function delCase(id){
   catch(e){alert("삭제 실패: "+(e.message||e));}
   finally{busy(false);}
 }
+/* ★상태에 '기한보류'를 처음 쓰는 순간 서버가 거부할 수 있다(status 에 허용값 규칙이 걸려 있으면).
+   그때는 무슨 일인지 우리말로 알려 주고 실행할 SQL 이름을 알려 준다. */
+function isStatusRuleErr(e){
+  var m=String((e&&e.message)||"")+" "+String((e&&e.details)||"")+" "+String((e&&e.hint)||"");
+  return m.indexOf("status")>=0 && (m.indexOf("check")>=0||m.indexOf("constraint")>=0||m.indexOf("23514")>=0);
+}
 async function patchCase(id,patch,logMsg){
   const c=cases.find(x=>x.id===id);if(!c)return;
   const nlog=(c.log||[]).concat(logMsg?[{t:fmt(new Date()),m:logMsg+" ("+me.name+")"}]:[]);
   busy(true);
   try{const {error}=await sd().from("deliveries").update({...patch,log:nlog}).eq("id",id);if(error)throw error;await refreshAll();}
-  catch(e){alert("저장 실패: "+(e.message||e));}
+  catch(e){
+    if(isStatusRuleErr(e))alert("서버가 아직 '기한보류' 상태를 받지 않습니다.\n\nSQL_송달앱_기한보류_허용_20260901.sql 을 한 번 실행한 뒤 다시 해 주세요.");
+    else alert("저장 실패: "+(e.message||e));
+  }
   finally{busy(false);}
 }
 function setStatus(id,val){patchCase(id,{status:val},"상태 → "+val);}
@@ -4595,7 +4637,7 @@ function render(){
   const _tl2=document.getElementById("s-total-l");
   if(_tl2)_tl2.textContent=_all?"전체 사건":"내 사건";
   /* 남은 기한 기준 숫자판 (시안 구조) */
-  const live=L.filter(c=>c.status!=="처리완료");
+  const live=L.filter(c=>!isOffDeadline(c));
   const dl=c=>{const p=procLeft(c);return p===null?confLeft(c):p;};
   const cnt=(f)=>live.filter(c=>{const d=dl(c);return d!==null&&f(d);}).length;
   document.getElementById("s-d0").textContent=cnt(d=>d<=0);
@@ -4605,7 +4647,7 @@ function render(){
 
   /* 오늘 할 일 */
   const todos=L.filter(c=>{
-    if(c.status==="처리완료")return false;
+    if(isOffDeadline(c))return false;
     const cd=confLeft(c),pd=procLeft(c),fl=followupLeft(c);
     return (!c.confirmed&&cd<=1)||(pd!==null&&pd<=2)||(fl!==null&&fl<=2);
   }).sort((a,b)=>{
@@ -4629,7 +4671,7 @@ function render(){
   }).join("");
   document.getElementById("todo-empty").style.display=todos.length?"none":"block";
 
-  const active=L.filter(c=>c.status!=="처리완료").sort((a,b)=>{
+  const active=L.filter(c=>!isOffDeadline(c)).sort((a,b)=>{
     const au=isUnconfDanger(a),bu=isUnconfDanger(b);if(au!==bu)return au?-1:1;
     const pa=procLeft(a),pb=procLeft(b);
     if(pa===null&&pb===null)return confLeft(a)-confLeft(b);
@@ -4686,15 +4728,15 @@ function render(){
   let list=L.filter(c=>{
     const okQ=!q||c.caseno.toLowerCase().includes(q)||c.name.toLowerCase().includes(q);
     let okS=true;
-    if(fStatus==="미확인")okS=(!c.confirmed&&c.status!=="처리완료");
+    if(fStatus==="미확인")okS=(!c.confirmed&&!isOffDeadline(c));
     else if(fStatus)okS=(c.status===fStatus);
     return okQ&&(!fOwner||c.owner_id===fOwner)&&okS;
   });
-  list.sort((a,b)=>{const ac=a.status==="처리완료",bc=b.status==="처리완료";if(ac!==bc)return ac?1:-1;const pa=procLeft(a),pb=procLeft(b);if(pa===null&&pb===null)return confLeft(a)-confLeft(b);if(pa===null)return 1;if(pb===null)return -1;return pa-pb;});
+  list.sort((a,b)=>{const ac=isOffDeadline(a),bc=isOffDeadline(b);if(ac!==bc)return ac?1:-1;const pa=procLeft(a),pb=procLeft(b);if(pa===null&&pb===null)return confLeft(a)-confLeft(b);if(pa===null)return 1;if(pb===null)return -1;return pa-pb;});
   document.getElementById("tbody").innerHTML=list.map(c=>{
     const due=procDueDate(c);
     const _d=(procLeft(c)===null?confLeft(c):procLeft(c));
-    const _cls=c.status==="처리완료"?"done":(isUnconfDanger(c)||(_d!==null&&_d<=0)?"hot":((_d!==null&&_d<=2)?"warn":""));
+    const _cls=isOffDeadline(c)?"done":(isUnconfDanger(c)||(_d!==null&&_d<=0)?"hot":((_d!==null&&_d<=2)?"warn":""));
     return `<tr class="${_cls}">
     <td>${procBadge(c)}<div style="font-size:12px;font-weight:700;color:${due?(procLeft(c)<=0?'var(--red)':procLeft(c)<=2?'var(--amber)':'#3B3733'):'var(--muted)'};margin-top:3px">${due?fmt(due)+"까지":"확인 후 확정"}${procRolled(c)?" ↗":""}</div></td>
     <td><b>${esc(c.caseno)}</b>${c.client_id?' <span class="pill" style="font-size:10px">허브</span>':''}</td><td>${esc(c.name)}${c.delayStrategy?' <span title="시간끌기"></span>':''}${c.submitStatus==="일부제출"?'<br><span style="font-size:10.5px;color:var(--amber)">추후 '+esc(c.followupDate||'')+'</span>':''}</td><td>${esc(c.doctype||"")}</td>
@@ -4704,7 +4746,7 @@ function render(){
     <td><label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)"><input type="checkbox" class="cbx" ${c.confirmed?"checked":""} onchange="confirmToggle('${c.id}')">${c.confirmed?('확인 '+esc(c.confirmedDate||"")):confChip(c)}</label></td>
     <td><span class="pill">${docProg(c)}%</span></td>
     <td><select class="status-sel" onchange="setStatus('${c.id}',this.value)">
-      ${["진행중","처리완료"].map(s=>`<option ${s===c.status?'selected':''}>${s}</option>`).join("")}</select></td>
+      ${["진행중","기한보류","처리완료"].map(s=>`<option ${s===c.status?'selected':''}>${s}</option>`).join("")}${!["진행중","기한보류","처리완료"].includes(c.status)?`<option selected>${esc(c.status)}</option>`:''}</select></td>
     <td><div class="row-actions">
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">상세</button>
       <button class="btn ghost mini" onclick="editCase('${c.id}')">수정</button>
@@ -4721,7 +4763,7 @@ function renderDetail(){
   const confCell=c.confirmed
     ? '<input type="date" style="width:auto;padding:6px 8px" value="'+esc(c.confirmedDate)+'" onchange="setConfirmDate(\''+c.id+'\',this.value)">'
     : (isDeemed(c) ? ('간주송달 '+fmt(serviceDate(c))+' · 미확인 7일 경과') : ('<button class="btn primary mini" onclick="confirmToggle(\''+c.id+'\')">송달 확인(다운로드) 처리</button>'));
-  const procCell=procDueDate(c) ? (fmt(procDueDate(c))+' ('+esc(c.termType)+')'+(procRolled(c)?' · 주말·공휴일로 연장(원래 '+fmt(procDueRaw(c))+')':'')+' · '+procBadge(c)) : ('송달 확인 후 확정 (확인일 +'+c.termDays+'일)');
+  const procCell=isHold(c) ? '<b style="color:#2B4570">기한 보류</b> · 나중에 보정명령이 오면 그때 함께 처리합니다 (상태를 진행중으로 바꾸면 기한이 다시 살아납니다)' : procDueDate(c) ? (fmt(procDueDate(c))+' ('+esc(c.termType)+')'+(procRolled(c)?' · 주말·공휴일로 연장(원래 '+fmt(procDueRaw(c))+')':'')+' · '+procBadge(c)) : ('송달 확인 후 확정 (확인일 +'+c.termDays+'일)');
   w.innerHTML=`<div class="detail">
     <div class="h2row"><h2 style="margin:0">${esc(c.name)} · ${esc(c.caseno)} <span class="pill">서류 ${docProg(c)}%</span></h2>
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">닫기</button></div>
@@ -4948,9 +4990,9 @@ function renderStaff(){
   const el=document.getElementById("stafflist");
   const rows=staff.map(s=>{
     const mine=cases.filter(c=>c.owner_id===s.id);
-    const act=mine.filter(c=>c.status!=="처리완료").length;
-    const unc=mine.filter(c=>!c.confirmed&&c.status!=="처리완료").length;
-    const urg=mine.filter(c=>{if(c.status==="처리완료")return false;const pd=procLeft(c);return isUnconfDanger(c)||(pd!==null&&pd<=2);}).length;
+    const act=mine.filter(c=>!isOffDeadline(c)).length;
+    const unc=mine.filter(c=>!c.confirmed&&!isOffDeadline(c)).length;
+    const urg=mine.filter(c=>{if(isOffDeadline(c))return false;const pd=procLeft(c);return isUnconfDanger(c)||(pd!==null&&pd<=2);}).length;
     const done=mine.filter(c=>c.status==="처리완료").length;
     return `<div class="staffrow"><span class="n">${esc(s.name||"이름 미설정")}</span>
       <span style="font-size:12px;color:var(--muted)">${s.role==="master"?"관리자":esc(s.role||"담당자")}</span>
@@ -4963,7 +5005,7 @@ function renderStaff(){
   });
   const noOwner=cases.filter(c=>!c.owner_id);
   if(noOwner.length){
-    const act=noOwner.filter(c=>c.status!=="처리완료").length;
+    const act=noOwner.filter(c=>!isOffDeadline(c)).length;
     rows.push(`<div class="staffrow"><span class="n" style="color:var(--muted)">담당 미지정</span>
       <span class="cnt"><span class="chip bad">진행 ${act} · 담당자를 지정하세요</span></span></div>`);
   }

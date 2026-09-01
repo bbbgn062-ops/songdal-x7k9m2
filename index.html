@@ -4837,7 +4837,7 @@ function renderDetail(){
   w.innerHTML=`<div class="detail">
     <div class="h2row"><h2 style="margin:0">${esc(c.name)} · ${esc(c.caseno)} <span class="pill">서류 ${docProg(c)}%</span></h2>
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">닫기</button></div>
-    <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")} <button class="btn primary mini" onclick="bjFromDelivery('${c.id}')">문서 등록·판독</button> ${c.client_id?`<label class="btn ghost mini" style="margin:0;cursor:pointer" title="판독 화면으로 넘어가지 않고 파일만 보관합니다">파일만 저장<input type="file" accept="application/pdf,image/*" onchange="uploadBojeong('${c.id}',event)" style="display:none"></label> `:''}<button class="btn ghost mini" onclick="wdOpenFromCase('${c.id}')">대행 작업대</button></span></div>
+    <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")} <button class="btn primary mini" onclick="bjFromDelivery('${c.id}')">문서 등록·판독</button> ${c.client_id?`<label class="btn ghost mini" style="margin:0;cursor:pointer" title="판독 화면으로 넘어가지 않고 '이 사건의 문서'에만 넣습니다. 판독은 나중에 [판독] 버튼으로 이어서 하면 됩니다">파일만 등록<input type="file" accept="application/pdf,image/*" onchange="caseFilePick('${c.id}',event)" style="display:none"></label> `:''}<button class="btn ghost mini" onclick="wdOpenFromCase('${c.id}')">대행 작업대</button></span></div>
     <div style="margin:10px 0 2px"><div style="font-weight:600;font-size:13px;margin:0 0 6px">이 사건의 문서</div><div id="bjprev-${c.id}">불러오는 중…</div></div>
     <div class="kv"><span class="k">담당자</span><span>${esc(ownerName(c.owner_id)||"미지정")}</span></div>
     ${c.client_id?'<div id="clientinfo-'+c.id+'" style="margin:8px 0;padding:10px 12px;background:#faf8f6;border-radius:10px;font-size:13px">의뢰인 정보 불러오는 중…</div>':''}
@@ -8945,7 +8945,7 @@ async function bjPick2(ev){
   if(!c)return;
   /* ★2026-09-01 혜림 지시 : 파일을 넣으면 무조건 판독 화면으로 넘어가던 것을 고른다.
      [취소]를 누르면 파일만 사건에 보관하고 이 화면에 그대로 있는다. */
-  var _go=confirm("이 파일로 지금 보정 판독까지 진행할까요?\n\n[확인] 판독 화면으로 넘어갑니다\n[취소] 파일만 저장하고 이 화면에 그대로 있습니다");
+  var _go=confirm("이 파일로 지금 보정 판독까지 진행할까요?\n\n[확인] 판독 화면으로 넘어갑니다\n[취소] '이 사건의 문서'에 등록만 하고 이 화면에 그대로 있습니다\n        (나중에 [판독] 버튼으로 이어서 할 수 있습니다)");
   if(!_go){
     bjPendingDelivery=null;
     await bjSaveFileOnly(c,f);
@@ -8976,8 +8976,47 @@ async function bjPick2(ev){
    보관 위치는 상세 아래 '보정서 파일'과 같은 곳(bojeong 버킷 · 사무소/의뢰인 폴더)이라
    같은 자리에서 미리보기·내려받기가 된다. 의뢰인 연결이 없으면 보관할 폴더가 없어 안내만 한다. */
 async function bjSaveFileOnly(c,f){
-  var ok=await saveCaseFile(c,f,"파일 보관 : "+f.name+" (판독 없이 저장)");
-  if(ok)alert("파일을 이 사건에 보관했습니다.\n상세 화면 아래 '보정서 파일'에서 미리보기·내려받기 할 수 있습니다.");
+  if(!c||!f)return;
+  /* PDF 가 아니면 판독할 것이 없으니 예전처럼 '보정서 파일'에 보관한다 */
+  var isPdf=/\.pdf$/i.test(String(f.name||""))||String(f.type||"").indexOf("pdf")>=0;
+  if(!isPdf){
+    var ok=await saveCaseFile(c,f,"파일 보관 : "+f.name+" (판독 없이 저장)");
+    if(ok)alert("PDF가 아니어서 아래 '보정서 파일'에 보관했습니다.\n거기서 미리보기·내려받기 할 수 있습니다.");
+    return;
+  }
+  busy(true);
+  try{
+    /* 판독 화면으로 넘어가지만 않을 뿐, 등록은 [문서 등록·판독]과 똑같이 한다.
+       그래야 상세의 '이 사건의 문서'에 카드로 뜨고, 나중에 [판독]으로 이어서 할 수 있다. */
+    var raw=await bjExtractPdf(f);
+    var cl=bjClean(raw);
+    var af=bjAutofill(cl.text);
+    var kinds=bjDocKinds(cl.text,c.caseno);
+    var path="orders/"+bjSafeKey(c.caseno)+"/"+Date.now()+".pdf",up=null;
+    try{up=await sbc.storage.from("bojeong").upload(path,f,{upsert:false,contentType:"application/pdf"});}catch(e){up={error:e};}
+    if(up&&up.error)alert("PDF 원본 보관에 실패했어요: "+(up.error.message||up.error)
+      +"\n\n등록은 계속되지만 [원본 미리보기]가 안 떠요.");
+    var doc={delivery_id:c.id,case_no:c.caseno,court:c.court||af.court||null,doc_type:kinds.join(","),
+      served_at:c.confirmed?c.confirmedDate:null,order_date:af.dates[0]||null,
+      pdf_path:(up&&!up.error)?path:null,raw_text:bjMaskRrn(cl.text),status:"판독중",assignee:(me&&me.name)||null};
+    var di=await sbc.from("bj_documents").insert(doc).select("id");
+    if(di.error)throw di.error;
+    if(!di.data||!di.data.length)throw new Error("보정문서 저장 0건. SQL L1과 권한을 확인하세요.");
+    try{ await patchCase(c.id,{},"문서 등록 : "+f.name+" (판독은 나중에)"); }catch(e){}
+    alert("'이 사건의 문서'에 넣었습니다.\n상세 화면에서 [판독]을 눌러 언제든 이어서 할 수 있습니다.");
+    if(typeof bjLoadPreview==="function")bjLoadPreview(c);
+  }catch(e){
+    alert("문서 등록 실패\n\n"+((e&&e.message)||e)+"\n\n(이 문구를 그대로 알려 주시면 원인을 바로 찾을 수 있습니다)");
+  }
+  finally{busy(false);}
+}
+/* 상세의 [파일만 저장] 버튼이 쓰는 문 */
+async function caseFilePick(id,ev){
+  var f=ev.target.files[0]; ev.target.value="";
+  if(!f)return;
+  var c=cases.find(function(x){return x.id===id;});
+  if(!c)return;
+  await bjSaveFileOnly(c,f);
 }
 /* 07-23: 한 사건에 보정이 1건뿐일 때도 같은 사건에 다음 보정(2차 권고·명령)을 바로 붙일 수 있게 */
 function bjAddToCase(){
@@ -11539,7 +11578,7 @@ async function bjLoadPreview(c){
   try{
     var r=await sbc.from("bj_documents").select("id,doc_type,order_date,served_at,status,created_at,pdf_path,court_deadline").eq("delivery_id",c.id).order("created_at",{ascending:false}).limit(50);
     var rows=r.data||[];
-    if(!rows.length){el.innerHTML='<div class="bj-note">아직 등록된 문서가 없습니다. 위 [문서 등록·판독]으로 PDF를 올리면 여기에 차곡차곡 쌓입니다.</div>';return;}
+    if(!rows.length){el.innerHTML='<div class="bj-note">아직 등록된 문서가 없습니다. 위 [문서 등록·판독]으로 PDF를 올리면 여기에 차곡차곡 쌓입니다.<br>바로 판독하지 않을 거라면 [파일만 등록]을 쓰세요. 여기에 카드로 쌓이고 나중에 [판독]으로 이어서 할 수 있습니다.</div>';return;}
     var active=rows.filter(function(a){return a.status!=="완료";});
     var summ;
     if(active.length){

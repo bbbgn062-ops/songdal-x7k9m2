@@ -1756,7 +1756,7 @@
         </div>
         <div style="overflow-x:auto;">
         <table><thead><tr>
-          <th>처리기한</th><th>사건번호</th><th>당사자</th><th>문서종류</th><th>기한유형</th><th>송달확인</th><th>서류</th><th>상태</th><th>관리</th>
+          <th>처리기한 (마감일)</th><th>사건번호</th><th>당사자</th><th>문서종류</th><th>기한유형</th><th>송달확인 (확인일)</th><th>서류</th><th>상태</th><th>관리</th>
         </tr></thead><tbody id="tbody"></tbody></table></div>
         <div class="empty" id="empty" style="display:none;">등록된 사건이 없습니다.</div>
       </div>
@@ -2975,6 +2975,104 @@ async function rcLoadClients(){
    ①문서 종류가 같고(앞 네 글자가 서로 겹치면 같은 종류로 본다) ②발송일자도 같아야 같은 문서다.
    ★우리 기록에 문서 종류가 비어 있으면 종류로 가릴 수 없으므로 발송일자만 같으면 같은 것으로 본다
      (중복으로 한 줄 더 만드는 것보다는 안전한 쪽). */
+/* ★2026-09-01 혜림 지시 : 보정권고·보정명령은 기한을 반드시 고르고 등록한다.
+   그 밖의 문서는 골라도 되고 안 골라도 된다(안 고르면 7일).
+   낱말을 늘리려면 RC_DUE_WORDS 배열만 손보면 된다. */
+var RC_DUE_WORDS=["보정권고","보정명령"];
+var rcDue={};   /* rcKey → {sel:"" | "7" | "14" | "date", date:"YYYY-MM-DD"} */
+function rcNeedDue(doc){
+  var t=String(doc||"").replace(/\s/g,"");
+  for(var i=0;i<RC_DUE_WORDS.length;i++){ if(t.indexOf(RC_DUE_WORDS[i])>=0)return true; }
+  return false;
+}
+/* 고른 것을 며칠짜리 처리기한으로 볼지. 안 골랐으면 null */
+function rcDueDays(k){
+  var d=rcDue[k];
+  if(!d||!d.sel)return null;
+  if(d.sel==="date"){
+    if(!d.date)return null;
+    var t=parseD(d.date);
+    if(!t)return null;
+    var n=Math.round((t-today0())/86400000);
+    return n<1?1:n;
+  }
+  var v=parseInt(d.sel,10);
+  return v>0?v:null;
+}
+function rcDueSet(k,field,val){
+  if(!rcDue[k])rcDue[k]={sel:"",date:""};
+  rcDue[k][field]=val;
+  if(field==="sel"&&val!=="date")rcDue[k].date="";
+  rcDueRender();
+}
+function rcDueClose(){ var w=document.getElementById("rc-due"); if(w)w.style.display="none"; }
+/* 등록 버튼을 누르면 저장 전에 이 창이 먼저 뜬다 */
+function rcDueOpen(){
+  var L=rcMatch().filter(function(r){return r.state==="new"&&rcSel[rcKey(r)];});
+  if(!L.length){alert("등록할 건을 먼저 고르세요.");return;}
+  rcDue={};
+  L.forEach(function(r){
+    var k=rcKey(r);
+    /* ★보정권고·보정명령은 법원이 정해 준 마감 '날짜'를 그대로 넣는 것이 정확하다.
+       그래서 날짜 칸이 처음부터 열려 있고, 비어 있으면 등록이 안 된다. */
+    rcDue[k]={sel:rcNeedDue(r.x.doc)?"date":"7", date:""};
+  });
+  rcDueRender();
+}
+function rcDueRender(){
+  var L=rcMatch().filter(function(r){return r.state==="new"&&rcSel[rcKey(r)];});
+  var w=document.getElementById("rc-due");
+  if(!w){
+    w=document.createElement("div");
+    w.id="rc-due";
+    w.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;display:flex;align-items:center;justify-content:center;padding:18px";
+    w.onclick=function(e){ if(e.target===w)rcDueClose(); };
+    document.body.appendChild(w);
+  }
+  var need=L.filter(function(r){return rcNeedDue(r.x.doc);});
+  var miss=need.filter(function(r){return rcDueDays(rcKey(r))===null;});
+  var opts=[["","선택 안 함 (7일)"],["date","마감 날짜로 정하기"],["7","7일"],["10","10일"],["14","14일"],["20","20일"],["30","30일"],["60","60일"]];
+  var rows=L.map(function(r){
+    var k=rcKey(r), must=rcNeedDue(r.x.doc), d=rcDue[k]||{sel:"",date:""}, n=rcDueDays(k);
+    var due=(n===null)?null:rollFwd(addDays(fmt(today0()),n));
+    var kj=JSON.stringify(k).replace(/"/g,"&quot;");
+    return '<tr'+(must&&n===null?' style="background:#FDECEC"':'')+'>'
+      +'<td style="padding:7px 8px;white-space:nowrap">'
+        +(must?'<span class="chip bad" style="font-size:10px;padding:1px 6px">날짜 필수</span>':'<span class="bj-note" style="font-size:11px">선택</span>')+'</td>'
+      +'<td style="padding:7px 8px"><b>'+esc(r.cli?r.cli.name:"")+'</b><div class="bj-note" style="font-size:11px">'+esc(r.x.caseno)+'</div></td>'
+      +'<td style="padding:7px 8px">'+esc(r.x.doc)+'<div class="bj-note" style="font-size:11px">발송 '+esc(r.x.sent||"-")+'</div></td>'
+      +'<td style="padding:7px 8px;white-space:nowrap">'
+        +'<select onchange="rcDueSet('+kj+',\'sel\',this.value)" style="width:auto;padding:5px 8px;font-size:12px">'
+        +opts.map(function(o){return '<option value="'+o[0]+'"'+(d.sel===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("")
+        +'</select>'
+        +(d.sel==="date"?' <input type="date" value="'+esc(d.date)+'" onchange="rcDueSet('+kj+',\'date\',this.value)" style="width:auto;padding:4px 6px;font-size:12px'+((must&&!d.date)?';border:2px solid #DC2626':'')+'">':'')
+        +'</td>'
+      +'<td style="padding:7px 8px;white-space:nowrap;font-size:12px">'
+        +(due?('<b>'+fmt(due)+'</b>'):'<span class="bj-note">미정 (7일로 등록)</span>')+'</td>'
+      +'</tr>';
+  }).join("");
+  w.innerHTML='<div style="background:#fff;border-radius:12px;width:min(1040px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden">'
+    +'<div style="padding:14px 16px;border-bottom:1px solid #eee">'
+      +'<div style="font-weight:800;font-size:15.5px">등록 전 · 처리기한 정하기 <span class="bj-note" style="font-weight:400">'+L.length+'건</span></div>'
+      +'<div class="bj-note" style="margin-top:4px">보정권고·보정명령은 법원이 준 기한이 건마다 다르므로 <b>마감 날짜를 반드시 넣어야</b> 등록됩니다(빨간 칸). 나머지 문서는 안 골라도 되고, 그 경우 7일로 들어갑니다.<br>'
+      +'송달 확인일은 오늘(<b>'+fmt(today0())+'</b>)로 자동 입력되고, 처리기한은 <b>오늘 + 고른 일수</b>입니다. 그날이 주말·공휴일이면 다음 영업일로 밀립니다.</div>'
+    +'</div>'
+    +'<div style="flex:1;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'
+      +'<thead><tr style="position:sticky;top:0;background:#faf8f6">'
+        +'<th style="padding:8px;text-align:left;width:88px">구분</th>'
+        +'<th style="padding:8px;text-align:left;width:180px">의뢰인 · 사건번호</th>'
+        +'<th style="padding:8px;text-align:left">송달문서</th>'
+        +'<th style="padding:8px;text-align:left;width:260px">기한 정하기</th>'
+        +'<th style="padding:8px;text-align:left;width:140px">마감일</th>'
+      +'</tr></thead><tbody>'+rows+'</tbody></table></div>'
+    +'<div style="padding:12px 16px;border-top:1px solid #eee;display:flex;align-items:center;gap:10px">'
+      +(miss.length?'<span style="color:var(--red);font-weight:700;font-size:12.5px">마감 날짜를 넣어야 하는 보정 건이 '+miss.length+'건 남았습니다</span>':'<span style="color:#2B7A4B;font-weight:700;font-size:12.5px">기한이 모두 정해졌습니다</span>')
+      +'<span style="flex:1"></span>'
+      +'<button class="btn ghost mini" onclick="rcDueClose()">취소</button>'
+      +'<button class="btn primary mini"'+(miss.length?' disabled':'')+' onclick="rcDueClose();rcRegister()">'+L.length+'건 등록하기</button>'
+    +'</div></div>';
+  w.style.display="flex";
+}
 /* 서버가 "이미 있는 문서"라고 거절했을 때인지 가린다.
    deliveries 에는 uq_delivery(사건번호+문서종류+발송일자) 유니크 규칙이 걸려 있어
    같은 문서를 두 번 넣으려 하면 이 오류가 난다. */
@@ -3183,7 +3281,7 @@ function rcRender(){
       +'<label class="rc-ck"><input type="checkbox" onchange="rcSelAll(this.checked)"> 보이는 미등록 건 모두 고르기</label>'
       +'<span style="flex:1"></span>'
       +'<span class="bj-note">'+pick.length+'건 골랐습니다</span>'
-      +'<button class="btn primary mini"'+(pick.length?'':' disabled')+' onclick="rcRegister()">고른 '+pick.length+'건 등록하기</button>'
+      +'<button class="btn primary mini"'+(pick.length?'':' disabled')+' onclick="rcDueOpen()">고른 '+pick.length+'건 등록하기</button>'
       +'</div>';
   }
 
@@ -3305,7 +3403,7 @@ function rcGoCase(id){
 /* 한 건 등록 */
 function rcRegisterOne(k){
   rcSel={}; rcSel[k]=true;
-  rcRegister();
+  rcDueOpen();
 }
 /* ★담당자 승계 : 그 의뢰인의 가장 최근 송달 건 담당자를 이어받는다.
    cases 는 created_at 내림차순으로 불러오므로 먼저 걸리는 것이 최신이다. */
@@ -3323,11 +3421,15 @@ async function rcRegister(){
   var L=rcMatch().filter(function(r){return r.state==="new"&&rcSel[rcKey(r)];});
   if(!L.length){alert("등록할 건을 먼저 고르세요.");return;}
   var nDiff=L.filter(function(r){return r.firmDiff||r.courtDiff;}).length;
+  /* ★2026-09-01 혜림 지시 : 송달 확인일을 등록하는 날(오늘)로 자동 입력한다.
+     이렇게 해야 처리기한(확인일 + N일)이 바로 잡혀 일정 관리를 할 수 있다.
+     실제로 전자소송에서 문서를 연 날과 다르면 상세 화면에서 날짜를 고치면 된다. */
+  var _rcToday=fmt(today0());
   var msg=L.length+"건을 송달 목록에 등록할까요?\n\n"
     +"· 발송일자가 송달 도착일로 들어갑니다\n"
-    +"· 처리기한은 7일로 시작합니다 (문서를 열어 고칠 수 있습니다)\n"
-    +"· 담당자는 그 의뢰인의 직전 회차 담당자를 이어받습니다\n"
-    +"· 송달 확인은 '미확인' 으로 둡니다";
+    +"· 송달 확인일은 오늘("+_rcToday+")로 자동 입력됩니다\n"
+    +"· 처리기한은 앞에서 고른 일수로 잡힙니다 (안 고른 건은 7일)\n"
+    +"· 담당자는 그 의뢰인의 직전 회차 담당자를 이어받습니다";
   if(nDiff)msg+="\n\n★"+nDiff+"건은 사무소 또는 법원이 우리 기록과 다릅니다. 등록 후 확인해 주세요.";
   if(!confirm(msg))return;
   rcBusy=true;busy(true);
@@ -3341,13 +3443,13 @@ async function rcRegister(){
         court:rcCourtExpand(r.x.court)||r.x.court||null,   /* '인천지법' → '인천지방법원' 으로 펴서 저장 */
         doctype:r.x.doc||null,
         arrived_at:r.x.sent||null,
-        term_days:7,
-        confirmed:false,
-        confirmed_at:null,
+        term_days:(rcDueDays(rcKey(r))||7),
+        confirmed:true,
+        confirmed_at:_rcToday,
         status:"진행중",
         checklist:defaultDocs(),
         memo:"미확인 송달 엑셀에서 등록 · "+rcFirm+(r.x.part?" · "+r.x.part:"")+(r.urgent?" · 즉시 안내(기일변경)":""),
-        log:[{t:fmt(new Date()),m:"미확인 송달 대조에서 등록 ("+((me&&me.name)||"직원")+" · "+rcFirm+")"}]
+        log:[{t:fmt(new Date()),m:"미확인 송달 대조에서 등록 ("+((me&&me.name)||"직원")+" · "+rcFirm+") · 송달확인일 "+_rcToday+" 자동 입력 · 처리기한 "+(rcDueDays(rcKey(r))||7)+"일"}]
       };
     });
     /* ★2026-09-01 추가 : 직원 두 사람이 거의 같은 순간에 같은 건을 등록하면 두 줄이 들어갈 수 있다.
@@ -4448,9 +4550,23 @@ function saveDetailMemo(id){
 function openDetail(id){detailId=(detailId===id?null:id);render();window.scrollTo({top:120,behavior:"smooth"});}
 
 /* ---------- 렌더링 ---------- */
+/* ★2026-09-01 : 서버 권한을 "이준 내부 직원끼리는 전체 열람"으로 바꾸면
+   담당자 계정에도 남의 담당 사건이 들어온다. 앱은 그걸 스스로 알아본다 —
+   내 것이 아닌 담당자의 사건이 한 건이라도 보이면 전체 열람 상태다. */
+function canSeeAll(){
+  if(me&&me.isMaster)return true;
+  if(!me||!Array.isArray(cases))return false;
+  for(var i=0;i<cases.length;i++){ if(cases[i].owner_id&&cases[i].owner_id!==me.id)return true; }
+  return false;
+}
 function render(){
   if(!me)return;
   const L=cases;
+  const _all=canSeeAll();
+  const _who=document.getElementById("who");
+  if(_who)_who.innerHTML="<b>"+esc(me.name)+"</b> "+(me.isMaster?"관리자":"담당자")+"<br>"+(_all?"전체 사건 열람":"내 사건만 열람");
+  const _tl2=document.getElementById("s-total-l");
+  if(_tl2)_tl2.textContent=_all?"전체 사건":"내 사건";
   /* 남은 기한 기준 숫자판 (시안 구조) */
   const live=L.filter(c=>c.status!=="처리완료");
   const dl=c=>{const p=procLeft(c);return p===null?confLeft(c):p;};
@@ -4536,7 +4652,7 @@ function render(){
 
   const ownerIds=[...new Set(L.map(c=>c.owner_id).filter(Boolean))];
   const fo=document.getElementById("fltOwner");const cur=fo.value;
-  fo.style.display=me.isMaster?"":"none";
+  fo.style.display=_all?"":"none";
   fo.innerHTML='<option value="">담당자 전체</option>'+ownerIds.map(o=>`<option value="${esc(o)}" ${o===cur?'selected':''}>${esc(ownerName(o)||o)}</option>`).join("");
 
   const q=v("q").toLowerCase(),fOwner=fo.value,fStatus=v("fltStatus");
@@ -4553,10 +4669,10 @@ function render(){
     const _d=(procLeft(c)===null?confLeft(c):procLeft(c));
     const _cls=c.status==="처리완료"?"done":(isUnconfDanger(c)||(_d!==null&&_d<=0)?"hot":((_d!==null&&_d<=2)?"warn":""));
     return `<tr class="${_cls}">
-    <td>${procBadge(c)}<div style="font-size:11px;color:var(--muted);margin-top:3px">${due?fmt(due):"확인 후 확정"}${procRolled(c)?" ↗":""}</div></td>
+    <td>${procBadge(c)}<div style="font-size:12px;font-weight:700;color:${due?(procLeft(c)<=0?'var(--red)':procLeft(c)<=2?'var(--amber)':'#3B3733'):'var(--muted)'};margin-top:3px">${due?fmt(due)+"까지":"확인 후 확정"}${procRolled(c)?" ↗":""}</div></td>
     <td><b>${esc(c.caseno)}</b>${c.client_id?' <span class="pill" style="font-size:10px">허브</span>':''}</td><td>${esc(c.name)}${c.delayStrategy?' <span title="시간끌기"></span>':''}${c.submitStatus==="일부제출"?'<br><span style="font-size:10.5px;color:var(--amber)">추후 '+esc(c.followupDate||'')+'</span>':''}</td><td>${esc(c.doctype||"")}</td>
     <td>${esc(c.termType)}</td>
-    <td><label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)"><input type="checkbox" class="cbx" ${c.confirmed?"checked":""} onchange="confirmToggle('${c.id}')">${c.confirmed?'확인':confChip(c)}</label></td>
+    <td><label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)"><input type="checkbox" class="cbx" ${c.confirmed?"checked":""} onchange="confirmToggle('${c.id}')">${c.confirmed?('확인 '+esc(c.confirmedDate||"")):confChip(c)}</label></td>
     <td><span class="pill">${docProg(c)}%</span></td>
     <td><select class="status-sel" onchange="setStatus('${c.id}',this.value)">
       ${["진행중","처리완료"].map(s=>`<option ${s===c.status?'selected':''}>${s}</option>`).join("")}</select></td>
@@ -4674,7 +4790,7 @@ async function loadBojeong(c){
     if(error)throw error;
     const real=(files||[]).filter(f=>f.name&&f.id);
     if(!real.length){el.innerHTML='<span style="color:var(--muted);font-size:12.5px">첨부된 보정서가 없어요.</span>';return;}
-    el.innerHTML=real.map(f=>'<div style="display:flex;align-items:center;gap:8px;padding:4px 0"><span style="flex:1">'+esc(f.name.replace(/^\\d+_/,""))+'</span><button class="btn ghost mini" onclick="downloadBojeong(\''+folder+'/'+esc(f.name)+'\')">내려받기</button></div>').join("");
+    el.innerHTML=real.map(f=>'<div style="display:flex;align-items:center;gap:8px;padding:4px 0"><span style="flex:1">'+esc(f.name.replace(/^\\d+_/,""))+'</span><button class="btn ghost mini" onclick="previewBojeong(\''+folder+'/'+esc(f.name)+'\',\''+esc(f.name)+'\')">미리보기</button><button class="btn ghost mini" onclick="downloadBojeong(\''+folder+'/'+esc(f.name)+'\')">내려받기</button></div>').join("");
   }catch(e){el.innerHTML='<span style="color:var(--muted);font-size:12.5px">목록을 불러오지 못했어요.</span>';}
 }
 async function uploadBojeong(id,ev){
@@ -4689,6 +4805,43 @@ async function uploadBojeong(id,ev){
     alert("보정서를 올렸어요.");await loadBojeong(c);
   }catch(e){alert("업로드 실패: "+(e.message||e));}
   finally{busy(false);ev.target.value="";}
+}
+/* ★2026-09-01 : 올려 둔 보정서 파일을 앱 안에서 바로 본다.
+   PDF 는 화면 안 틀(iframe)에, 사진은 그림으로 띄운다. 서명 주소는 10분만 살아 있다. */
+async function previewBojeong(path,name){
+  busy(true);
+  try{
+    const {data,error}=await sbc.storage.from("bojeong").createSignedUrl(path,600);
+    if(error)throw error;
+    fpShow(data.signedUrl,name);
+  }catch(e){alert("미리보기 실패: "+(e.message||e));}
+  finally{busy(false);}
+}
+function fpClose(){ var w=document.getElementById("filePrev"); if(w){w.innerHTML="";w.style.display="none";} }
+function fpShow(url,name){
+  var w=document.getElementById("filePrev");
+  if(!w){
+    w=document.createElement("div");
+    w.id="filePrev";
+    w.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px";
+    w.onclick=function(e){ if(e.target===w)fpClose(); };
+    document.body.appendChild(w);
+  }
+  var isImg=/\.(png|jpe?g|gif|webp|bmp)$/i.test(String(name||""));
+  w.innerHTML='<div style="background:#fff;border-radius:12px;width:min(1040px,96vw);height:min(92vh,940px);display:flex;flex-direction:column;overflow:hidden">'
+    +'<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid #eee">'
+    +'<b style="flex:1;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(name||"파일")+'</b>'
+    +'<button class="btn ghost mini" id="fp-new">새 탭에서 열기</button>'
+    +'<button class="btn ghost mini" onclick="fpClose()">닫기</button></div>'
+    +(isImg
+      ? '<div style="flex:1;overflow:auto;background:#f6f6f6;text-align:center"><img id="fp-img" style="max-width:100%"></div>'
+      : '<iframe id="fp-frame" style="flex:1;border:0;width:100%"></iframe>')
+    +'</div>';
+  var t=document.getElementById(isImg?"fp-img":"fp-frame");
+  if(t)t.src=url;                                   /* 주소는 글자로 안 붙이고 값으로 넣는다 */
+  var nb=document.getElementById("fp-new");
+  if(nb)nb.onclick=function(){ window.open(url,"_blank","noopener"); };
+  w.style.display="flex";
 }
 async function downloadBojeong(path){
   busy(true);

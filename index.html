@@ -1990,7 +1990,10 @@ async function refreshAll(){
     staff=(pf.data||[]).filter(s=>s.active!==false);
     const dbDays=(hd.data||[]).map(r=>r.day);
     holidays=[...new Set([...DEFAULT_HOLIDAYS,...dbDays])].sort();
+    /* ★사무소 딱지에 쓸 표. offices 는 작으니 기다리고, clients 는 뒤에서 불러온 뒤 한 번 더 그린다 */
+    try{ await rcLoadOffices(); }catch(e){}
     render();
+    if(!calCli){ calLoadClients().then(function(){ try{ render(); }catch(e){} }); }
   }catch(e){
     alert("데이터를 불러오지 못했습니다: "+(e.message||e));
   }finally{busy(false);}
@@ -3430,7 +3433,7 @@ function rcFirmShort(f){
   if(!f)return "";
   if(f.indexOf("블루")>=0)return "블루";
   if(f.indexOf("남부")>=0)return "남부";
-  if(f.indexOf("이준")>=0)return "이준";
+  if(f.indexOf("이준")>=0)return "이준서초";
   return f;
 }
 function rcTags(r){
@@ -3440,6 +3443,16 @@ function rcTags(r){
   else if(r.intake==="전체")t.push('<span class="chip ok" style="font-size:10px;padding:1px 7px">전체사건</span>');
   else t.push('<span class="bj-note" style="font-size:11px">유형 미정</span>');
   return '<div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">'+t.join("")+'</div>';
+}
+/* ★2026-09-01 혜림 지시 : 송달문서 목록의 '허브' 딱지를 사무소 딱지로 바꾼다.
+   사무소는 deliveries 에 없고 clients.office_id 에 있으므로 달력이 쓰는 의뢰인 표(calCli)를 함께 쓴다.
+   아직 안 불러왔거나 못 찾으면 예전처럼 '허브'로 둔다. */
+function firmChipOf(c){
+  if(!c)return "";
+  var v=(c.client_id&&calCli&&calCli[c.client_id])||((typeof calCliOf==="function")?calCliOf(c.court,c.caseno):null);
+  var f=v?rcFirmOfOffice(v.office_id):"";
+  if(!f)return c.client_id?' <span class="pill" style="font-size:10px">허브</span>':'';
+  return ' <span class="chip '+rcFirmCls(f)+'" style="font-size:10px;padding:1px 7px" title="'+esc(f)+'">'+esc(rcFirmShort(f))+'</span>';
 }
 function rcKpi(kind,label,n,sub){
   return '<div class="rc-kpi '+kind+'" onclick="rcTab=\''+(kind==="late"?"all":kind)+'\';rcRender()">'
@@ -4750,7 +4763,7 @@ function render(){
     return `<tr class="${cls}" style="cursor:pointer" onclick="goDetail('${c.id}')">
       <td>${procBadge(c)}<div style="font-size:11.5px;color:var(--muted);margin-top:3px">${due?fmt(due):"확인 후 확정"}</div></td>
       <td><b style="font-size:15px">${esc(c.name)}</b> <span style="color:var(--muted)">${esc(c.doctype||"")}</span>${c.delayStrategy?' <span class="chip" style="background:var(--amber-bg);color:var(--amber)">시간끌기</span>':''}</td>
-      <td>${esc(c.court||"")} <b>${esc(c.caseno)}</b>${c.client_id?' <span class="pill" style="font-size:10.5px">허브</span>':''}</td>
+      <td>${esc(c.court||"")} <b>${esc(c.caseno)}</b>${firmChipOf(c)}</td>
       <td>${esc(c.date||"")||'<span class="bj-note">미입력</span>'}</td>
       <td>${confChip(c)}</td>
       <td><span class="pill">${docProg(c)}%</span></td>
@@ -4765,7 +4778,7 @@ function render(){
     const on=ownerName(c.owner_id);
     return `<div class="pc ${isUnconfDanger(c)?'warn':''}" style="cursor:pointer" onclick="goDetail('${c.id}')">
     <div class="r1"><span class="nm">${esc(c.name)}${(c.memo&&c.memo.indexOf("자동감지")>=0)?' <span title="전자소송 자동감지 등록" style="font-size:13px"></span>':''}</span>${procBadge(c)}</div>
-    <div class="meta">${esc(c.doctype||"")} · ${esc(c.caseno)}${c.client_id?' <span class="pill" style="font-size:10px">허브연동</span>':''}<br>송달도착 ${esc(c.date)}${svc}<br>처리기한 ${dueTxt}</div>
+    <div class="meta">${esc(c.doctype||"")} · ${esc(c.caseno)}${firmChipOf(c)}<br>송달도착 ${esc(c.date)}${svc}<br>처리기한 ${dueTxt}</div>
     <div class="chips">${confChip(c)}${submitChip(c)}${c.delayStrategy?'<span class="chip" style="background:#FCEFD3;color:#8a5a00">시간끌기</span>':''}${on?'<span class="chip" style="background:var(--gray-bg);color:var(--muted)">'+esc(on)+'</span>':''}</div>
     <div class="lab"><span>처리기한 진행</span><span>${timeProg(c)}%</span></div>
     <div class="bar"><i style="width:${timeProg(c)}%;background:${barc}"></i></div>
@@ -4794,7 +4807,7 @@ function render(){
     const _cls=isOffDeadline(c)?"done":(isUnconfDanger(c)||(_d!==null&&_d<=0)?"hot":((_d!==null&&_d<=2)?"warn":""));
     return `<tr class="${_cls}">
     <td>${procBadge(c)}<div style="font-size:12px;font-weight:700;color:${due?(procLeft(c)<=0?'var(--red)':procLeft(c)<=2?'var(--amber)':'#3B3733'):'var(--muted)'};margin-top:3px">${due?fmt(due)+"까지":"확인 후 확정"}${procRolled(c)?" ↗":""}</div></td>
-    <td><b>${esc(c.caseno)}</b>${c.client_id?' <span class="pill" style="font-size:10px">허브</span>':''}</td><td>${esc(c.name)}${c.delayStrategy?' <span title="시간끌기"></span>':''}${c.submitStatus==="일부제출"?'<br><span style="font-size:10.5px;color:var(--amber)">추후 '+esc(c.followupDate||'')+'</span>':''}</td><td>${esc(c.doctype||"")}</td>
+    <td><b>${esc(c.caseno)}</b>${firmChipOf(c)}</td><td>${esc(c.name)}${c.delayStrategy?' <span title="시간끌기"></span>':''}${c.submitStatus==="일부제출"?'<br><span style="font-size:10.5px;color:var(--amber)">추후 '+esc(c.followupDate||'')+'</span>':''}</td><td>${esc(c.doctype||"")}</td>
     <td><select class="status-sel" style="width:auto;padding:4px 6px;font-size:11.5px" onchange="setTermInline('${c.id}',this.value)">
       ${[7,10,14,20,30,60].map(d=>`<option value="${d}" ${(!isOffDeadline(c)&&c.termDays===d)?'selected':''}>${d}일</option>`).join("")}${(![7,10,14,20,30,60].includes(c.termDays)&&!isOffDeadline(c))?`<option value="${c.termDays}" selected>${c.termDays}일</option>`:''}<option value="hold" ${isHold(c)?'selected':''}>추후 처리</option><option value="notice" ${isNotice(c)?'selected':''}>당사자 안내</option><option value="custom">직접 입력…</option></select>
       <div style="margin-top:3px">${isOffDeadline(c)&&c.status!=="처리완료"?`<span class="bj-note" style="font-size:11px">기한 없음</span>`:`<input type="date" value="${due?fmt(due):''}" ${serviceDate(c)?'':'disabled title="송달 확인 후 고칠 수 있습니다"'} onchange="setDueDate('${c.id}',this.value)" style="width:auto;padding:3px 5px;font-size:11px">`}</div></td>

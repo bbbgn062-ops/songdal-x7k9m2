@@ -1749,7 +1749,7 @@
         <div class="toolbar">
           <input id="q" placeholder="사건번호·이름 검색" oninput="render()" style="min-width:200px;">
           <select id="fltOwner" onchange="render()"><option value="">담당자 전체</option></select>
-          <select id="fltStatus" onchange="render()"><option value="">상태 전체</option><option>진행중</option><option>기한보류</option><option>처리완료</option><option value="미확인">송달 미확인만</option></select>
+          <select id="fltStatus" onchange="render()"><option value="">상태 전체</option><option>진행중</option><option>추후처리</option><option>당사자안내</option><option>처리완료</option><option value="미확인">송달 미확인만</option></select>
           <div class="spacer"></div>
           <button class="btn ghost mini" onclick="exportCSV()">엑셀(CSV) 내보내기</button>
           <label class="btn ghost mini" style="margin:0;">가져오기<input type="file" accept=".csv" onchange="importCSV(event)" style="display:none;"></label>
@@ -1878,17 +1878,22 @@ function badgeClass(days,done){if(done)return"done";if(days<=0)return"r";if(days
 function badgeText(days,done){if(done)return"완료";if(days<0)return"D+"+(-days);if(days===0)return"D-day";return"D-"+days;}
 function procBadge(c){
   if(c.status==="처리완료")return '<span class="dd done">완료</span>';
-  if(isHold(c))return '<span class="dd done" style="background:#EEF1F6;color:#2B4570">기한 보류</span>';
+  if(isHold(c))return '<span class="dd done" style="background:#EEF1F6;color:#2B4570">추후 처리</span>';
+  if(isNotice(c))return '<span class="dd done" style="background:#FCEFD3;color:#8a5a00">당사자 안내</span>';
   const pd=procLeft(c);
   if(pd===null)return '<span class="dd done">확인 전</span>';
   return '<span class="dd '+badgeClass(pd,false)+'">처리 '+badgeText(pd,false)+'</span>';
 }
 /* ★2026-09-01 혜림 지시 : 채권자 금액·명의·계좌만 바뀌는 문서는 지금 당장 할 일이 없다.
-   나중에 보정명령이 오면 그때 한꺼번에 처리하므로 '기한 보류'로 두고 기한 계산에서 뺀다.
-   보류 건은 처리기한·급건·달력·오늘 할 일에 안 나오고, 송달문서 목록에는 남는다. */
-function isHold(c){ return c&&c.status==="기한보류"; }
-/* 기한을 세지 않는 상태 = 처리완료 + 기한보류 */
-function isOffDeadline(c){ return c&&(c.status==="처리완료"||c.status==="기한보류"); }
+   나중에 보정명령이 오면 그때 한꺼번에 처리하므로 '추후 처리'로 두고 기한 계산에서 뺀다.
+   추후 처리 건은 처리기한·급건·달력·오늘 할 일에 안 나오고, 송달문서 목록에는 남는다. */
+function isHold(c){ return c&&c.status==="추후처리"; }
+/* ★2026-09-01 혜림 지시 : 금지명령결정·중지명령결정·면책결정처럼 우리가 법원에 낼 것이 없고
+   당사자에게 알리기만 하면 되는 문서는 '당사자안내'로 둔다. 기한을 잡지 않고 날짜만 기록한다.
+   안내를 마치면 상태를 '처리완료'로 내리면 된다. */
+function isNotice(c){ return c&&c.status==="당사자안내"; }
+/* 기한을 세지 않는 상태 = 처리완료 + 추후 처리 + 당사자 안내 */
+function isOffDeadline(c){ return c&&(c.status==="처리완료"||c.status==="추후처리"||c.status==="당사자안내"); }
 function isUnconfDanger(c){const d=confLeft(c);return !c.confirmed&&!isOffDeadline(c)&&d!==null&&d<0;}
 function confChip(c){
   if(c.confirmed)return '<span class="chip ok">송달확인 완료</span>';
@@ -2988,17 +2993,36 @@ async function rcLoadClients(){
    낱말을 늘리려면 RC_DUE_WORDS 배열만 손보면 된다. */
 var RC_DUE_WORDS=["보정권고","보정명령"];
 /* ★2026-09-01 혜림 지시 : 채권자 금액·명의·계좌만 바뀌는 문서는 지금 낼 것이 없다.
-   나중에 보정명령이 왔을 때 한꺼번에 처리하므로 '기한 보류'로 두기를 권한다.
+   나중에 보정명령이 왔을 때 한꺼번에 처리하므로 '추후 처리'로 두기를 권한다.
    낱말을 늘리려면 이 배열만 손보면 된다. */
 var RC_HOLD_WORDS=["채권명의변경","채권자명의변경","채권자변경","명의변경","계좌번호신고","계좌신고","계좌번호","대위변제","채권액변경","금액변경"];
+/* ★2026-09-01 혜림 지시 : 우리가 법원에 낼 것이 없고 당사자에게 알리기만 하면 되는 문서.
+   기한을 잡지 않고 날짜만 기록한다. 낱말을 늘리려면 이 배열만 손보면 된다. */
+var RC_NOTICE_WORDS=["금지명령","중지명령","포괄금지","면책결정","면책허가","면책불허가","취소결정"];
 var rcDue={};   /* rcKey → {sel:"" | "7" | "14" | "date", date:"YYYY-MM-DD"} */
 function rcLikelyHold(doc){
   var t=String(doc||"").replace(/\s/g,"");
-  if(rcNeedDue(doc))return false;                 /* 보정권고·보정명령은 보류 대상이 아니다 */
+  if(rcNeedDue(doc))return false;                 /* 보정권고·보정명령은 추후 처리 대상이 아니다 */
   for(var i=0;i<RC_HOLD_WORDS.length;i++){ if(t.indexOf(RC_HOLD_WORDS[i])>=0)return true; }
   return false;
 }
+function rcLikelyNotice(doc){
+  var t=String(doc||"").replace(/\s/g,"");
+  if(rcNeedDue(doc))return false;
+  for(var i=0;i<RC_NOTICE_WORDS.length;i++){ if(t.indexOf(RC_NOTICE_WORDS[i])>=0)return true; }
+  return false;
+}
 function rcIsHoldSel(k){ var d=rcDue[k]; return !!(d&&d.sel==="hold"); }
+function rcIsNoticeSel(k){ var d=rcDue[k]; return !!(d&&d.sel==="notice"); }
+/* ★등록할 때 넣을 상태 */
+function rcStatusOf(k){ return rcIsHoldSel(k)?"추후처리":(rcIsNoticeSel(k)?"당사자안내":"진행중"); }
+function rcDueNoticeAll(){
+  var L=rcMatch().filter(function(r){return r.state==="new"&&rcSel[rcKey(r)];});
+  L.forEach(function(r){
+    if(rcLikelyNotice(r.x.doc)){ var k=rcKey(r); rcDue[k]=rcDue[k]||{sel:"",date:""}; rcDue[k].sel="notice"; rcDue[k].date=""; }
+  });
+  rcDueRender();
+}
 function rcDueHoldAll(){
   var L=rcMatch().filter(function(r){return r.state==="new"&&rcSel[rcKey(r)];});
   L.forEach(function(r){
@@ -3014,7 +3038,7 @@ function rcNeedDue(doc){
 /* 고른 것을 며칠짜리 처리기한으로 볼지. 안 골랐으면 null */
 function rcDueDays(k){
   var d=rcDue[k];
-  if(!d||!d.sel||d.sel==="hold")return null;
+  if(!d||!d.sel||d.sel==="hold"||d.sel==="notice")return null;
   if(d.sel==="date"){
     if(!d.date)return null;
     var t=parseD(d.date);
@@ -3058,18 +3082,21 @@ function rcDueRender(){
   var need=L.filter(function(r){return rcNeedDue(r.x.doc);});
   var miss=need.filter(function(r){return rcDueDays(rcKey(r))===null;});
   var optsBase=[["","선택 안 함 (7일)"],["date","마감 날짜로 정하기"],["7","7일"],["10","10일"],["14","14일"],["20","20일"],["30","30일"],["60","60일"]];
-  var optsHold=optsBase.concat([["hold","기한 보류 (나중에 보정 올 때 같이)"]]);
+  var optsHold=optsBase.concat([["hold","추후 처리 (나중에 보정 올 때 같이)"],["notice","당사자 안내 (알리기만 하면 끝)"]]);
   var nHold=L.filter(function(r){return rcLikelyHold(r.x.doc);}).length;
+  var nNotice=L.filter(function(r){return rcLikelyNotice(r.x.doc);}).length;
   var rows=L.map(function(r){
     var k=rcKey(r), must=rcNeedDue(r.x.doc), d=rcDue[k]||{sel:"",date:""}, n=rcDueDays(k);
-    var hold=(d.sel==="hold");
+    var hold=(d.sel==="hold"), notice=(d.sel==="notice");
     var opts=must?optsBase:optsHold;
     var due=(n===null)?null:rollFwd(addDays(fmt(today0()),n));
     var kj=JSON.stringify(k).replace(/"/g,"&quot;");
     return '<tr'+(must&&n===null?' style="background:#FDECEC"':'')+'>'
       +'<td style="padding:7px 8px;white-space:nowrap">'
         +(must?'<span class="chip bad" style="font-size:10px;padding:1px 6px">날짜 필수</span>'
-              :(rcLikelyHold(r.x.doc)?'<span class="chip" style="font-size:10px;padding:1px 6px;background:#EEF1F6;color:#2B4570">보류 추천</span>':'<span class="bj-note" style="font-size:11px">선택</span>'))+'</td>'
+              :(rcLikelyHold(r.x.doc)?'<span class="chip" style="font-size:10px;padding:1px 6px;background:#EEF1F6;color:#2B4570">추후 처리 추천</span>'
+              :(rcLikelyNotice(r.x.doc)?'<span class="chip" style="font-size:10px;padding:1px 6px;background:#FCEFD3;color:#8a5a00">당사자 안내 추천</span>'
+              :'<span class="bj-note" style="font-size:11px">선택</span>')))+'</td>'
       +'<td style="padding:7px 8px"><b>'+esc(r.cli?r.cli.name:"")+'</b><div class="bj-note" style="font-size:11px">'+esc(r.x.caseno)+'</div></td>'
       +'<td style="padding:7px 8px">'+esc(r.x.doc)+'<div class="bj-note" style="font-size:11px">발송 '+esc(r.x.sent||"-")+'</div></td>'
       +'<td style="padding:7px 8px;white-space:nowrap">'
@@ -3079,16 +3106,20 @@ function rcDueRender(){
         +(d.sel==="date"?' <input type="date" value="'+esc(d.date)+'" onchange="rcDueSet('+kj+',\'date\',this.value)" style="width:auto;padding:4px 6px;font-size:12px'+((must&&!d.date)?';border:2px solid #DC2626':'')+'">':'')
         +'</td>'
       +'<td style="padding:7px 8px;white-space:nowrap;font-size:12px">'
-        +(hold?'<b style="color:#2B4570">기한 보류</b>':(due?('<b>'+fmt(due)+'</b>'):'<span class="bj-note">미정 (7일로 등록)</span>'))+'</td>'
+        +(hold?'<b style="color:#2B4570">추후 처리</b>':(notice?'<b style="color:#8a5a00">당사자 안내</b>':(due?('<b>'+fmt(due)+'</b>'):'<span class="bj-note">미정 (7일로 등록)</span>')))+'</td>'
       +'</tr>';
   }).join("");
   w.innerHTML='<div style="background:#fff;border-radius:12px;width:min(1040px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden">'
     +'<div style="padding:14px 16px;border-bottom:1px solid #eee">'
       +'<div style="font-weight:800;font-size:15.5px">등록 전 · 처리기한 정하기 <span class="bj-note" style="font-weight:400">'+L.length+'건</span></div>'
       +'<div class="bj-note" style="margin-top:4px">보정권고·보정명령은 법원이 준 기한이 건마다 다르므로 <b>마감 날짜를 반드시 넣어야</b> 등록됩니다(빨간 칸). 나머지 문서는 안 골라도 되고, 그 경우 7일로 들어갑니다.<br>'
-      +'채권자 금액·명의·계좌만 바뀌는 문서는 지금 낼 것이 없으므로 <b>기한 보류</b>로 두면 기한 계산·급건·달력에서 빠집니다. 나중에 보정명령이 오면 그때 함께 처리하면 됩니다.<br>'
+      +'채권자 금액·명의·계좌만 바뀌는 문서는 지금 낼 것이 없으므로 <b>추후 처리</b>로 두면 기한 계산·급건·달력에서 빠집니다. 나중에 보정명령이 오면 그때 함께 처리하면 됩니다.<br>'
+      +'금지명령·중지명령·면책결정처럼 법원에 낼 것이 없고 알리기만 하면 되는 문서는 <b>당사자 안내</b>로 두세요. 역시 기한을 잡지 않습니다.<br>'
       +'송달 확인일은 오늘(<b>'+fmt(today0())+'</b>)로 자동 입력되고, 처리기한은 <b>오늘 + 고른 일수</b>입니다. 그날이 주말·공휴일이면 다음 영업일로 밀립니다.</div>'
-      +(nHold?'<div style="margin-top:8px"><button class="btn ghost mini" onclick="rcDueHoldAll()">금액·명의·계좌 변경류 '+nHold+'건을 한 번에 기한 보류로</button></div>':'')
+      +((nHold||nNotice)?'<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'
+        +(nHold?'<button class="btn ghost mini" onclick="rcDueHoldAll()">금액·명의·계좌 변경류 '+nHold+'건 → 추후 처리</button>':'')
+        +(nNotice?'<button class="btn ghost mini" onclick="rcDueNoticeAll()">금지·중지·면책 결정류 '+nNotice+'건 → 당사자 안내</button>':'')
+        +'</div>':'')
     +'</div>'
     +'<div style="flex:1;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'
       +'<thead><tr style="position:sticky;top:0;background:#faf8f6">'
@@ -3154,6 +3185,7 @@ function rcMatch(){
     var cliFirm=rcFirmOfOffice(cli.office_id);
     res.push({
       x:x, c:c, other:other, cli:cli, state:state,
+      sameList:same, hitFirst:(hit[0]||null),
       left:rcLeft(x.sent), bj:rcIsBj(x.doc), urgent:rcIsUrgent(x.doc),
       courtDiff:courtDiff,
       firmDiff:!!(rcFirm&&cliFirm&&cliFirm!==rcFirm),
@@ -3177,7 +3209,20 @@ function rcMatch(){
   Object.keys(grp).forEach(function(gk){
     var g=grp[gk];
     for(var i=0;i<g.length;i++){ g[i].dupN=g.length; g[i].dupIdx=i+1; }
-    if(g.length>1)rcDup+=g.length;
+    if(g.length>1){
+      rcDup+=g.length;
+      /* ★2026-09-01 고침 : 이름이 똑같은 줄이 2개인데 그중 1건만 등록했더니
+         짝인 나머지 줄까지 '이미 등록'으로 넘어가 화면에서 사라졌다.
+         등록된 것과 엑셀 줄을 하나씩 짝지어, 등록분보다 많은 줄은 '아직 안 등록'으로 남긴다. */
+      var pool=(g[0].sameList||[]).slice();
+      for(var i=0;i<g.length;i++){
+        var c2=pool[i]||null;
+        g[i].c=c2;
+        g[i].state=!c2?"new":(c2.confirmed?"done":"unconf");
+        g[i].other=(!c2&&g[i].hitFirst)?g[i].hitFirst:null;
+        g[i].nameDiff=!!(c2&&c2.name&&g[i].cli&&g[i].cli.name&&c2.name.replace(/\s/g,"")!==g[i].cli.name.replace(/\s/g,""));
+      }
+    }
   });
   return res;
 }
@@ -3469,6 +3514,7 @@ async function rcRegister(){
     +"· 발송일자가 송달 도착일로 들어갑니다\n"
     +"· 송달 확인일은 오늘("+_rcToday+")로 자동 입력됩니다\n"
     +"· 처리기한은 앞에서 고른 일수로 잡힙니다 (안 고른 건은 7일)\n"
+    +"· '추후 처리'·'당사자 안내'로 고른 건은 기한을 세지 않고 송달문서 목록에만 남습니다\n"
     +"· 담당자는 그 의뢰인의 직전 회차 담당자를 이어받습니다";
   if(nDiff)msg+="\n\n★"+nDiff+"건은 사무소 또는 법원이 우리 기록과 다릅니다. 등록 후 확인해 주세요.";
   if(!confirm(msg))return;
@@ -3486,10 +3532,10 @@ async function rcRegister(){
         term_days:(rcDueDays(rcKey(r))||7),
         confirmed:true,
         confirmed_at:_rcToday,
-        status:"진행중",
+        status:rcStatusOf(rcKey(r)),
         checklist:defaultDocs(),
         memo:"미확인 송달 엑셀에서 등록 · "+rcFirm+(r.x.part?" · "+r.x.part:"")+(r.urgent?" · 즉시 안내(기일변경)":""),
-        log:[{t:fmt(new Date()),m:"미확인 송달 대조에서 등록 ("+((me&&me.name)||"직원")+" · "+rcFirm+") · 송달확인일 "+_rcToday+" 자동 입력 · 처리기한 "+(rcDueDays(rcKey(r))||7)+"일"}]
+        log:[{t:fmt(new Date()),m:"미확인 송달 대조에서 등록 ("+((me&&me.name)||"직원")+" · "+rcFirm+") · 송달확인일 "+_rcToday+" 자동 입력 · "+(rcIsHoldSel(rcKey(r))?"추후 처리(나중에 보정과 함께)":(rcIsNoticeSel(rcKey(r))?"당사자 안내(법원 제출 없음)":"처리기한 "+(rcDueDays(rcKey(r))||7)+"일"))}]
       };
     });
     /* ★2026-09-01 추가 : 직원 두 사람이 거의 같은 순간에 같은 건을 등록하면 두 줄이 들어갈 수 있다.
@@ -3501,17 +3547,15 @@ async function rcRegister(){
     /* ★2026-09-01 혜림 확정 : 사건번호·문서명·발송일이 같아도 각각 다른 문서다.
        그런데 서버에 유니크 규칙 uq_delivery(사건번호 + 문서종류 + 발송일자)가 걸려 있어
        그대로 넣으면 둘째부터 "duplicate key ... uq_delivery" 로 등록이 통째로 실패한다.
-       그래서 그런 묶음에만 문서명 뒤에 (1/2) (2/2) 를 붙여 서로 다른 문서로 만든다.
-       한 건뿐인 문서에는 아무것도 붙이지 않는다. */
+       그래서 문서명 뒤에 (1/2) (2/2) 를 붙여 서로 다른 문서로 만든다.
+       ★번호는 '이번에 몇 건을 고랐나'가 아니라 '엑셀에서 몇 번째 줄인가'로 고정한다.
+         그래야 오늘 1번만 등록하고 내일 2번을 등록해도 이름이 겹치지 않는다. */
     function _uqKey(w){ return rcNormCase(w.case_no)+"|"+String(w.doctype||"").replace(/\s/g,"")+"|"+String(w.arrived_at||"").slice(0,10); }
-    var grpN={};
-    rows.forEach(function(w){ var uk=_uqKey(w); grpN[uk]=(grpN[uk]||0)+1; });
-    var grpI={}, suffixed=0;
-    rows.forEach(function(w){
-      var uk=_uqKey(w);
-      if(grpN[uk]>1){
-        grpI[uk]=(grpI[uk]||0)+1;
-        w.doctype=String(w.doctype||"")+" ("+grpI[uk]+"/"+grpN[uk]+")";
+    var suffixed=0;
+    rows.forEach(function(w,i){
+      var r=L[i];
+      if(r&&r.dupN>1){
+        w.doctype=String(w.doctype||"")+" ("+r.dupIdx+"/"+r.dupN+")";
         suffixed++;
       }
     });
@@ -3539,7 +3583,7 @@ async function rcRegister(){
     if(rows.length){
       var ins=await sd().from("deliveries").insert(rows);
       if(!ins.error){ savedN=rows.length; }
-      else if(isStatusRuleErr(ins.error)){ throw new Error("서버가 아직 '기한보류' 상태를 받지 않습니다. SQL_송달앱_기한보류_허용_20260901.sql 을 한 번 실행한 뒤 다시 등록해 주세요."); }
+      else if(isStatusRuleErr(ins.error)){ throw new Error("서버가 아직 '추후처리'·'당사자안내' 상태를 받지 않습니다. SQL_송달앱_추후처리_허용_20260901.sql 을 한 번 실행한 뒤 다시 등록해 주세요."); }
       else if(rcIsDupErr(ins.error)){
         for(var ri=0;ri<rows.length;ri++){
           var one=await sd().from("deliveries").insert([rows[ri]]);
@@ -3554,7 +3598,11 @@ async function rcRegister(){
     showView("recon");
     rcRender();
     var msg=[];
+    var holdN=L.filter(function(r){return rcIsHoldSel(rcKey(r));}).length;
+    var noticeN=L.filter(function(r){return rcIsNoticeSel(rcKey(r));}).length;
     msg.push(savedN?(savedN+"건을 송달 목록에 등록했습니다."):"새로 등록한 것은 없습니다.");
+    if(holdN)msg.push("· 그중 "+holdN+"건은 추후 처리입니다. 나중에 보정명령이 오면 함께 처리하세요.");
+    if(noticeN)msg.push("· 그중 "+noticeN+"건은 당사자 안내입니다. 알린 뒤 상태를 처리완료로 내리세요.");
     if(suffixed)msg.push("· 이름이 똑같은 "+suffixed+"건은 문서명 뒤에 (1/2) 같은 번호를 붙여 각각 등록했습니다.");
     if(skipped)msg.push("· "+skipped+"건은 그 사이 다른 사람이 이미 등록해서 건너뛰었습니다.");
     if(dupServer)msg.push("· "+dupServer+"건은 이미 등록돼 있는 문서라 건너뛰었습니다.\n  담당자가 다른 직원이면 내 화면에 안 보여서 '아직 안 등록'으로 나옵니다.\n  관리자에게 그 사건의 담당자를 확인해 달라고 하세요.");
@@ -3782,7 +3830,7 @@ function calItems(){
 
   /* 2) 송달 사건 : 처리기한 · 송달간주일 · 추후제출 */
   (cases||[]).forEach(function(c){
-    if(isOffDeadline(c))return;                     /* ★기한 보류 건은 달력에 올리지 않는다 */
+    if(isOffDeadline(c))return;                     /* ★추후 처리 건은 달력에 올리지 않는다 */
     var cl=(c.client_id&&calCli&&calCli[c.client_id])||calCliOf(c.court,c.caseno);
     var base={
       name:c.name||(cl&&cl.name)||"이름 없음", caseno:c.caseno||"", court:c.court||"",
@@ -4551,7 +4599,7 @@ async function delCase(id){
   catch(e){alert("삭제 실패: "+(e.message||e));}
   finally{busy(false);}
 }
-/* ★상태에 '기한보류'를 처음 쓰는 순간 서버가 거부할 수 있다(status 에 허용값 규칙이 걸려 있으면).
+/* ★상태에 '추후처리'를 처음 쓰는 순간 서버가 거부할 수 있다(status 에 허용값 규칙이 걸려 있으면).
    그때는 무슨 일인지 우리말로 알려 주고 실행할 SQL 이름을 알려 준다. */
 function isStatusRuleErr(e){
   var m=String((e&&e.message)||"")+" "+String((e&&e.details)||"")+" "+String((e&&e.hint)||"");
@@ -4563,7 +4611,7 @@ async function patchCase(id,patch,logMsg){
   busy(true);
   try{const {error}=await sd().from("deliveries").update({...patch,log:nlog}).eq("id",id);if(error)throw error;await refreshAll();}
   catch(e){
-    if(isStatusRuleErr(e))alert("서버가 아직 '기한보류' 상태를 받지 않습니다.\n\nSQL_송달앱_기한보류_허용_20260901.sql 을 한 번 실행한 뒤 다시 해 주세요.");
+    if(isStatusRuleErr(e))alert("서버가 아직 '추후처리'·'당사자안내' 상태를 받지 않습니다.\n\nSQL_송달앱_추후처리_허용_20260901.sql 을 한 번 실행한 뒤 다시 해 주세요.");
     else alert("저장 실패: "+(e.message||e));
   }
   finally{busy(false);}
@@ -4587,11 +4635,18 @@ function setDueDate(id,ymd){
   const t=parseD(ymd); if(!t){render();return;}
   let n=Math.round((t-base)/86400000);
   if(n<1)n=1;
-  patchCase(id,{term_days:n},"마감일 → "+ymd+" (송달일 +"+n+"일)");
+  const back=(c.status==="추후처리"||c.status==="당사자안내")?{status:"진행중"}:{};
+  patchCase(id,Object.assign({term_days:n},back),"마감일 → "+ymd+" (송달일 +"+n+"일)");
 }
 function setTermInline(id,val){
-  if(val==="custom"){const n=prompt("처리기한 일수를 직접 입력하세요 (예: 10)","10");const d=parseInt(n);if(!d||d<1)return;patchCase(id,{term_days:d},"처리기한 → "+d+"일");}
-  else patchCase(id,{term_days:parseInt(val)},"처리기한 → "+val+"일");
+  /* ★2026-09-01 : 이 칸 하나에서 처리기한 일수와 '추후 처리 · 당사자 안내'를 같이 고른다.
+     일수를 고르면 기한이 다시 살아나므로 상태도 진행중으로 되돌린다(처리완료는 건드리지 않는다). */
+  const c=cases.find(x=>x.id===id);
+  if(val==="hold"){ patchCase(id,{status:"추후처리"},"상태 → 추후 처리 (기한 없음)"); return; }
+  if(val==="notice"){ patchCase(id,{status:"당사자안내"},"상태 → 당사자 안내 (기한 없음)"); return; }
+  const back=(c&&(c.status==="추후처리"||c.status==="당사자안내"))?{status:"진행중"}:{};
+  if(val==="custom"){const n=prompt("처리기한 일수를 직접 입력하세요 (예: 10)","10");const d=parseInt(n);if(!d||d<1)return;patchCase(id,Object.assign({term_days:d},back),"처리기한 → "+d+"일");}
+  else patchCase(id,Object.assign({term_days:parseInt(val)},back),"처리기한 → "+val+"일");
 }
 /* 체크리스트 항목 직접 추가 (2026-08-31) */
 function addDoc(id){
@@ -4741,12 +4796,12 @@ function render(){
     <td>${procBadge(c)}<div style="font-size:12px;font-weight:700;color:${due?(procLeft(c)<=0?'var(--red)':procLeft(c)<=2?'var(--amber)':'#3B3733'):'var(--muted)'};margin-top:3px">${due?fmt(due)+"까지":"확인 후 확정"}${procRolled(c)?" ↗":""}</div></td>
     <td><b>${esc(c.caseno)}</b>${c.client_id?' <span class="pill" style="font-size:10px">허브</span>':''}</td><td>${esc(c.name)}${c.delayStrategy?' <span title="시간끌기"></span>':''}${c.submitStatus==="일부제출"?'<br><span style="font-size:10.5px;color:var(--amber)">추후 '+esc(c.followupDate||'')+'</span>':''}</td><td>${esc(c.doctype||"")}</td>
     <td><select class="status-sel" style="width:auto;padding:4px 6px;font-size:11.5px" onchange="setTermInline('${c.id}',this.value)">
-      ${[7,10,14,20,30,60].map(d=>`<option value="${d}" ${c.termDays===d?'selected':''}>${d}일</option>`).join("")}${![7,10,14,20,30,60].includes(c.termDays)?`<option value="${c.termDays}" selected>${c.termDays}일</option>`:''}<option value="custom">직접 입력…</option></select>
-      <div style="margin-top:3px"><input type="date" value="${due?fmt(due):''}" ${serviceDate(c)?'':'disabled title="송달 확인 후 고칠 수 있습니다"'} onchange="setDueDate('${c.id}',this.value)" style="width:auto;padding:3px 5px;font-size:11px"></div></td>
+      ${[7,10,14,20,30,60].map(d=>`<option value="${d}" ${(!isOffDeadline(c)&&c.termDays===d)?'selected':''}>${d}일</option>`).join("")}${(![7,10,14,20,30,60].includes(c.termDays)&&!isOffDeadline(c))?`<option value="${c.termDays}" selected>${c.termDays}일</option>`:''}<option value="hold" ${isHold(c)?'selected':''}>추후 처리</option><option value="notice" ${isNotice(c)?'selected':''}>당사자 안내</option><option value="custom">직접 입력…</option></select>
+      <div style="margin-top:3px">${isOffDeadline(c)&&c.status!=="처리완료"?`<span class="bj-note" style="font-size:11px">기한 없음</span>`:`<input type="date" value="${due?fmt(due):''}" ${serviceDate(c)?'':'disabled title="송달 확인 후 고칠 수 있습니다"'} onchange="setDueDate('${c.id}',this.value)" style="width:auto;padding:3px 5px;font-size:11px">`}</div></td>
     <td><label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)"><input type="checkbox" class="cbx" ${c.confirmed?"checked":""} onchange="confirmToggle('${c.id}')">${c.confirmed?('확인 '+esc(c.confirmedDate||"")):confChip(c)}</label></td>
     <td><span class="pill">${docProg(c)}%</span></td>
     <td><select class="status-sel" onchange="setStatus('${c.id}',this.value)">
-      ${["진행중","기한보류","처리완료"].map(s=>`<option ${s===c.status?'selected':''}>${s}</option>`).join("")}${!["진행중","기한보류","처리완료"].includes(c.status)?`<option selected>${esc(c.status)}</option>`:''}</select></td>
+      ${["진행중","추후처리","당사자안내","처리완료"].map(s=>`<option ${s===c.status?'selected':''}>${s}</option>`).join("")}${!["진행중","추후처리","당사자안내","처리완료"].includes(c.status)?`<option selected>${esc(c.status)}</option>`:''}</select></td>
     <td><div class="row-actions">
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">상세</button>
       <button class="btn ghost mini" onclick="editCase('${c.id}')">수정</button>
@@ -4763,11 +4818,13 @@ function renderDetail(){
   const confCell=c.confirmed
     ? '<input type="date" style="width:auto;padding:6px 8px" value="'+esc(c.confirmedDate)+'" onchange="setConfirmDate(\''+c.id+'\',this.value)">'
     : (isDeemed(c) ? ('간주송달 '+fmt(serviceDate(c))+' · 미확인 7일 경과') : ('<button class="btn primary mini" onclick="confirmToggle(\''+c.id+'\')">송달 확인(다운로드) 처리</button>'));
-  const procCell=isHold(c) ? '<b style="color:#2B4570">기한 보류</b> · 나중에 보정명령이 오면 그때 함께 처리합니다 (상태를 진행중으로 바꾸면 기한이 다시 살아납니다)' : procDueDate(c) ? (fmt(procDueDate(c))+' ('+esc(c.termType)+')'+(procRolled(c)?' · 주말·공휴일로 연장(원래 '+fmt(procDueRaw(c))+')':'')+' · '+procBadge(c)) : ('송달 확인 후 확정 (확인일 +'+c.termDays+'일)');
+  const procCell=isHold(c) ? '<b style="color:#2B4570">추후 처리</b> · 나중에 보정명령이 오면 그때 함께 처리합니다 (상태를 진행중으로 바꾸면 기한이 다시 살아납니다)'
+    : isNotice(c) ? '<b style="color:#8a5a00">당사자 안내</b> · 법원에 낼 것은 없고 당사자에게 알리기만 하면 됩니다 (안내를 마치면 상태를 처리완료로 내리세요)'
+    : procDueDate(c) ? (fmt(procDueDate(c))+' ('+esc(c.termType)+')'+(procRolled(c)?' · 주말·공휴일로 연장(원래 '+fmt(procDueRaw(c))+')':'')+' · '+procBadge(c)) : ('송달 확인 후 확정 (확인일 +'+c.termDays+'일)');
   w.innerHTML=`<div class="detail">
     <div class="h2row"><h2 style="margin:0">${esc(c.name)} · ${esc(c.caseno)} <span class="pill">서류 ${docProg(c)}%</span></h2>
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">닫기</button></div>
-    <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")} <button class="btn primary mini" onclick="bjFromDelivery('${c.id}')">문서 등록·판독</button> <button class="btn ghost mini" onclick="wdOpenFromCase('${c.id}')">대행 작업대</button></span></div>
+    <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")} <button class="btn primary mini" onclick="bjFromDelivery('${c.id}')">문서 등록·판독</button> ${c.client_id?`<label class="btn ghost mini" style="margin:0;cursor:pointer" title="판독 화면으로 넘어가지 않고 파일만 보관합니다">파일만 저장<input type="file" accept="application/pdf,image/*" onchange="uploadBojeong('${c.id}',event)" style="display:none"></label> `:''}<button class="btn ghost mini" onclick="wdOpenFromCase('${c.id}')">대행 작업대</button></span></div>
     <div style="margin:10px 0 2px"><div style="font-weight:600;font-size:13px;margin:0 0 6px">이 사건의 문서</div><div id="bjprev-${c.id}">불러오는 중…</div></div>
     <div class="kv"><span class="k">담당자</span><span>${esc(ownerName(c.owner_id)||"미지정")}</span></div>
     ${c.client_id?'<div id="clientinfo-'+c.id+'" style="margin:8px 0;padding:10px 12px;background:#faf8f6;border-radius:10px;font-size:13px">의뢰인 정보 불러오는 중…</div>':''}
@@ -8797,6 +8854,14 @@ async function bjPick2(ev){
   if(!f||!bjPendingDelivery)return;
   var c=cases.find(function(x){return x.id===bjPendingDelivery;});
   if(!c)return;
+  /* ★2026-09-01 혜림 지시 : 파일을 넣으면 무조건 판독 화면으로 넘어가던 것을 고른다.
+     [취소]를 누르면 파일만 사건에 보관하고 이 화면에 그대로 있는다. */
+  var _go=confirm("이 파일로 지금 보정 판독까지 진행할까요?\n\n[확인] 판독 화면으로 넘어갑니다\n[취소] 파일만 저장하고 이 화면에 그대로 있습니다");
+  if(!_go){
+    bjPendingDelivery=null;
+    await bjSaveFileOnly(c,f);
+    return;
+  }
   busy(true);
   try{
     var raw=await bjExtractPdf(f);
@@ -8816,6 +8881,28 @@ async function bjPick2(ev){
     bjPendingDelivery=null;
     bjOpen(di.data[0].id);
   }catch(e){alert("판독 시작 실패: "+(e.message||e));}
+  finally{busy(false);}
+}
+/* ★2026-09-01 : 판독하지 않고 파일만 사건에 보관한다.
+   보관 위치는 상세 아래 '보정서 파일'과 같은 곳(bojeong 버킷 · 사무소/의뢰인 폴더)이라
+   같은 자리에서 미리보기·내려받기가 된다. 의뢰인 연결이 없으면 보관할 폴더가 없어 안내만 한다. */
+async function bjSaveFileOnly(c,f){
+  if(!c||!c.client_id){alert("이 사건은 케이스허브 의뢰인과 연결돼 있지 않아 파일을 보관할 곳이 없습니다.\n케이스허브에서 사건번호를 먼저 연결해 주세요.");return;}
+  busy(true);
+  try{
+    var oid=(_clientCache[c.id]&&_clientCache[c.id].office_id)||null;
+    if(!oid){
+      var q=await sbc.from("clients").select("id,office_id").eq("id",c.client_id).single();
+      oid=(q.data&&q.data.office_id)||null;
+    }
+    if(!oid)throw new Error("의뢰인의 소속 사무소를 확인하지 못했습니다.");
+    var path=oid+"/"+c.client_id+"/"+Date.now()+"_"+f.name;
+    var up=await sbc.storage.from("bojeong").upload(path,f,{upsert:false});
+    if(up.error)throw up.error;
+    await patchCase(c.id,{},"파일 보관 : "+f.name+" (판독 없이 저장)");
+    alert("파일을 이 사건에 보관했습니다.\n상세 화면 아래 '보정서 파일'에서 미리보기·내려받기 할 수 있습니다.");
+    if(typeof loadBojeong==="function")loadBojeong(c);
+  }catch(e){alert("파일 보관 실패: "+(e.message||e));}
   finally{busy(false);}
 }
 /* 07-23: 한 사건에 보정이 1건뿐일 때도 같은 사건에 다음 보정(2차 권고·명령)을 바로 붙일 수 있게 */

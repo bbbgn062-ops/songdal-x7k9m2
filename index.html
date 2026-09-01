@@ -3433,7 +3433,7 @@ function rcFirmShort(f){
   if(!f)return "";
   if(f.indexOf("블루")>=0)return "블루";
   if(f.indexOf("남부")>=0)return "남부";
-  if(f.indexOf("이준")>=0)return "이준서초";
+  if(f.indexOf("이준")>=0)return "서초";
   return f;
 }
 function rcTags(r){
@@ -4934,18 +4934,50 @@ async function loadBojeong(c){
     el.innerHTML=real.map(f=>'<div style="display:flex;align-items:center;gap:8px;padding:4px 0"><span style="flex:1">'+esc(f.name.replace(/^\\d+_/,""))+'</span><button class="btn ghost mini" onclick="previewBojeong(\''+folder+'/'+esc(f.name)+'\',\''+esc(f.name)+'\')">미리보기</button><button class="btn ghost mini" onclick="downloadBojeong(\''+folder+'/'+esc(f.name)+'\')">내려받기</button></div>').join("");
   }catch(e){el.innerHTML='<span style="color:var(--muted);font-size:12.5px">목록을 불러오지 못했어요.</span>';}
 }
-async function uploadBojeong(id,ev){
-  const file=ev.target.files[0]; if(!file)return;
-  const c=cases.find(x=>x.id===id),data=_clientCache[id];
-  if(!data||!data.office_id){alert("의뢰인 정보를 먼저 불러온 뒤 다시 시도하세요.");ev.target.value="";return;}
-  const path=data.office_id+"/"+c.client_id+"/"+Date.now()+"_"+file.name;
+/* ★2026-09-01 : 파일을 어느 사무소 폴더에 넣을지 찾는다.
+   ①이 화면이 이미 불러 둔 의뢰인 정보 ②달력이 쓰는 의뢰인 표 ③그래도 없으면 서버에 직접 물어본다.
+   예전에는 ①만 봐서, 상세를 막 열자마자 파일을 넣으면
+   "의뢰인 정보를 먼저 불러온 뒤 다시 시도하세요" 로 막혔다. */
+async function officeIdOfCase(c){
+  if(!c)return null;
+  var d=_clientCache[c.id];
+  if(d&&d.office_id)return d.office_id;
+  if(c.client_id&&calCli&&calCli[c.client_id]&&calCli[c.client_id].office_id)return calCli[c.client_id].office_id;
+  if(!c.client_id)return null;
+  try{
+    var r=await sbc.from("clients").select("id,office_id").eq("id",c.client_id).single();
+    if(r.error)throw r.error;
+    var oid=(r.data&&r.data.office_id)||null;
+    if(oid){ _clientCache[c.id]=Object.assign({},_clientCache[c.id]||{},{office_id:oid}); }
+    return oid;
+  }catch(e){ return null; }
+}
+/* 파일 하나를 그 사건 폴더에 보관한다. 성공하면 true */
+async function saveCaseFile(c,file,logMsg){
+  if(!c||!c.client_id){alert("이 사건은 케이스허브 의뢰인과 연결돼 있지 않아 파일을 보관할 곳이 없습니다.\n케이스허브에서 사건번호를 먼저 연결해 주세요.");return false;}
   busy(true);
   try{
-    const {error}=await sbc.storage.from("bojeong").upload(path,file,{upsert:false});
-    if(error)throw error;
-    alert("보정서를 올렸어요.");await loadBojeong(c);
-  }catch(e){alert("업로드 실패: "+(e.message||e));}
-  finally{busy(false);ev.target.value="";}
+    var oid=await officeIdOfCase(c);
+    if(!oid)throw new Error("이 의뢰인의 소속 사무소가 비어 있습니다. 케이스허브에서 사무소를 지정해 주세요.");
+    var path=oid+"/"+c.client_id+"/"+Date.now()+"_"+file.name;
+    var up=await sbc.storage.from("bojeong").upload(path,file,{upsert:false});
+    if(up.error)throw up.error;
+    if(logMsg){ try{ await patchCase(c.id,{},logMsg); }catch(e){} }
+    if(typeof loadBojeong==="function")loadBojeong(c);
+    return true;
+  }catch(e){
+    var m=(e&&e.message)||String(e);
+    alert("파일 보관 실패\n\n"+m+"\n\n(이 문구를 그대로 알려 주시면 원인을 바로 찾을 수 있습니다)");
+    return false;
+  }
+  finally{busy(false);}
+}
+async function uploadBojeong(id,ev){
+  const file=ev.target.files[0]; ev.target.value="";
+  if(!file)return;
+  const c=cases.find(x=>x.id===id);
+  const ok=await saveCaseFile(c,file,"파일 보관 : "+file.name);
+  if(ok)alert("파일을 이 사건에 보관했습니다.\n상세 화면 아래 '보정서 파일'에서 미리보기·내려받기 할 수 있습니다.");
 }
 /* ★2026-09-01 : 올려 둔 보정서 파일을 앱 안에서 바로 본다.
    PDF 는 화면 안 틀(iframe)에, 사진은 그림으로 띄운다. 서명 주소는 10분만 살아 있다. */
@@ -8900,23 +8932,8 @@ async function bjPick2(ev){
    보관 위치는 상세 아래 '보정서 파일'과 같은 곳(bojeong 버킷 · 사무소/의뢰인 폴더)이라
    같은 자리에서 미리보기·내려받기가 된다. 의뢰인 연결이 없으면 보관할 폴더가 없어 안내만 한다. */
 async function bjSaveFileOnly(c,f){
-  if(!c||!c.client_id){alert("이 사건은 케이스허브 의뢰인과 연결돼 있지 않아 파일을 보관할 곳이 없습니다.\n케이스허브에서 사건번호를 먼저 연결해 주세요.");return;}
-  busy(true);
-  try{
-    var oid=(_clientCache[c.id]&&_clientCache[c.id].office_id)||null;
-    if(!oid){
-      var q=await sbc.from("clients").select("id,office_id").eq("id",c.client_id).single();
-      oid=(q.data&&q.data.office_id)||null;
-    }
-    if(!oid)throw new Error("의뢰인의 소속 사무소를 확인하지 못했습니다.");
-    var path=oid+"/"+c.client_id+"/"+Date.now()+"_"+f.name;
-    var up=await sbc.storage.from("bojeong").upload(path,f,{upsert:false});
-    if(up.error)throw up.error;
-    await patchCase(c.id,{},"파일 보관 : "+f.name+" (판독 없이 저장)");
-    alert("파일을 이 사건에 보관했습니다.\n상세 화면 아래 '보정서 파일'에서 미리보기·내려받기 할 수 있습니다.");
-    if(typeof loadBojeong==="function")loadBojeong(c);
-  }catch(e){alert("파일 보관 실패: "+(e.message||e));}
-  finally{busy(false);}
+  var ok=await saveCaseFile(c,f,"파일 보관 : "+f.name+" (판독 없이 저장)");
+  if(ok)alert("파일을 이 사건에 보관했습니다.\n상세 화면 아래 '보정서 파일'에서 미리보기·내려받기 할 수 있습니다.");
 }
 /* 07-23: 한 사건에 보정이 1건뿐일 때도 같은 사건에 다음 보정(2차 권고·명령)을 바로 붙일 수 있게 */
 function bjAddToCase(){

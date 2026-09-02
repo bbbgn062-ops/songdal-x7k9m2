@@ -1587,6 +1587,14 @@
 .ba-again span{font-size:12.5px;font-weight:700;background:#fff;border:1px solid #D8D3CC;border-radius:999px;padding:5px 12px;color:#3A342E}
 .ba-ta{width:100%;min-height:150px;padding:10px;border:1px solid #D8D3CC;border-radius:9px;font-size:12.5px;line-height:1.7;background:#fff;resize:vertical}
 
+  /* 보정 처리대 화면 (2026-09-02) */
+  #view-cd{display:flex;flex-direction:column;gap:10px}
+  .cd-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 14px;}
+  .cd-bar .cd-t{font-size:16px;font-weight:800;color:var(--navy)}
+  .cd-bar .cd-d{font-size:12.5px;color:var(--muted);flex:1;min-width:120px;line-height:1.5;word-break:keep-all}
+  .cd-bar .cd-b{display:flex;gap:7px;flex:0 0 auto}
+  #cd-frame{width:100%;height:calc(100vh - 175px);min-height:620px;border:1px solid var(--line);border-radius:12px;background:#fff;display:block}
+  @media(max-width:900px){#cd-frame{height:calc(100vh - 235px);min-height:560px}}
 </style>
 </head>
 <body>
@@ -1619,6 +1627,7 @@
       <a id="nav-cal" onclick="showView('cal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>기한 달력</span></a>
       <div class="ncap">보정</div>
       <a id="nav-bjbox" onclick="showView('bjbox')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v5H4z"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/></svg><span>보정 문서함</span><span class="nbadge" id="nb-bjbox"></span></a>
+      <a id="nav-cd" onclick="showView('cd')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg><span>보정 처리대</span></a>
       <a id="nav-work" onclick="showView('work')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg><span>대행 작업대</span><span class="nbadge" id="nb-work"></span></a>
       <a id="nav-hist" onclick="showView('hist')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg><span>제출 이력</span></a>
       <div class="ncap">관리</div>
@@ -1795,6 +1804,14 @@
     <div id="view-cal" class="hide"><div id="cal-wrap"></div></div>
     <div id="view-chk" class="hide"><div id="chk-wrap"></div></div>
     <div id="view-bjbox" class="hide"></div>
+    <div id="view-cd" class="hide">
+      <div class="cd-bar">
+        <div class="cd-t">보정 처리대</div>
+        <div class="cd-d">보정권고 넣기 · 오늘 할 일 · 서류함 · 사건 · 보정서 · 점검표 · 배분</div>
+        <div class="cd-b"><button class="btn ghost mini" onclick="cdReload()">새로 고침</button><button class="btn ghost mini" onclick="cdOpenNew()">새 창으로 열기</button></div>
+      </div>
+      <iframe id="cd-frame" title="보정 처리대" src="about:blank"></iframe>
+    </div>
     <div id="view-hist" class="hide"><div class="soon"><div class="t">제출 이력</div>
       <div class="d">회차별로 낸 보정서와 서류를 모아 봅니다.<br><b>만들 예정입니다.</b></div></div></div>
     <div id="view-set" class="hide">
@@ -4390,7 +4407,7 @@ async function bxDel(id){
   finally{busy(false);}
 }
 
-var BJ_VIEWS=["chk","dash","list","pending","recon","cal","bjbox","work","hist","staff","set","bj"];
+var BJ_VIEWS=["chk","dash","list","pending","recon","cal","bjbox","cd","work","hist","staff","set","bj"];
 /* 왼쪽 메뉴 숫자표 : 화면을 바꾸거나 목록을 다시 그릴 때마다 갱신 */
 function navBadges(){
   function put(id,nv,hot){
@@ -4450,17 +4467,18 @@ function showView(vw){
   /* 화면 안에 제목이 따로 있는 화면은 위쪽 공통 제목줄을 숨긴다 */
   var _top=document.querySelector(".mbody > .top");
   /* ★bj(보정 판독)는 화면 안에 제목줄과 4단계 표시줄이 있어 위쪽 줄이 겹쳤다 (2026-08-04) */
-  if(_top)_top.classList.toggle("hide",["bjbox","recon","cal","hist","bj","chk"].indexOf(vw)>=0);
+  if(_top)_top.classList.toggle("hide",["bjbox","recon","cal","hist","bj","chk","cd"].indexOf(vw)>=0);
   const titles={dash:"대시보드",list:"송달문서",staff:"직원 현황",set:"설정",bj:"보정 판독",work:"대행 작업대",
-    pending:"감지 대기함",recon:"미확인 송달 대조",cal:"기한 달력",bjbox:"보정 문서함",hist:"제출 이력",chk:"아침 점검"};
+    pending:"감지 대기함",recon:"미확인 송달 대조",cal:"기한 달력",bjbox:"보정 문서함",cd:"보정 처리대",hist:"제출 이력",chk:"아침 점검"};
   const subs={dash:me&&me.isMaster?"전체 사건을 한눈에":"내 담당 사건을 한눈에",list:"송달 등록·수정·검색 (케이스허브 사건 연동)",staff:"공용 계정 현황",set:"공휴일·데이터 관리",bj:"등록 → 판독 → 유형 선택 → 서류 확정 → 안내 발송",work:"사무실 대행 발급 · 파일 정리 · 요청메시지 · 보정 문서함",
-    pending:"전자소송에서 자동으로 찾아낸 새 송달",recon:"전자소송 미확인 송달 엑셀과 대조",cal:"보정 기한과 안내 마감을 달력으로",bjbox:"등록한 보정 문서 모아 보기",hist:"회차별 제출 기록"};
+    pending:"전자소송에서 자동으로 찾아낸 새 송달",recon:"전자소송 미확인 송달 엑셀과 대조",cal:"보정 기한과 안내 마감을 달력으로",bjbox:"등록한 보정 문서 모아 보기",cd:"보정권고를 넣고 오늘 할 일까지 이어서",hist:"회차별 제출 기록"};
   document.getElementById("view-title").textContent=titles[vw]||"";
   document.getElementById("view-sub").textContent=subs[vw]||"";
   tbSet();
   navBadges();
   if(vw==="pending"&&typeof loadPending==="function")loadPending();
   if(vw==="bjbox")bxRender();
+  if(vw==="cd")cdEnter();
   if(vw==="recon")rcRender();
   if(vw==="cal")calEnter();
   if(vw==="chk"&&typeof chkEnter==="function")chkEnter();
@@ -4472,6 +4490,19 @@ function showView(vw){
   if(vw==="list"){resetForm();hideForm();}
   render();
 }
+/* 보정 처리대 : 따로 만든 화면을 창 안에 띄운다 (2026-09-02) */
+var CD_SRC="bojeong.html";
+var cdLoaded=false;
+function cdEnter(){
+  if(cdLoaded)return;
+  var w=document.getElementById("cd-frame"); if(!w)return;
+  w.src=CD_SRC; cdLoaded=true;
+}
+function cdReload(){
+  var w=document.getElementById("cd-frame"); if(!w)return;
+  cdLoaded=true; w.src=CD_SRC+"?t="+Date.now();
+}
+function cdOpenNew(){ window.open(CD_SRC,"_blank"); }
 function showForm(){document.getElementById("form-sec").classList.remove("hide");}
 function hideForm(){document.getElementById("form-sec").classList.add("hide");}
 function cancelForm(){resetForm();hideForm();}

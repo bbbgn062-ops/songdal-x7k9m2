@@ -4674,6 +4674,16 @@ async function saveCase(){
   }catch(e){alert("저장 실패: "+(e.message||e));}
   finally{busy(false);}
 }
+/* ★2026-09-02 혜림 : 의뢰인 연결이 없으면 사무소 딱지도 안 붙고 보정서 보관도 안 된다.
+   상세에서 바로 연결 화면으로 보내고 검색칸에 커서를 놓아 준다 */
+function goLinkClient(id){
+  editCase(id);
+  setTimeout(function(){
+    var el=document.getElementById("f-clientq");
+    if(el){ el.focus(); try{el.select();}catch(e){} }
+    if(typeof toast==="function")toast("의뢰인 이름이나 사건번호로 찾아서 고른 뒤 저장하세요");
+  },300);
+}
 function editCase(id){
   const c=cases.find(x=>x.id===id);if(!c)return;
   showView("list");showForm();editId=id;pickedClientId=c.client_id||null;fillOwnerSelect();
@@ -4960,7 +4970,18 @@ function renderDetail(){
   w.innerHTML=`<div class="detail">
     <div class="h2row"><h2 style="margin:0">${esc(c.name)} · ${esc(c.caseno)} <span class="pill">서류 ${docProg(c)}%</span></h2>
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">닫기</button></div>
-    <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")} <button class="btn primary mini" onclick="bjFromDelivery('${c.id}')">문서 등록·판독</button> ${c.client_id?`<label class="btn ghost mini" style="margin:0;cursor:pointer" title="판독 화면으로 넘어가지 않고 '이 사건의 문서'에만 넣습니다. 판독은 나중에 [판독] 버튼으로 이어서 하면 됩니다">파일만 등록<input type="file" accept="application/pdf,image/*" onchange="caseFilePick('${c.id}',event)" style="display:none"></label> `:''}<button class="btn ghost mini" onclick="wdOpenFromCase('${c.id}')">대행 작업대</button></span></div>
+    <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")} <button class="btn primary mini" onclick="bjFromDelivery('${c.id}')">문서 등록·판독</button> <label class="btn ghost mini" style="margin:0;cursor:pointer" title="판독 화면으로 넘어가지 않고 '이 사건의 문서'에만 넣습니다. 판독은 나중에 [판독] 버튼으로 이어서 하면 됩니다">파일만 등록<input type="file" accept="application/pdf,image/*" onchange="caseFilePick('${c.id}',event)" style="display:none"></label> <button class="btn ghost mini" onclick="wdOpenFromCase('${c.id}')">대행 작업대</button></span></div>
+    ${c.client_id?'':`<div class="bj-alert amber" style="margin:10px 0">
+      <b>케이스허브 의뢰인과 연결돼 있지 않습니다.</b><br>
+      그래서 이런 일이 생깁니다.
+      <ul style="margin:6px 0 8px 18px;padding:0;line-height:1.75">
+        <li>사무소(서초·남부·블루) 딱지가 안 붙고, 아침 점검·기한 달력의 사무소 탭에서 빠집니다</li>
+        <li>보정서 파일을 보관할 사무소 폴더가 없어 [보정서 올리기]가 안 됩니다</li>
+        <li>준비서류 체크리스트와 취합앱 연동이 돌지 않습니다</li>
+      </ul>
+      결정문 PDF 등록과 판독은 연결 없이도 됩니다.
+      <button class="btn ghost mini" style="margin-top:4px" onclick="goLinkClient('${c.id}')">의뢰인 연결하기</button>
+    </div>`}
     <div style="margin:10px 0 2px"><div style="font-weight:600;font-size:13px;margin:0 0 6px">이 사건의 문서</div><div id="bjprev-${c.id}">불러오는 중…</div></div>
     <div class="kv"><span class="k">담당자</span><span>${esc(ownerName(c.owner_id)||"미지정")}</span></div>
     ${c.client_id?'<div id="clientinfo-'+c.id+'" style="margin:8px 0;padding:10px 12px;background:#faf8f6;border-radius:10px;font-size:13px">의뢰인 정보 불러오는 중…</div>':''}
@@ -4984,7 +5005,10 @@ function renderDetail(){
     <div style="margin-top:10px"><button class="btn primary mini" onclick="saveDetailMemo('${c.id}')">메모 저장</button></div>
     <div style="font-weight:600;font-size:13.5px;margin:16px 0 6px">처리 이력</div>
     <div style="font-size:12.5px;color:var(--muted);line-height:1.7">${(c.log||[]).slice().reverse().map(l=>esc(l.t)+" · "+esc(l.m)).join("<br>")||"기록 없음"}</div>
-    ${c.client_id?'<div style="font-weight:600;font-size:13.5px;margin:16px 0 6px">보정서 파일 (사무소별 보안 저장)</div><div id="bojeong-'+c.id+'" style="font-size:13px">불러오는 중…</div><div style="margin-top:8px"><label class="btn ghost mini" style="margin:0;cursor:pointer">＋ 보정서 올리기<input type="file" accept="application/pdf,image/*" onchange="uploadBojeong(\''+c.id+'\',event)" style="display:none"></label></div>':''}
+    <div style="font-weight:600;font-size:13.5px;margin:16px 0 6px">보정서 파일 (사무소별 보안 저장)</div>
+    ${c.client_id
+      ? '<div id="bojeong-'+c.id+'" style="font-size:13px">불러오는 중…</div><div style="margin-top:8px"><label class="btn ghost mini" style="margin:0;cursor:pointer">＋ 보정서 올리기<input type="file" accept="application/pdf,image/*" onchange="uploadBojeong(\''+c.id+'\',event)" style="display:none"></label></div>'
+      : '<div class="bj-note">의뢰인 연결이 없어 보관할 사무소 폴더가 없습니다. 위에서 [의뢰인 연결하기]를 먼저 해주세요. <span class="bj-link" onclick="goLinkClient(\''+c.id+'\')">연결하러 가기</span></div>'}
   </div>`;
   if(c.client_id){loadClientInfo(c);loadBojeong(c);}
   bjLoadPreview(c);
@@ -5121,7 +5145,10 @@ async function officeIdOfCase(c){
 }
 /* 파일 하나를 그 사건 폴더에 보관한다. 성공하면 true */
 async function saveCaseFile(c,file,logMsg){
-  if(!c||!c.client_id){alert("이 사건은 케이스허브 의뢰인과 연결돼 있지 않아 파일을 보관할 곳이 없습니다.\n케이스허브에서 사건번호를 먼저 연결해 주세요.");return false;}
+  if(!c||!c.client_id){
+    alert("이 파일을 보관할 사무소 폴더가 없습니다.\n\n이 사건이 케이스허브 의뢰인과 연결돼 있지 않기 때문입니다.\n상세 화면 위쪽 [의뢰인 연결하기]로 먼저 연결해 주세요.\n\n(PDF 결정문·보정권고는 연결 없이도 [파일만 등록]으로 넣을 수 있습니다)");
+    return false;
+  }
   busy(true);
   try{
     var oid=await officeIdOfCase(c);

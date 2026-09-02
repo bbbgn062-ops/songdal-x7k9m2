@@ -1235,6 +1235,8 @@
   .bjpick-desc{font-size:12px;color:var(--muted);line-height:1.5}
   .bjpick-acts{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
   .bjpick-acts button{font-size:11.5px;font-weight:700;border:1px solid #d7dde5;background:#fff;border-radius:7px;padding:5px 11px;color:var(--brand-d);cursor:pointer;font-family:inherit}
+  .bjpick-acts button.del{color:#B91C1C;border-color:#F0C9C9}
+  .bjpick-acts button.del:hover{background:#FDECEC;border-color:#E39B9B}
 
   /* ===== 07-24 보정 발송화면 프리미엄(토스 고급) 스킨 — 클래스 접두사 bs- (기존 스타일과 분리) ===== */
   .bs{--f:#F5F1EA;--hair:#F3EEE6;--sub:#6A625A;--mut:#A79C8F;--ln:#EBE4DA;--off:#E1DACF;--bd:#7A1427;--bsoft:#F8EBEE;--bln:#EAD2D9;--blue:#2A62BE;--bluesoft:#EDF2FB;--amb:#9A5B0B;--ambsoft:#FAF1DD;
@@ -1614,6 +1616,9 @@
   .bjf-row{display:flex;align-items:center;gap:7px;padding:5px 0;flex-wrap:wrap}
   .bjf-row .nm{flex:1;min-width:120px;word-break:break-all}
   .bjf-row .up{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-d)}
+  .rc-file{display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:11.5px}
+  .rc-file .nm{flex:1;min-width:0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    background:#EDF7F0;color:#1B7F4B;font-weight:700;border-radius:5px;padding:2px 7px}
 </style>
 </head>
 <body>
@@ -3443,7 +3448,8 @@ function rcRender(){
   h+='<div class="bj-note" style="margin-top:6px;padding:10px 12px;background:#F3F7F4;border-radius:8px">'
     +'<b>보정 문서에는 여기서 바로 PDF를 넣을 수 있습니다.</b> 「할 일」 칸의 [＋ 파일]을 누르세요. '
     +'아직 등록 전인 줄은 파일을 담아 두었다가 <b>[등록]하는 순간 함께 올라갑니다.</b> '
-    +'이미 등록된 줄은 누르는 즉시 그 사건의 문서에 들어갑니다.</div>';
+    +'이미 등록된 줄은 누르는 즉시 그 사건의 문서에 들어갑니다. '
+    +'<b>여러 개를 한꺼번에 고를 수 있습니다.</b> 보정권고와 함께 낼 예정 보정서까지 담아 두면 보정 내용을 한자리에서 볼 수 있습니다.</div>';
   h+='<div class="bj-note" style="margin-top:10px">간주송달 칸은 <b>발송일자 + 7일</b>이며 그날이 주말·공휴일이면 다음 영업일로 밉니다. 실제 확인일이 있으면 그 날짜가 우선입니다. '
     +'등록하면 발송일자가 송달 도착일로 들어가고, 담당자는 그 의뢰인의 직전 회차 담당자를 이어받습니다.</div>';
   h+='<div class="bj-note" style="margin-top:6px;padding:10px 12px;background:#F6F6F6;border-radius:8px">'
@@ -3466,11 +3472,17 @@ function rcRow(r,showLeft){
       +(r.other?' <button class="btn ghost mini" onclick="rcGoCase('+JSON.stringify(r.other.id).replace(/"/g,"&quot;")+')">이전 문서 열기</button>':'')
     : (r.c?'<button class="btn ghost mini" onclick="rcGoCase('+JSON.stringify(r.c.id).replace(/"/g,"&quot;")+')">열기</button>':'');
   var fkey=JSON.stringify(k).replace(/"/g,"&quot;");
-  var fnm=(rcFiles&&rcFiles[k])?rcFiles[k].name:"";
+  var fs=(rcFiles&&rcFiles[k])?rcFiles[k]:[];
   if(r.bj||r.c){
-    act+=fnm
-      ? '<div style="margin-top:4px"><span class="rc-tag" style="background:#EDF7F0;color:#1B7F4B" title="'+esc(fnm)+'">파일 담김</span> <span class="bj-link" onclick="rcFileClear('+fkey+')">빼기</span></div>'
-      : '<div style="margin-top:4px"><label class="btn ghost mini" style="margin:0;cursor:pointer" title="'+(r.c?'이 사건의 문서에 바로 넣습니다':'지금 담아 두었다가 [등록]할 때 함께 올립니다')+'">＋ 파일<input type="file" accept="application/pdf" onchange="rcFilePick('+fkey+',event)" style="display:none"></label></div>';
+    act+='<div style="margin-top:4px">'
+      +fs.map(function(f,fi){
+          return '<div class="rc-file"><span class="nm" title="'+esc(f.name)+'">'+esc(f.name)+'</span>'
+            +'<span class="bj-link" onclick="rcFileClear('+fkey+','+fi+')">빼기</span></div>';
+        }).join("")
+      +'<label class="btn ghost mini" style="margin:0;cursor:pointer" title="'+(r.c?'이 사건의 문서에 바로 넣습니다. 여러 개를 한꺼번에 고를 수 있습니다':'지금 담아 두었다가 [등록]할 때 함께 올립니다. 보정권고와 함께 낼 보정서까지 여러 개 담을 수 있습니다')+'">'
+      +(fs.length?'＋ 더 담기':'＋ 파일')
+      +'<input type="file" accept="application/pdf" multiple onchange="rcFilePick('+fkey+',event)" style="display:none"></label>'
+      +'</div>';
   }
   var warn="";
   if(r.firmDiff)warn+='<div style="color:#B45309;font-weight:700;font-size:12px">사무소 다름 : '+esc(r.cliFirm)+'</div>';
@@ -3574,35 +3586,44 @@ function rcGoCase(id){
    미확인 송달 화면에서 바로 PDF를 넣을 수 있어야 한다.
    아직 등록 전인 줄은 파일을 브라우저에 담아 두었다가 [등록]이 끝나는 순간 함께 올린다. */
 var rcFiles={};
-function rcFilePick(k,ev){
-  var f=ev.target.files[0]; ev.target.value="";
-  if(!f)return;
+async function rcFilePick(k,ev){
+  var fl=Array.prototype.slice.call(ev.target.files||[]); ev.target.value="";
+  if(!fl.length)return;
   var rows=rcMatch();
   var r=null;
   for(var i=0;i<rows.length;i++){ if(rcKey(rows[i])===k){ r=rows[i]; break; } }
   if(r&&r.c){
-    /* 이미 송달문서에 등록된 줄이면 바로 그 사건에 넣는다 */
+    /* 이미 송달문서에 등록된 줄이면 고른 파일을 하나씩 바로 그 사건에 넣는다 */
     busy(true);
-    bjSaveFileOnly(r.c,f,true).then(function(){
-      busy(false);
-      if(typeof wdToast==="function")wdToast(f.name+" 를 그 사건의 문서에 넣었습니다");
-    }).catch(function(e){
-      busy(false);
-      alert("파일을 넣지 못했습니다\n\n"+((e&&e.message)||e));
-    });
+    var ok=0,ng=0,lastErr="";
+    for(var j=0;j<fl.length;j++){
+      try{ await bjSaveFileOnly(r.c,fl[j],true); ok++; }
+      catch(e){ ng++; if(!lastErr)lastErr=(e&&e.message)||String(e); }
+    }
+    busy(false);
+    if(ng)alert(ok+"건은 넣었고 "+ng+"건은 실패했습니다.\n\n"+lastErr);
+    else if(typeof wdToast==="function")wdToast(ok+"건을 그 사건의 문서에 넣었습니다");
     return;
   }
-  rcFiles[k]=f;
+  rcFiles[k]=(rcFiles[k]||[]).concat(fl);
   rcRender();
-  if(typeof wdToast==="function")wdToast(f.name+" 를 담아 두었습니다. [등록]하면 함께 올라갑니다");
+  if(typeof wdToast==="function")wdToast(fl.length+"건을 담아 두었습니다. [등록]하면 함께 올라갑니다");
 }
-function rcFileClear(k){ delete rcFiles[k]; rcRender(); }
+function rcFileClear(k,idx){
+  if(idx===undefined||idx===null){ delete rcFiles[k]; }
+  else{
+    var a=rcFiles[k]||[];
+    a.splice(idx,1);
+    if(a.length)rcFiles[k]=a; else delete rcFiles[k];
+  }
+  rcRender();
+}
 /* 등록이 끝난 뒤, 담아 둔 파일을 방금 만들어진 송달문서에 붙인다 */
 async function rcAttachFiles(L){
   var done=0,fail=0;
   for(var i=0;i<L.length;i++){
-    var r=L[i],k=rcKey(r),f=rcFiles[k];
-    if(!f)continue;
+    var r=L[i],k=rcKey(r),fs=rcFiles[k];
+    if(!fs||!fs.length)continue;
     var dt=String(r.x.doc||"")+((r.dupN>1)?(" ("+r.dupIdx+"/"+r.dupN+")"):"");
     var want=dt.replace(/\s/g,"");
     var sent=String(r.x.sent||"").slice(0,10);
@@ -3611,9 +3632,13 @@ async function rcAttachFiles(L){
         && String(x.doctype||"").replace(/\s/g,"")===want
         && String(x.date||"").slice(0,10)===sent;
     });
-    if(!c){ fail++; continue; }
-    try{ await bjSaveFileOnly(c,f,true); delete rcFiles[k]; done++; }
-    catch(e){ fail++; }
+    if(!c){ fail+=fs.length; continue; }
+    var left=[];
+    for(var q=0;q<fs.length;q++){
+      try{ await bjSaveFileOnly(c,fs[q],true); done++; }
+      catch(e){ left.push(fs[q]); fail++; }
+    }
+    if(left.length)rcFiles[k]=left; else delete rcFiles[k];
   }
   return {done:done,fail:fail};
 }
@@ -4762,6 +4787,16 @@ async function saveCase(){
 }
 /* ★2026-09-02 혜림 : 의뢰인 연결이 없으면 사무소 딱지도 안 붙고 보정서 보관도 안 된다.
    상세에서 바로 연결 화면으로 보내고 검색칸에 커서를 놓아 준다 */
+/* 케이스허브에서 방금 고쳤을 때 다시 한 번 찾아 본다 */
+async function retryLink(id){
+  var c=(cases||[]).find(function(x){return x.id===id;});
+  if(!c)return;
+  delete _linkTried[id];
+  busy(true);
+  await autoLinkOne(c);
+  busy(false);
+  if(!c.client_id)alert("케이스허브에서 딱 맞는 의뢰인을 찾지 못했습니다.\n\n· 사건번호 "+(c.caseno||"")+"\n· 이름 "+(c.name||"")+"\n\n둘 중 하나라도 케이스허브와 똑같아야 자동으로 이어집니다.\n[직접 골라서 연결]로 골라 주세요.");
+}
 function goLinkClient(id){
   editCase(id);
   setTimeout(function(){
@@ -5140,7 +5175,8 @@ function renderDetail(){
         <li>준비서류 체크리스트와 취합앱 연동이 돌지 않습니다</li>
       </ul>
       결정문 PDF 등록과 판독은 연결 없이도 됩니다.
-      <button class="btn ghost mini" style="margin-top:4px" onclick="goLinkClient('${c.id}')">의뢰인 연결하기</button>
+      <button class="btn ghost mini" style="margin-top:4px" onclick="retryLink('${c.id}')">지금 다시 찾기</button>
+      <button class="btn ghost mini" style="margin-top:4px" onclick="goLinkClient('${c.id}')">직접 골라서 연결</button>
     </div>`}
     <div style="margin:10px 0 2px"><div style="font-weight:600;font-size:13px;margin:0 0 6px">이 사건의 문서</div><div id="bjprev-${c.id}">불러오는 중…</div></div>
     <div class="kv"><span class="k">담당자</span><span>${esc(ownerName(c.owner_id)||"미지정")}</span></div>
@@ -5171,6 +5207,7 @@ function renderDetail(){
       : '<div class="bj-note">의뢰인 연결이 없어 보관할 사무소 폴더가 없습니다. 위에서 [의뢰인 연결하기]를 먼저 해주세요. <span class="bj-link" onclick="goLinkClient(\''+c.id+'\')">연결하러 가기</span></div>'}
   </div>`;
   if(c.client_id){loadClientInfo(c);loadBojeong(c);}
+  else autoLinkOne(c);
   bjLoadPreview(c);
   loadAutoChk(c);
 }
@@ -5181,6 +5218,45 @@ function maskRrn(r){r=String(r||"").replace(/[^0-9]/g,"");if(!r)return"";if(r.le
 /* ★주민등록번호는 앱이 들고 있지 않다. DB에 암호로 잠겨 있고(client_rrn),
    [보기]를 누를 때만 서버 함수 rrn_get으로 풀어서 보여준다. 저장도 서버 함수 rrn_set이 한다.
    화면에 평소 보이는 것은 앞 7자리(clients.rrn_front)를 가린 형태뿐이다. */
+/* ★2026-09-02 혜림 : 케이스허브에서 사건번호를 고치거나 의뢰인을 새로 등록해도
+   송달문서 줄의 연결 고리(client_id)는 그대로 비어 있어 경고가 계속 떴다.
+   상세를 열 때 사건번호 → 이름 순으로 찾아, 딱 하나로 정해질 때만 조용히 이어 붙인다.
+   여러 명이 걸리거나 못 찾으면 손대지 않고 경고를 그대로 둔다. */
+var _linkTried={};
+async function autoLinkOne(c){
+  if(!c||!c.id||c.client_id||_linkTried[c.id])return;
+  _linkTried[c.id]=true;
+  try{
+    var raw=String(c.caseno||"").trim();
+    var no=rcNormCase(splitCourtCase(raw).caseNo||raw);
+    var hits=[];
+    if(no){
+      var q=await sbc.from("clients").select("id,name,case_no").ilike("case_no","%"+(splitCourtCase(raw).caseNo||raw)+"%").limit(30);
+      if(!q.error&&q.data){
+        hits=q.data.filter(function(cl){
+          var ok=false;
+          String(cl.case_no||"").split(/[,\n\r\t;]+/).forEach(function(ch){
+            ch=String(ch||"").trim(); if(!ch)return;
+            var p=splitCourtCase(ch);
+            if(rcNormCase(p.caseNo||ch)===no)ok=true;
+          });
+          return ok;
+        });
+      }
+    }
+    if(hits.length!==1&&String(c.name||"").trim()){
+      var q2=await sbc.from("clients").select("id,name,case_no").eq("name",String(c.name||"").trim()).limit(10);
+      if(!q2.error&&q2.data&&q2.data.length===1)hits=q2.data;
+    }
+    if(hits.length!==1)return;
+    var u=await sd().from("deliveries").update({client_id:hits[0].id}).eq("id",c.id);
+    if(u.error)return;
+    c.client_id=hits[0].id;
+    if(typeof wdToast==="function")wdToast("케이스허브 의뢰인 "+(hits[0].name||"")+" 님과 이어 붙였습니다");
+    if(typeof renderDetail==="function")renderDetail();
+    if(typeof render==="function")render();
+  }catch(e){}
+}
 async function loadClientInfo(c){
   try{
     const {data}=await sbc.from("clients").select("id,phone,rrn_front,office_id").eq("id",c.client_id).single();
@@ -6138,6 +6214,30 @@ async function bxRename(id){
   if(!nn||nn===cur)return;
   var ok=await bjDocPatch(id,{file_name:nn},"파일 이름을 바꿨습니다");
   if(ok){ r.file_name=nn; if(typeof bxRender==="function")bxRender(); }
+}
+/* ★2026-09-02 혜림 : 중복으로 잘못 올린 문서를 카드에서 바로 지운다.
+   저장소에 있는 원본 PDF 도 같이 지운다. 관리자는 전부, 담당자는 자기가 올린 것만 지울 수 있다. */
+function bjCanDelDoc(a){
+  if(!me)return false;
+  if(me.isMaster)return true;
+  return String((a&&a.assignee)||"")===String(me.name||"");
+}
+async function bjDelDoc(id,label,path){
+  if(!confirm("이 문서를 지웁니다.\n\n"+(label||"")+"\n\n되돌릴 수 없습니다.\n저장해 둔 원본 PDF 도 함께 지워집니다.\n계속할까요?"))return;
+  busy(true);
+  try{
+    var d=await sbc.from("bj_documents").delete().eq("id",id).select("id");
+    if(d.error)throw d.error;
+    if(path){ try{ await sbc.storage.from("bojeong").remove([path]); }catch(e){} }
+    if(typeof bxRows!=="undefined"&&bxRows)bxRows=bxRows.filter(function(x){return x.id!==id;});
+    busy(false);
+    if(typeof wdToast==="function")wdToast("문서를 지웠습니다");
+    if(bjPrevCase)bjLoadPreview(bjPrevCase);
+    if(typeof view!=="undefined"&&view==="bjbox"&&typeof bxRender==="function")bxRender();
+  }catch(e){
+    busy(false);
+    alert("삭제 실패\n\n"+((e&&e.message)||e)+"\n\n(이 문구를 그대로 알려 주시면 원인을 바로 찾겠습니다)");
+  }
 }
 function bjPreviewDoc(path,name){
   if(!path){ alert("이 문서에는 보관된 원본 파일이 없습니다."); return; }
@@ -12415,6 +12515,7 @@ function bjDocCardHtml(a){ /* 사건 상세·팝업 공용 문서 카드 (2026-0
     +'<button onclick="event.stopPropagation();bjPreviewDoc('+pj+','+nj+')">미리보기</button>'
     +'<button onclick="event.stopPropagation();downloadBojeong('+pj+','+nj+')">내려받기</button>'
     +(ours?'<button onclick="event.stopPropagation();wdCloseModal();bjOpen(\''+a.id+'\')">자세히</button>':'')
+    +(bjCanDelDoc(a)?'<button class="del" title="이 문서를 지웁니다" onclick="event.stopPropagation();bjDelDoc(\''+a.id+'\','+JSON.stringify(kindTxt+" "+(mainD||"")+" · "+fname).replace(/"/g,"&quot;")+','+pj+')">휴지통</button>':'')
     +'</div>'
     +'</div>'
     +side

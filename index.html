@@ -3440,6 +3440,10 @@ function rcRender(){
     h+=show.map(function(r){return rcRow(r,true);}).join("");
   }
   h+='</tbody></table></div>';
+  h+='<div class="bj-note" style="margin-top:6px;padding:10px 12px;background:#F3F7F4;border-radius:8px">'
+    +'<b>보정 문서에는 여기서 바로 PDF를 넣을 수 있습니다.</b> 「할 일」 칸의 [＋ 파일]을 누르세요. '
+    +'아직 등록 전인 줄은 파일을 담아 두었다가 <b>[등록]하는 순간 함께 올라갑니다.</b> '
+    +'이미 등록된 줄은 누르는 즉시 그 사건의 문서에 들어갑니다.</div>';
   h+='<div class="bj-note" style="margin-top:10px">간주송달 칸은 <b>발송일자 + 7일</b>이며 그날이 주말·공휴일이면 다음 영업일로 밉니다. 실제 확인일이 있으면 그 날짜가 우선입니다. '
     +'등록하면 발송일자가 송달 도착일로 들어가고, 담당자는 그 의뢰인의 직전 회차 담당자를 이어받습니다.</div>';
   h+='<div class="bj-note" style="margin-top:6px;padding:10px 12px;background:#F6F6F6;border-radius:8px">'
@@ -3461,6 +3465,13 @@ function rcRow(r,showLeft){
     ? '<button class="btn ghost mini" onclick="rcRegisterOne('+JSON.stringify(k).replace(/"/g,"&quot;")+')">등록</button>'
       +(r.other?' <button class="btn ghost mini" onclick="rcGoCase('+JSON.stringify(r.other.id).replace(/"/g,"&quot;")+')">이전 문서 열기</button>':'')
     : (r.c?'<button class="btn ghost mini" onclick="rcGoCase('+JSON.stringify(r.c.id).replace(/"/g,"&quot;")+')">열기</button>':'');
+  var fkey=JSON.stringify(k).replace(/"/g,"&quot;");
+  var fnm=(rcFiles&&rcFiles[k])?rcFiles[k].name:"";
+  if(r.bj||r.c){
+    act+=fnm
+      ? '<div style="margin-top:4px"><span class="rc-tag" style="background:#EDF7F0;color:#1B7F4B" title="'+esc(fnm)+'">파일 담김</span> <span class="bj-link" onclick="rcFileClear('+fkey+')">빼기</span></div>'
+      : '<div style="margin-top:4px"><label class="btn ghost mini" style="margin:0;cursor:pointer" title="'+(r.c?'이 사건의 문서에 바로 넣습니다':'지금 담아 두었다가 [등록]할 때 함께 올립니다')+'">＋ 파일<input type="file" accept="application/pdf" onchange="rcFilePick('+fkey+',event)" style="display:none"></label></div>';
+  }
   var warn="";
   if(r.firmDiff)warn+='<div style="color:#B45309;font-weight:700;font-size:12px">사무소 다름 : '+esc(r.cliFirm)+'</div>';
   if(r.courtDiff)warn+='<div style="color:#B45309;font-weight:700;font-size:12px">법원 확인 : 케이스허브에 <b>법원 이름</b>이 없어 사건번호만으로 찾았습니다</div>';
@@ -3559,6 +3570,53 @@ function rcGoCase(id){
   },120);
 }
 /* 한 건 등록 */
+/* ★2026-09-02 혜림 : 기한이 정해지는 문서는 송달문서로 넘어가지 않고
+   미확인 송달 화면에서 바로 PDF를 넣을 수 있어야 한다.
+   아직 등록 전인 줄은 파일을 브라우저에 담아 두었다가 [등록]이 끝나는 순간 함께 올린다. */
+var rcFiles={};
+function rcFilePick(k,ev){
+  var f=ev.target.files[0]; ev.target.value="";
+  if(!f)return;
+  var rows=rcMatch();
+  var r=null;
+  for(var i=0;i<rows.length;i++){ if(rcKey(rows[i])===k){ r=rows[i]; break; } }
+  if(r&&r.c){
+    /* 이미 송달문서에 등록된 줄이면 바로 그 사건에 넣는다 */
+    busy(true);
+    bjSaveFileOnly(r.c,f,true).then(function(){
+      busy(false);
+      if(typeof wdToast==="function")wdToast(f.name+" 를 그 사건의 문서에 넣었습니다");
+    }).catch(function(e){
+      busy(false);
+      alert("파일을 넣지 못했습니다\n\n"+((e&&e.message)||e));
+    });
+    return;
+  }
+  rcFiles[k]=f;
+  rcRender();
+  if(typeof wdToast==="function")wdToast(f.name+" 를 담아 두었습니다. [등록]하면 함께 올라갑니다");
+}
+function rcFileClear(k){ delete rcFiles[k]; rcRender(); }
+/* 등록이 끝난 뒤, 담아 둔 파일을 방금 만들어진 송달문서에 붙인다 */
+async function rcAttachFiles(L){
+  var done=0,fail=0;
+  for(var i=0;i<L.length;i++){
+    var r=L[i],k=rcKey(r),f=rcFiles[k];
+    if(!f)continue;
+    var dt=String(r.x.doc||"")+((r.dupN>1)?(" ("+r.dupIdx+"/"+r.dupN+")"):"");
+    var want=dt.replace(/\s/g,"");
+    var sent=String(r.x.sent||"").slice(0,10);
+    var c=(cases||[]).find(function(x){
+      return rcNormCase(x.caseno)===rcNormCase(r.x.caseno)
+        && String(x.doctype||"").replace(/\s/g,"")===want
+        && String(x.date||"").slice(0,10)===sent;
+    });
+    if(!c){ fail++; continue; }
+    try{ await bjSaveFileOnly(c,f,true); delete rcFiles[k]; done++; }
+    catch(e){ fail++; }
+  }
+  return {done:done,fail:fail};
+}
 function rcRegisterOne(k){
   rcSel={}; rcSel[k]=true;
   rcDueOpen();
@@ -3668,6 +3726,7 @@ async function rcRegister(){
     }
     rcSel={};
     await refreshAll();
+    var _att=await rcAttachFiles(L);
     showView("recon");
     rcRender();
     var msg=[];
@@ -3679,6 +3738,8 @@ async function rcRegister(){
     if(suffixed)msg.push("· 이름이 똑같은 "+suffixed+"건은 문서명 뒤에 (1/2) 같은 번호를 붙여 각각 등록했습니다.");
     if(skipped)msg.push("· "+skipped+"건은 그 사이 다른 사람이 이미 등록해서 건너뛰었습니다.");
     if(dupServer)msg.push("· "+dupServer+"건은 이미 등록돼 있는 문서라 건너뛰었습니다.\n  담당자가 다른 직원이면 내 화면에 안 보여서 '아직 안 등록'으로 나옵니다.\n  관리자에게 그 사건의 담당자를 확인해 달라고 하세요.");
+    if(_att&&_att.done)msg.push("· 미리 담아 둔 PDF "+_att.done+"건을 '이 사건의 문서'에 함께 넣었습니다.");
+    if(_att&&_att.fail)msg.push("· PDF "+_att.fail+"건은 붙일 사건을 못 찾아 담긴 채로 두었습니다. 송달문서 상세에서 [파일만 등록]으로 넣어 주세요.");
     if(nDiff)msg.push("· 사무소·법원이 우리 기록과 다른 건은 송달문서 목록에서 확인해 주세요.");
     alert(msg.join("\n"));
   }catch(e){
@@ -9736,13 +9797,13 @@ async function bjPick2(ev){
 /* ★2026-09-01 : 판독하지 않고 파일만 사건에 보관한다.
    보관 위치는 상세 아래 '보정서 파일'과 같은 곳(bojeong 버킷 · 사무소/의뢰인 폴더)이라
    같은 자리에서 미리보기·내려받기가 된다. 의뢰인 연결이 없으면 보관할 폴더가 없어 안내만 한다. */
-async function bjSaveFileOnly(c,f){
+async function bjSaveFileOnly(c,f,quiet){
   if(!c||!f)return;
   /* PDF 가 아니면 판독할 것이 없으니 예전처럼 '보정서 파일'에 보관한다 */
   var isPdf=/\.pdf$/i.test(String(f.name||""))||String(f.type||"").indexOf("pdf")>=0;
   if(!isPdf){
     var ok=await saveCaseFile(c,f,"파일 보관 : "+f.name+" (판독 없이 저장)");
-    if(ok)alert("PDF가 아니어서 아래 '보정서 파일'에 보관했습니다.\n거기서 미리보기·내려받기 할 수 있습니다.");
+    if(ok&&!quiet)alert("PDF가 아니어서 아래 '보정서 파일'에 보관했습니다.\n거기서 미리보기·내려받기 할 수 있습니다.");
     return;
   }
   busy(true);
@@ -9770,11 +9831,12 @@ async function bjSaveFileOnly(c,f){
     if(!di.data||!di.data.length)throw new Error("보정문서 저장 0건. SQL L1과 권한을 확인하세요.");
     try{ await patchCase(c.id,{},"문서 등록 : "+f.name+" (판독은 나중에)"); }catch(e){}
     var _od=bjOrderDate(cl.text,f.name);
-    alert("'이 사건의 문서'에 넣었습니다.\n\n이 서류의 보정명령일 : "
+    if(!quiet)alert("'이 사건의 문서'에 넣었습니다.\n\n이 서류의 보정명령일 : "
       +(_od.date||"찾지 못했습니다")+(_od.date?"  (서류의 "+_od.how+" 자리)":"")
       +"\n\n상세 화면에서 [판독]을 눌러 언제든 이어서 할 수 있습니다.");
     if(typeof bjLoadPreview==="function")bjLoadPreview(c);
   }catch(e){
+    if(quiet)throw e;
     alert("문서 등록 실패\n\n"+((e&&e.message)||e)+"\n\n(이 문구를 그대로 알려 주시면 원인을 바로 찾을 수 있습니다)");
   }
   finally{busy(false);}

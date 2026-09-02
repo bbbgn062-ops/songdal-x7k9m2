@@ -6192,18 +6192,22 @@ async function bjSyncCase(delId,state,holdDate,quiet){
         if(n<1)n=1;
         patch.term_days=n;
       }
-      if(c.status==="추후처리"||c.status==="당사자안내")patch.status="진행중";
     }
+    if(c.status!=="진행중")patch.status="진행중";
     msg="보정서 추후제출 · 기한 "+(holdDate||"미정")+" 으로 맞춤";
   }else if(state==="보정완료"){
+    /* ★2026-09-02 혜림 : 보정이 다 끝났으면 기한을 세지 않는다.
+       송달문서 줄도 「처리완료」가 되어 목록에서 빨간 디데이가 사라진다. */
     patch.submit_status="제출완료";
     patch.followup_date=null;
     patch.followup_note=null;
-    msg="보정 완료 · 제출 상태 제출완료";
+    if(c.status!=="처리완료")patch.status="처리완료";
+    msg="보정 완료 · 제출 상태 제출완료 · 상태 처리완료";
   }else{
     patch.submit_status="미제출";
     patch.followup_date=null;
     patch.followup_note=null;
+    if(c.status==="처리완료")patch.status="진행중";
     msg="보정중으로 되돌림 · 추후제출 해제";
   }
   try{ await patchCase(c.id,patch,msg); }
@@ -6220,24 +6224,24 @@ var bjHoldHealed={};
 async function bjHealHold(c,rows){
   if(!c||!c.id||bjHoldHealed[c.id])return 0;
   bjHoldHealed[c.id]=true;
-  var n=0;
-  for(var i=0;i<(rows||[]).length;i++){
-    var r=rows[i];
-    if(!r||!r.delivery_id)continue;
-    var ws=bjWorkStateOf(r);
-    var hu=String(r.hold_until||"").slice(0,10);
-    var dc=(typeof cases!=="undefined"&&cases)?cases.find(function(x){return x.id===r.delivery_id;}):null;
+  var n=0, seen={};
+  var ids=[];
+  (rows||[]).forEach(function(r){ if(r&&r.delivery_id&&!seen[r.delivery_id]){seen[r.delivery_id]=true;ids.push(r.delivery_id);} });
+  for(var i=0;i<ids.length;i++){
+    var delId=ids[i];
+    var docs=(rows||[]).filter(function(x){return x.delivery_id===delId;});
+    var up=bjRollup(docs);
+    if(!up)continue;
+    var dc=(typeof cases!=="undefined"&&cases)?cases.find(function(x){return x.id===delId;}):null;
     if(!dc)continue;
-    if(ws==="추후제출"&&hu){
-      if(String(dc.followupDate||"").slice(0,10)===hu&&dc.submitStatus==="일부제출")continue;
-      await bjSyncCase(r.delivery_id,"추후제출",hu,true); n++;
-    }else if(ws==="보정완료"){
-      if(dc.submitStatus==="제출완료")continue;
-      await bjSyncCase(r.delivery_id,"보정완료",null,true); n++;
-    }
+    /* 이미 맞으면 건드리지 않는다 */
+    if(up.state==="보정완료"&&dc.submitStatus==="제출완료"&&dc.status==="처리완료")continue;
+    if(up.state==="추후제출"&&String(dc.followupDate||"").slice(0,10)===up.hold&&dc.submitStatus==="일부제출")continue;
+    if(up.state==="보정중"&&dc.submitStatus==="미제출"&&dc.status!=="처리완료")continue;
+    await bjSyncCase(delId,up.state,up.hold,true); n++;
   }
   if(n){
-    if(typeof wdToast==="function")wdToast("추후제출 기한 "+n+"건을 송달문서에 반영했습니다");
+    if(typeof wdToast==="function")wdToast("보정 상태 "+n+"건을 송달문서에 반영했습니다");
     if(typeof render==="function")render();
     bjLoadPreview(c);
   }
@@ -6247,17 +6251,46 @@ async function bjHealHold(c,rows){
 async function bjPushHold(id,delId,state,hold){
   if(!delId){ alert("이 문서는 송달문서 줄과 이어져 있지 않습니다."); return; }
   busy(true);
-  await bjSyncCase(delId,state,hold||null,false);
+  await bjRollupSync(delId,false);
   busy(false);
   if(typeof render==="function")render();
   if(bjPrevCase)bjLoadPreview(bjPrevCase);
+}
+/* ★2026-09-02 : 한 줄에 문서가 여러 개일 수 있으므로, 그 줄의 문서를 전부 보고 정한다.
+   모두 보정완료면 처리완료 · 하나라도 추후제출이면 가장 늦은 연장기한 · 그 밖에는 보정중 */
+function bjRollup(docs){
+  docs=(docs||[]);
+  if(!docs.length)return null;
+  var allDone=true, hold=null;
+  docs.forEach(function(r){
+    var w=bjWorkStateOf(r);
+    if(w!=="보정완료")allDone=false;
+    if(w==="추후제출"&&r.hold_until){
+      var h=String(r.hold_until).slice(0,10);
+      if(!hold||h>hold)hold=h;
+    }
+  });
+  if(allDone)return {state:"보정완료",hold:null};
+  if(hold)return {state:"추후제출",hold:hold};
+  return {state:"보정중",hold:null};
+}
+async function bjRollupSync(delId,quiet){
+  if(!delId)return;
+  try{
+    var r=await bjFetchDocs(delId,80);
+    if(r.error||!r.data)return;
+    var docs=r.data.filter(function(x){return x.delivery_id===delId;});
+    var up=bjRollup(docs);
+    if(!up)return;
+    await bjSyncCase(delId,up.state,up.hold,quiet);
+  }catch(e){}
 }
 function bjCardState(id,delId,val){
   var patch={work_state:val||null};
   if(val!=="추후제출")patch.hold_until=null;
   bjDocPatch(id,patch,"상태를 "+(val||"보정중")+"으로 바꿨습니다").then(function(ok){
     if(!ok)return;
-    return bjSyncCase(delId,val,null,true).then(function(){
+    return bjRollupSync(delId,true).then(function(){
       if(bjPrevCase)bjLoadPreview(bjPrevCase);
       if(typeof bxLoaded!=="undefined")bxLoaded=false;
       if(typeof render==="function")render();
@@ -6268,7 +6301,7 @@ function bjCardHold(id,delId,val){
   bjDocPatch(id,{hold_until:val||null,work_state:"추후제출"},
     val?("연장기한을 "+val+"로 저장했습니다"):"연장기한을 지웠습니다").then(function(ok){
     if(!ok)return;
-    return bjSyncCase(delId,"추후제출",val,false).then(function(){
+    return bjRollupSync(delId,false).then(function(){
       if(bjPrevCase)bjLoadPreview(bjPrevCase);
       if(typeof bxLoaded!=="undefined")bxLoaded=false;
       if(typeof render==="function")render();
@@ -12628,8 +12661,9 @@ function bjDocCardHtml(a){ /* 사건 상세·팝업 공용 문서 카드 (2026-0
       ? '<div><div class="sl">언제까지 연장했나요</div>'
         +'<div class="bj-note" style="margin-bottom:3px">이 날짜를 넣으면 송달문서의 제출 상태가 「일부제출」이 되고 처리기한도 이 날짜로 바뀝니다. 법원이 연장을 안 받아 주고 새 기한을 정해 주면 여기 날짜를 그 날짜로 바꾸세요</div>'
         +'<input type="date" value="'+esc(hold)+'" onchange="bjCardHold('+sid+','+did+',this.value)">'
-        +'<button class="btn ghost mini" style="width:100%;margin-top:4px" onclick="bjPushHold('+sid+','+did+',\'추후제출\','+JSON.stringify(hold).replace(/"/g,"&quot;")+')">송달문서에 지금 반영</button></div>'
+        +'</div>'
       : '')
+    +(did!=="null"?'<button class="btn ghost mini" style="width:100%" onclick="bjPushHold('+sid+','+did+',\'\',\'\')" title="이 문서의 보정 상태를 송달문서 줄의 제출 상태·처리기한에 다시 맞춥니다">송달문서에 지금 반영</button>':'')
     +'<div><div class="sl">메모</div>'
     +'<textarea placeholder="이 문서에 남길 메모를 적어 주세요" oninput="bjCardMemo('+sid+',this.value)">'+esc(a.memo||"")+'</textarea></div>'
     +'</div>';

@@ -293,6 +293,7 @@ body.docmode .bar1 h1{font-size:16px}
 /* 배분판에서 고른 카드 (2026-08-31) */
 .tk.on{border-color:hsl(var(--pri));box-shadow:0 0 0 2px hsl(var(--pri)/.18)}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -1972,8 +1973,10 @@ function addF(k,inp){var a=M(k);if(!a)return;var was=got(k);
     var f=inp.files[i], u="";
     var fid="f"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
     try{ u=URL.createObjectURL(f); }catch(e){}
-    a.mat.files.push({name:f.name,size:f.size,url:u,type:f.type||"",fid:fid,at:new Date().toISOString()});
+    var _e1={name:f.name,size:f.size,url:u,type:f.type||"",fid:fid,at:new Date().toISOString()};
+    a.mat.files.push(_e1);
     jobs.push(idbPut("files",fid,f));
+    jobs.push(cloudPutFile(f,fid).then(function(p){ if(p)_e1.spath=p; }).catch(function(){}));
   }
   if(full(a))a.mat.status=mt(a).step[2];
   Promise.all(jobs).then(function(){ markSave(); })
@@ -2238,6 +2241,7 @@ function draw(){
         + '<button class="b o s" onclick="backAdmin()">관리자로 돌아가기</button>'
       : '')
    + '<span class="tag" id="savedot">저장 준비 중</span>'
+   + '<button class="b o s" onclick="wbOpenList()" title="회사 서버에 저장된 사건을 골라서 엽니다">다른 사건 열기</button>'
    + '<button class="b g s" onclick="wipeSave()">저장 지우기</button>'
    + '<button class="b g s" onclick="theme()">밝게/어둡게</button>';
 
@@ -3155,6 +3159,110 @@ function idbWipe(){return db().then(function(d){return new Promise(function(res)
   t.objectStore("kv").clear(); t.objectStore("files").clear();
   t.oncomplete=function(){res();}; t.onerror=function(){res();};});});}
 
+
+/* ==========================================================
+   ★2026-09-02 : 회사 서버(Supabase)에 저장한다.
+   지금까지는 이 브라우저 안(IndexedDB)에만 저장돼서
+   회사 컴퓨터에서 넣은 것이 집이나 직원 계정에서는 안 보였다.
+   이제 사건번호를 열쇠로 서버에 한 줄로 저장하고, 파일은 보관함에 올린다.
+   로그인은 송달앱과 같은 주소라 이미 되어 있는 것을 그대로 쓴다.
+   ========================================================== */
+var SBW=null, cloudOn=false, cloudBusy=false, cloudErr="";
+try{
+  if(window.supabase&&window.supabase.createClient){
+    SBW=window.supabase.createClient("https://zxwsfwhyjkixsnfpzpkt.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4d3Nmd2h5amtpeHNuZnB6cGt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NjUxMzIsImV4cCI6MjA5ODA0MTEzMn0.mHfZJNRMmH-I2XI3ISutaYNemIbjKvWzFlOzMLmi-aQ",{auth:{persistSession:true,autoRefreshToken:false}});
+    cloudOn=true;
+  }
+}catch(e){ cloudOn=false; }
+
+function wbCase(){ return String((D&&D["case"]&&D["case"].case_no)||"").trim(); }
+function wbSafe(t){ return String(t||"").replace(/[^0-9A-Za-z가-힣._-]/g,"_").slice(0,60); }
+async function wbWho(){
+  try{
+    var u=await SBW.auth.getUser();
+    return (u&&u.data&&u.data.user&&u.data.user.email)||"";
+  }catch(e){ return ""; }
+}
+/* 서버에 통째로 저장 */
+async function cloudSave(copy){
+  if(!cloudOn)return false;
+  var no=wbCase();
+  if(!no)return false;
+  var row={
+    case_no:no,
+    debtor:(D["case"]&&D["case"].debtor)||null,
+    court:(D["case"]&&D["case"].court)||null,
+    firm_label:(D["case"]&&D["case"].firm_label)||null,
+    state:copy,
+    updated_by:(await wbWho())||null,
+    updated_at:new Date().toISOString()
+  };
+  var r=await SBW.from("bj_workbench").upsert(row,{onConflict:"case_no"});
+  if(r.error)throw r.error;
+  return true;
+}
+/* 서버에서 불러오기 */
+async function cloudLoad(no){
+  if(!cloudOn||!no)return null;
+  var r=await SBW.from("bj_workbench").select("state,updated_at,updated_by").eq("case_no",no).limit(1);
+  if(r.error)throw r.error;
+  return (r.data&&r.data[0])||null;
+}
+/* 저장돼 있는 사건 목록 */
+async function cloudList(){
+  if(!cloudOn)return [];
+  var r=await SBW.from("bj_workbench").select("case_no,debtor,court,firm_label,updated_at,updated_by").order("updated_at",{ascending:false}).limit(200);
+  if(r.error)throw r.error;
+  return r.data||[];
+}
+/* 파일을 보관함에 올린다. 실패해도 이 브라우저에는 남으므로 작업은 이어진다 */
+async function cloudPutFile(f,fid){
+  if(!cloudOn)return "";
+  var no=wbCase(); if(!no)return "";
+  var path="workbench/"+wbSafe(no)+"/"+fid+"_"+wbSafe(f.name);
+  var up=await SBW.storage.from("bojeong").upload(path,f,{upsert:true,contentType:f.type||undefined});
+  if(up.error)throw up.error;
+  return path;
+}
+async function cloudFileUrl(path){
+  if(!cloudOn||!path)return "";
+  var r=await SBW.storage.from("bojeong").createSignedUrl(path,3600);
+  if(r.error)return "";
+  return (r.data&&r.data.signedUrl)||"";
+}
+/* 사건 고르기 창 */
+async function wbOpenList(){
+  if(!cloudOn){ alert("회사 서버에 연결돼 있지 않습니다.\n송달앱에 로그인한 창에서 열어 주세요."); return; }
+  saveDot("목록 불러오는 중","");
+  var rows=[];
+  try{ rows=await cloudList(); }
+  catch(e){ alert("목록을 불러오지 못했습니다\n\n"+((e&&e.message)||e)+"\n\nSQL_보정처리대_20260902 의 SQL을 실행했는지 확인해 주세요."); saveDot("저장 실패","r"); return; }
+  if(!rows.length){ alert("회사 서버에 저장된 처리대가 아직 없습니다.\n\n보정권고를 넣고 작업을 시작하면 자동으로 저장됩니다."); saveDot("저장됨","g"); return; }
+  var t=rows.map(function(r,i){
+    return (i+1)+". "+(r.debtor||"이름 없음")+"  "+(r.case_no||"")+"  ("+String(r.updated_at||"").slice(0,10)+" "+(r.updated_by||"")+")";
+  }).join("\n");
+  var pick=prompt("열 사건의 번호를 적어 주세요.\n\n"+t+"\n\n지금 열려 있는 것은 "+(wbCase()||"없음")+" 입니다.","1");
+  if(pick===null)return;
+  var idx=parseInt(pick,10)-1;
+  if(!(idx>=0&&idx<rows.length)){ alert("번호를 잘못 적으셨습니다."); return; }
+  await wbSwitch(rows[idx].case_no);
+}
+async function wbSwitch(no){
+  saveDot("불러오는 중","");
+  try{
+    var got=await cloudLoad(no);
+    if(!got||!got.state){ alert("그 사건의 저장본을 찾지 못했습니다."); saveDot("저장됨","g"); return; }
+    D=got.state; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null;
+    await rehydrate();
+    draw();
+    saveDot("서버에서 불러옴 "+String(got.updated_at||"").slice(0,10),"g");
+    try{ await idbPut("kv","state",JSON.parse(JSON.stringify(D,function(k,v){return k==="url"?undefined:v;}))); }catch(e){}
+  }catch(e){
+    alert("불러오지 못했습니다\n\n"+((e&&e.message)||e));
+    saveDot("저장 실패","r");
+  }
+}
+
 /* 저장 표시를 바꿔 준다 */
 function saveDot(txt,cls){
   var e=document.getElementById("savedot");
@@ -3169,39 +3277,56 @@ function doSave(){
   saveDot("저장 중","");
   idbPut("kv","state",copy).then(function(){
     savedAt=new Date().toTimeString().slice(0,5); saveErr="";
-    saveDot("저장됨 "+savedAt,"g");
+    if(!cloudOn||!wbCase()){ saveDot("이 브라우저에만 저장됨 "+savedAt,"a"); return; }
+    saveDot("회사 서버에 저장 중","");
+    cloudSave(copy).then(function(){
+      saveDot("회사 서버에 저장됨 "+savedAt,"g");
+    }).catch(function(e){
+      cloudErr=(e&&e.message)||String(e);
+      saveDot("이 브라우저에만 저장됨 "+savedAt,"a");
+    });
   }).catch(function(){ saveErr="저장 실패"; saveDot("저장 실패","r"); });
 }
 /* 저장해 둔 파일을 다시 볼 수 있게 되살린다 */
 function rehydrate(){
   var jobs=[];
-  (D.tasks||[]).forEach(function(t){
-    (t.files||[]).forEach(function(f){
-      if(!f.fid)return;
-      jobs.push(idbGet("files",f.fid).then(function(b){
-        if(b){ try{ f.url=URL.createObjectURL(b); }catch(e){} }
-      }).catch(function(){}));
-    });
-  });
-  MATS().forEach(function(a){
-    (a.mat.files||[]).forEach(function(f){
-      if(!f.fid)return;
-      jobs.push(idbGet("files",f.fid).then(function(b){
-        if(b){ try{ f.url=URL.createObjectURL(b); }catch(e){} }
-      }).catch(function(){}));
-    });
-  });
+  /* 이 브라우저에 원본이 있으면 그것으로, 없으면 회사 보관함에서 주소를 받아 온다 */
+  function revive(f){
+    if(!f)return;
+    jobs.push(
+      (f.fid?idbGet("files",f.fid):Promise.resolve(null)).then(function(b){
+        if(b){ try{ f.url=URL.createObjectURL(b); return; }catch(e){} }
+        if(f.spath)return cloudFileUrl(f.spath).then(function(u){ if(u)f.url=u; });
+      }).catch(function(){})
+    );
+  }
+  (D.tasks||[]).forEach(function(t){ (t.files||[]).forEach(revive); });
+  MATS().forEach(function(a){ (a.mat.files||[]).forEach(revive); });
   return Promise.all(jobs);
 }
 function boot(){
   draw();
+  var localState=null;
   idbGet("kv","state").then(function(st){
-    if(!st||!st.tasks||!st.case)return null;
-    D=st; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null;
-    return rehydrate();
-  }).then(function(ok){
-    if(ok!==null){ draw(); saveDot("저장된 것 불러옴","g"); }
-    else saveDot("저장 안 됨","");
+    if(st&&st.tasks&&st["case"])localState=st;
+    if(localState){ D=localState; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null; }
+    var no=wbCase();
+    if(!cloudOn||!no)return null;
+    /* ★서버에 더 최근 것이 있으면 그것으로 연다. 회사 컴퓨터와 집 컴퓨터가 어긋나지 않게 */
+    return cloudLoad(no).then(function(got){
+      if(got&&got.state){
+        D=got.state; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null;
+        return {from:"서버",at:String(got.updated_at||"").slice(0,10)};
+      }
+      return null;
+    }).catch(function(){ return null; });
+  }).then(function(src){
+    return rehydrate().then(function(){ return src; });
+  }).then(function(src){
+    draw();
+    if(src&&src.from==="서버")saveDot("회사 서버에서 불러옴 "+src.at,"g");
+    else if(localState)saveDot(cloudOn?"이 브라우저에서 불러옴":"저장된 것 불러옴","g");
+    else saveDot(cloudOn?"회사 서버에 연결됨":"저장 안 됨","");
   }).catch(function(){ saveDot("저장 안 됨",""); });
 }
 function wipeSave(){
@@ -3249,8 +3374,10 @@ function addTF(id,inp){
     var f=inp.files[i], u="";
     var fid="f"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
     try{ u=URL.createObjectURL(f); }catch(e){}
-    t.files.push({name:f.name,size:f.size,url:u,type:f.type||"",fid:fid,at:new Date().toISOString()});
+    var _e2={name:f.name,size:f.size,url:u,type:f.type||"",fid:fid,at:new Date().toISOString()};
+    t.files.push(_e2);
     jobs.push(idbPut("files",fid,f));
+    jobs.push(cloudPutFile(f,fid).then(function(p){ if(p)_e2.spath=p; }).catch(function(){}));
   }
   Promise.all(jobs).then(function(){ markSave(); toast("파일 "+inp.files.length+"개를 붙였습니다"); })
     .catch(function(){ toast("파일을 저장하지 못했습니다. 이름만 남습니다"); saveDot("파일 저장 실패","r"); });

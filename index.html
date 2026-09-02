@@ -6172,19 +6172,64 @@ function bjCardMemo(id,val){
   bjMemoT[id]=setTimeout(function(){ bjDocPatch(id,{memo:val||null},"메모를 저장했습니다"); },700);
 }
 var bjPrevCase=null;
-function bjCardState(id,val){
+/* ★2026-09-02 혜림 : 문서 카드에서 추후제출과 연장기한을 넣으면
+   송달문서 줄의 「제출 상태」와 「처리기한」도 같이 바뀌어야 한다.
+   그래야 목록·달력·아침 점검이 전부 그 날짜로 움직인다. */
+async function bjSyncCase(delId,state,holdDate,quiet){
+  if(!delId||typeof cases==="undefined"||!cases)return;
+  var c=cases.find(function(x){return x.id===delId;});
+  if(!c)return;
+  var patch={},msg="";
+  if(state==="추후제출"){
+    patch.submit_status="일부제출";
+    patch.followup_date=holdDate||null;
+    patch.followup_note="보정서로 기간 연장 신청";
+    if(holdDate){
+      var base=(typeof serviceDate==="function")?serviceDate(c):null;
+      var t=parseD(holdDate);
+      if(base&&t){
+        var n=Math.round((t-base)/86400000);
+        if(n<1)n=1;
+        patch.term_days=n;
+      }
+      if(c.status==="추후처리"||c.status==="당사자안내")patch.status="진행중";
+    }
+    msg="보정서 추후제출 · 기한 "+(holdDate||"미정")+" 으로 맞춤";
+  }else if(state==="보정완료"){
+    patch.submit_status="제출완료";
+    patch.followup_date=null;
+    patch.followup_note=null;
+    msg="보정 완료 · 제출 상태 제출완료";
+  }else{
+    patch.submit_status="미제출";
+    patch.followup_date=null;
+    patch.followup_note=null;
+    msg="보정중으로 되돌림 · 추후제출 해제";
+  }
+  try{ await patchCase(c.id,patch,msg); }catch(e){}
+  if(!quiet&&typeof wdToast==="function")wdToast("송달문서의 제출 상태와 처리기한도 함께 맞췄습니다");
+}
+function bjCardState(id,delId,val){
   var patch={work_state:val||null};
   if(val!=="추후제출")patch.hold_until=null;
   bjDocPatch(id,patch,"상태를 "+(val||"보정중")+"으로 바꿨습니다").then(function(ok){
-    if(ok&&bjPrevCase)bjLoadPreview(bjPrevCase);
-    if(typeof bxLoaded!=="undefined")bxLoaded=false;
+    if(!ok)return;
+    return bjSyncCase(delId,val,null,true).then(function(){
+      if(bjPrevCase)bjLoadPreview(bjPrevCase);
+      if(typeof bxLoaded!=="undefined")bxLoaded=false;
+      if(typeof render==="function")render();
+    });
   });
 }
-function bjCardHold(id,val){
+function bjCardHold(id,delId,val){
   bjDocPatch(id,{hold_until:val||null,work_state:"추후제출"},
     val?("연장기한을 "+val+"로 저장했습니다"):"연장기한을 지웠습니다").then(function(ok){
-    if(ok&&bjPrevCase)bjLoadPreview(bjPrevCase);
-    if(typeof bxLoaded!=="undefined")bxLoaded=false;
+    if(!ok)return;
+    return bjSyncCase(delId,"추후제출",val,false).then(function(){
+      if(bjPrevCase)bjLoadPreview(bjPrevCase);
+      if(typeof bxLoaded!=="undefined")bxLoaded=false;
+      if(typeof render==="function")render();
+    });
   });
 }
 /* ★2026-09-02 : 저장소 키는 1788311338058.pdf 처럼 숫자다.
@@ -12519,6 +12564,7 @@ function bjDocCardHtml(a){ /* 사건 상세·팝업 공용 문서 카드 (2026-0
   var fname=bjFileName(a);
   var nj=JSON.stringify(fname).replace(/"/g,"&quot;");
   var sid="'"+a.id+"'";
+  var did=a.delivery_id?("'"+a.delivery_id+"'"):"null";
 
   var side='<div class="bjpick-side" onclick="event.stopPropagation()">'
     +'<div><div class="sl">문서 구분</div>'
@@ -12530,14 +12576,15 @@ function bjDocCardHtml(a){ /* 사건 상세·팝업 공용 문서 카드 (2026-0
     +'<input type="date" value="'+esc(mainD)+'" onchange="bjCardDate('+sid+',\''+(ours?"submitted_at":"order_date")+'\',this.value)">'
     +'<div class="bj-note" style="margin-top:3px">자동으로 잘못 읽었으면 여기서 직접 고치세요</div></div>'
     +'<div><div class="sl">보정 상태</div>'
-    +'<select onchange="bjCardState('+sid+',this.value)">'
+    +'<select onchange="bjCardState('+sid+','+did+',this.value)">'
     +  '<option value="보정중"'+(ws==="보정중"?" selected":"")+'>보정중</option>'
     +  '<option value="추후제출"'+(ws==="추후제출"?" selected":"")+'>추후제출 (기간 연장)</option>'
     +  '<option value="보정완료"'+(ws==="보정완료"?" selected":"")+'>보정완료</option>'
     +'</select></div>'
     +(ws==="추후제출"
       ? '<div><div class="sl">언제까지 연장했나요</div>'
-        +'<input type="date" value="'+esc(hold)+'" onchange="bjCardHold('+sid+',this.value)"></div>'
+        +'<div class="bj-note" style="margin-bottom:3px">이 날짜를 넣으면 송달문서의 제출 상태가 「일부제출」이 되고 처리기한도 이 날짜로 바뀝니다. 법원이 연장을 안 받아 주고 새 기한을 정해 주면 여기 날짜를 그 날짜로 바꾸세요</div>'
+        +'<input type="date" value="'+esc(hold)+'" onchange="bjCardHold('+sid+','+did+',this.value)"></div>'
       : '')
     +'<div><div class="sl">메모</div>'
     +'<textarea placeholder="이 문서에 남길 메모를 적어 주세요" oninput="bjCardMemo('+sid+',this.value)">'+esc(a.memo||"")+'</textarea></div>'

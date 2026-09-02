@@ -5462,7 +5462,7 @@ async function bjInsertSubmission(c,path,fileObj,nm){
       doc_type:title,doc_kind:"보정서",
       submitted_at:sub.date||null,hold_until:hold.date||null,
       work_state:hold.date?"추후제출":"보정완료",
-      pdf_path:path,file_name:nm||(f&&f.name)||null,raw_text:txt?bjMaskRrn(txt):null,
+      pdf_path:path,file_name:bjSafeText(nm||(f&&f.name))||null,raw_text:txt?bjMaskRrn(txt):null,
       status:"완료",assignee:(me&&me.name)||null};
     var ins=await bjInsertDoc(doc);
     if(ins.error)throw ins.error;
@@ -6323,7 +6323,19 @@ function bjCourtNorm(c){ /* 지방법원 표기 → 회생법원 프로필·양�
   var base=c.replace("지방법원","").replace("회생법원","");
   return BJ_SYN.indexOf(base)>=0?base+"회생법원":c;
 }
-function bjMaskRrn(t){return String(t||"").replace(BJ_RE.rrn,function(_,a,b){return a+"-"+b+"******";});}
+/* 2026-09-02 : PDF 에서 뽑은 글자에 데이터베이스가 못 받는 글자가 섞여 있으면
+   저장이 통째로 실패한다. 오류 문구는 "unsupported Unicode escape sequence".
+   눈에 보이지 않는 글자들이라 지워도 서류 내용은 그대로 남는다. */
+function bjSafeText(t){
+  return String(t||"")
+    .replace(/\u0000/g,"")
+    .replace(/[\u0001-\u0008\u000B\u000C\u000E-\u001F\u007F]/g,"")
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g,"")
+    .replace(/([^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/g,"$1");
+}
+function bjMaskRrn(t){
+  return bjSafeText(t).replace(BJ_RE.rrn,function(_,a,b){return a+"-"+b+"******";});
+}
 function bjDetectChecks(txt){ /* 부산 표준양식 : ☑ 줄만 (자동 체크 금지, 확인 제안용) */
   return txt.split("\n").filter(function(l){return l.indexOf("☑")>=0||l.indexOf("✔")>=0||l.indexOf("✓")>=0;}).map(function(l){return l.trim();});
 }
@@ -6534,9 +6546,9 @@ async function bjRegisterAll(){
         var docType=String(b.doctype||"").trim()||bjDoctypeGuess(b.text,b.kinds);
         var kindGuess=(typeof bjDecideKind==="function"&&bjDecideKind("",docType))||"";
         var row={client_id:b.client_id||null,case_no:b.case_no,party_name:b.client_name,owner_id:b.owner_id||null,
-          court:b.court||null,doctype:docType||"보정명령",arrived_at:b.arrived,term_days:(kindGuess?null:term),status:"진행중",
+          court:b.court||null,doctype:bjSafeText(docType)||"보정명령",arrived_at:b.arrived,term_days:(kindGuess?null:term),status:"진행중",
           confirmed:!!b.confirmed_at,confirmed_at:b.confirmed_at||null,checklist:defaultDocs(),log:nlog,
-          memo:"보정 판독 자동 등록 · "+b.fname,submit_status:"미제출"};
+          memo:bjSafeText("보정 판독 자동 등록 · "+b.fname),submit_status:"미제출"};
         /* 2026-08-31 : 한 사건에 송달 기록은 하나만 만들 수 있다(uq_delivery).
            금지명령처럼 같은 사건에 두 번째 문서가 오면 여기서 막혔다.
            이럴 땐 새로 만들지 말고 이미 있는 송달 기록에 문서만 붙인다. */
@@ -6590,14 +6602,19 @@ async function bjRegisterAll(){
         }
         var doc={delivery_id:deliveryId,case_no:b.case_no,court:b.court||null,doc_type:docType||b.kinds.join(","),
           served_at:b.confirmed_at||null,order_date:b.order_date||null,court_deadline:cd,
-          deadline_source:cd?"문서":null,pdf_path:pdfPath,raw_text:bjMaskRrn(b.text),
+          deadline_source:cd?"문서":null,pdf_path:pdfPath,file_name:bjSafeText(b.fname)||null,raw_text:bjMaskRrn(b.text),
           parse_mode:b.scan?"직접입력":null,status:"판독중",assignee:me.name||null};
         var di=await sbc.from("bj_documents").insert(doc).select("id");
         if(di.error)throw di.error;
         if(!di.data||!di.data.length)throw new Error("보정문서가 저장되지 않았어요(0건). SQL L1 실행 여부와 권한을 확인하세요.");
         okDocs.push(di.data[0].id);
         b._done=true;
-      }catch(e){alert(b.fname+" 등록 실패: "+(e.message||e));}
+      }catch(e){
+        var _m=(e&&e.message)||String(e);
+        if(/unicode escape|invalid byte|untranslatable/i.test(_m))
+          _m+="\n\n서류에서 뽑은 글자에 데이터베이스가 못 받는 글자가 섞여 있었습니다.\n새로고침(Ctrl+Shift+R) 뒤 다시 해 보세요. 그래도 같으면 이 문구를 그대로 알려 주세요.";
+        alert(b.fname+" 등록 실패: "+_m);
+      }
     }
     if(bjReused.length)alert("문서 종류와 받은 날짜가 똑같은 줄이 이미 있어서, 새 줄을 만들지 않고 그 줄에 문서만 쌓았습니다.\n\n"+bjReused.join("\n")+"\n\n다른 문서는 각각 새 줄로 등록해 기한을 따로 셉니다.\n[상세]를 열면 그 의뢰인의 문서가 한자리에 모여 보입니다.");
     bjBatch=bjBatch.filter(function(b){return !b._done;});
@@ -9914,7 +9931,7 @@ async function bjPick2(ev){
       +"\n\n판독은 계속되지만 [원본 미리보기]가 안 떠요. SQL L1(orders 저장 정책) 실행 여부를 확인하세요.");
     var doc={delivery_id:c.id,case_no:c.caseno,court:c.court||af.court||null,doc_type:kinds.join(","),
       served_at:c.confirmed?c.confirmedDate:null,order_date:bjOrderDate(cl.text,f.name).date||af.dates[0]||null,
-      pdf_path:(up&&!up.error)?path:null,file_name:f.name||null,raw_text:bjMaskRrn(cl.text),status:"판독중",assignee:me.name||null};
+      pdf_path:(up&&!up.error)?path:null,file_name:bjSafeText(f.name)||null,raw_text:bjMaskRrn(cl.text),status:"판독중",assignee:me.name||null};
     if(_sub1){ doc.doc_kind="보정서"; doc.submitted_at=_sd1.date||null; doc.order_date=null;
                if(_hu1.date){doc.hold_until=_hu1.date;doc.work_state="추후제출";} }
     var di=await bjInsertDoc(doc);
@@ -9954,7 +9971,7 @@ async function bjSaveFileOnly(c,f,quiet){
       +"\n\n등록은 계속되지만 [원본 미리보기]가 안 떠요.");
     var doc={delivery_id:c.id,case_no:c.caseno,court:c.court||af.court||null,doc_type:kinds.join(","),
       served_at:c.confirmed?c.confirmedDate:null,order_date:bjOrderDate(cl.text,f.name).date||af.dates[0]||null,
-      pdf_path:(up&&!up.error)?path:null,file_name:f.name||null,raw_text:bjMaskRrn(cl.text),status:"판독중",assignee:(me&&me.name)||null};
+      pdf_path:(up&&!up.error)?path:null,file_name:bjSafeText(f.name)||null,raw_text:bjMaskRrn(cl.text),status:"판독중",assignee:(me&&me.name)||null};
     if(_sub2){ doc.doc_kind="보정서"; doc.submitted_at=_sd2.date||null; doc.order_date=null;
                if(_hu2.date){doc.hold_until=_hu2.date;doc.work_state="추후제출";} }
     var di=await bjInsertDoc(doc);

@@ -4235,6 +4235,7 @@ function bxStage(r){
   return "판독 전";
 }
 function bxLeft(r){
+  if(typeof bjIsOurDoc==="function"&&bjIsOurDoc(r))return null;   /* 보정서는 기한이 없다 */
   var due=(typeof bjDueOf==="function")?bjDueOf(r).date:String(r.court_deadline||"").slice(0,10);
   if(!due)return null;
   var d=parseD(due);
@@ -4387,6 +4388,10 @@ async function bxRender(){
    기한이 없는 문서(금지·중지명령 등)는 「기한 미정」 대신 지금 무슨 상태인지를 보여 준다 */
 function bxLeftBlock(r){
   var st=String(r.status||"");
+  if(typeof bjIsOurDoc==="function"&&bjIsOurDoc(r)){
+    var sd=String(r.submitted_at||"").slice(0,10);
+    return '<div class="bx-dday g"><b>제출함</b><span>'+esc(sd||"제출일 미확인")+'</span></div>';
+  }
   var hd=(typeof bjHandlingOfRow==="function")?bjHandlingOfRow(r):"제출";
   if(st==="완료"){
     var when=String(r.notified_at||r.paid_at||r.updated_at||"").slice(0,10);
@@ -12142,7 +12147,8 @@ function bjDocCardHtml(a){ /* 사건 상세·팝업 공용 문서 카드 (2026-0
   var kindTxt=bjCardKind(a);
   var mainD=ours?String(a.submitted_at||"").slice(0,10):String(a.order_date||"").slice(0,10);
   var mainL=ours?"제출일":"명령일";
-  var due=bjDueOf(a);
+  /* ★2026-09-02 혜림 : 우리가 낸 보정서는 이미 낸 서류라 법원기한이 없다. 디데이를 붙이지 않는다 */
+  var due=ours?{date:"",from:""}:bjDueOf(a);
   var left=null;
   if(due.date&&ws!=="보정완료"){ var dd=parseD(due.date); if(dd)left=Math.round((dd-today0())/86400000); }
   var hold=String(a.hold_until||"").slice(0,10);

@@ -4274,15 +4274,26 @@ async function bxHealTypes(){
       var r=bxRows[i];
       var _c=(typeof cases!=="undefined"&&cases)?cases.find(function(x){return x.id===r.delivery_id;}):null;
       var nt=bjTypeFix(r)||bjTypeWithTitle(r.raw_text||"",r.doc_type,_c&&_c.doctype);
-      var g=(typeof bjOdStale==="function")?bjOdStale(r):null;
-      if(!nt&&!g)continue;
+      var ours=bjIsOurDoc({doc_kind:r.doc_kind,doc_type:nt||r.doc_type});
+      var g=(!ours&&typeof bjOdStale==="function")?bjOdStale(r):null;   /* 보정서에는 명령일을 넣지 않는다 */
       var pt={};
       if(nt)pt.doc_type=nt;
       if(g)pt.order_date=g.date;
+      if(ours){
+        if(!r.doc_kind)pt.doc_kind="보정서";
+        if(!r.submitted_at){
+          var sd=bjSubmitDate(r.raw_text||"",r.file_name||"");
+          if(sd.date)pt.submitted_at=sd.date;
+        }
+        if(!r.hold_until){
+          var hu=bjHoldUntil(r.raw_text||"");
+          if(hu.date){ pt.hold_until=hu.date; if(!r.work_state)pt.work_state="추후제출"; }
+        }
+      }
+      if(!Object.keys(pt).length)continue;
       var u=await sbc.from("bj_documents").update(pt).eq("id",r.id);
       if(u.error)continue;
-      if(nt)r.doc_type=nt;
-      if(g)r.order_date=g.date;
+      Object.keys(pt).forEach(function(k){ r[k]=pt[k]; });
       n++;
     }
     if(n){
@@ -4402,6 +4413,9 @@ function bxCard(r){
       +'<div class="bx-mid">'
         +'<div class="l1"><b>'+esc(bxName(r))+'</b> <span class="bx-st s-'+(st==="완료"?"done":(st==="진행중"?"prog":(st==="판독 중"?"read":"wait")))+'">'+st+'</span></div>'
         +'<div class="l2">'+esc(r.court||"법원 미상")+' · '+esc(r.case_no||"")+'  <b>'+esc(bjCardKind(r)||"보정 문서")+' · '+(r.round_no||1)+'회차</b>'
+        +(bjIsOurDoc(r)
+           ? '  <span class="bj-note">제출일 '+esc(String(r.submitted_at||"").slice(0,10)||"미확인")+'</span>'
+           : (r.order_date?'  <span class="bj-note">명령일 '+esc(String(r.order_date).slice(0,10))+'</span>':''))
         +(bjSubKind(r)?'  <span class="bj-note">'+esc(bjSubKind(r))+'</span>':'')
         +'  <span class="bj-note">'+(subs.length?'제출 '+subs.length+'건 · ':'')+esc(String(r.created_at||"").slice(0,10))+' 등록</span></div>'
       +'</div>'
@@ -5158,7 +5172,7 @@ async function bjInsertSubmission(c,path,fileObj,nm){
       work_state:hold.date?"추후제출":"보정완료",
       pdf_path:path,file_name:nm||(f&&f.name)||null,raw_text:txt?bjMaskRrn(txt):null,
       status:"완료",assignee:(me&&me.name)||null};
-    var ins=await sbc.from("bj_documents").insert(doc).select("id");
+    var ins=await bjInsertDoc(doc);
     if(ins.error)throw ins.error;
     busy(false);
     alert("보정서를 「이 사건의 문서」에 올렸습니다.\n\n종류 : "+title
@@ -5639,17 +5653,33 @@ async function bjHealOrderDates(c){
   if(!c||!c.id||bjHealed[c.id])return;
   bjHealed[c.id]=true;
   try{
-    var r=await sbc.from("bj_documents").select("id,order_date,doc_type,raw_text").eq("delivery_id",c.id).limit(30);
+    var HC="id,order_date,doc_type,doc_kind,submitted_at,hold_until,work_state,file_name,raw_text";
+    var r=await sbc.from("bj_documents").select(HC).eq("delivery_id",c.id).limit(30);
+    if(r.error&&bjNeedSqlMsg(r.error.message||""))
+      r=await sbc.from("bj_documents").select("id,order_date,doc_type,raw_text").eq("delivery_id",c.id).limit(30);
     if(r.error||!r.data)return;
     var n=0;
     for(var i=0;i<r.data.length;i++){
-      var g=bjOdStale(r.data[i]);
-      var nt=bjTypeFix(r.data[i])||bjTypeWithTitle(r.data[i].raw_text||"",r.data[i].doc_type,c&&c.doctype);
-      if(!g&&!nt)continue;
+      var row=r.data[i];
+      var nt=bjTypeFix(row)||bjTypeWithTitle(row.raw_text||"",row.doc_type,c&&c.doctype);
+      var ours2=bjIsOurDoc({doc_kind:row.doc_kind,doc_type:nt||row.doc_type});
+      var g=(!ours2&&typeof bjOdStale==="function")?bjOdStale(row):null;
       var pt={};
       if(g)pt.order_date=g.date;
       if(nt)pt.doc_type=nt;
-      var u=await sbc.from("bj_documents").update(pt).eq("id",r.data[i].id);
+      if(ours2){
+        if(!row.doc_kind)pt.doc_kind="보정서";
+        if(!row.submitted_at){
+          var sd=bjSubmitDate(row.raw_text||"",row.file_name||"");
+          if(sd.date)pt.submitted_at=sd.date;
+        }
+        if(!row.hold_until){
+          var hu=bjHoldUntil(row.raw_text||"");
+          if(hu.date){ pt.hold_until=hu.date; if(!row.work_state)pt.work_state="추후제출"; }
+        }
+      }
+      if(!Object.keys(pt).length)continue;
+      var u=await sbc.from("bj_documents").update(pt).eq("id",row.id);
       if(!u.error)n++;
     }
     if(n){
@@ -5808,6 +5838,34 @@ async function bjDocPatch(id,patch,msg){
     else alert("저장 실패\n\n"+m);
     return false;
   }
+}
+/* 새 칸이 아직 없는 DB에서도 등록이 죽지 않게, 새 칸을 빼고 한 번 더 넣어 본다 */
+var BJ_NEWF={memo:1,work_state:1,hold_until:1,submitted_at:1,doc_kind:1,file_name:1};
+async function bjInsertDoc(doc){
+  var r=await sbc.from("bj_documents").insert(doc).select("id");
+  if(r.error&&bjNeedSqlMsg(r.error.message||"")){
+    var d2={};
+    Object.keys(doc).forEach(function(k){ if(!BJ_NEWF[k])d2[k]=doc[k]; });
+    r=await sbc.from("bj_documents").insert(d2).select("id");
+  }
+  return r;
+}
+/* ★2026-09-02 혜림 : 자동으로 잘못 읽었을 수 있으니 날짜를 직접 고칠 수 있어야 한다 */
+function bjCardDate(id,field,val){
+  var nm=(field==="submitted_at")?"제출일":(field==="order_date"?"명령일":"날짜");
+  var patch={}; patch[field]=val||null;
+  bjDocPatch(id,patch,val?(nm+"을 "+val+"로 고쳤습니다"):(nm+"을 지웠습니다")).then(function(ok){
+    if(ok&&bjPrevCase)bjLoadPreview(bjPrevCase);
+    if(typeof bxLoaded!=="undefined")bxLoaded=false;
+  });
+}
+/* 법원이 준 문서인지, 우리가 낸 보정서인지 직접 바꾼다 */
+function bjCardWho(id,val){
+  var patch={doc_kind:(val==="보정서")?"보정서":null};
+  bjDocPatch(id,patch,(val==="보정서")?"우리가 낸 보정서로 바꿨습니다":"법원이 준 문서로 바꿨습니다").then(function(ok){
+    if(ok&&bjPrevCase)bjLoadPreview(bjPrevCase);
+    if(typeof bxLoaded!=="undefined")bxLoaded=false;
+  });
 }
 var bjMemoT={};
 function bjCardMemo(id,val){
@@ -9504,6 +9562,7 @@ async function bjPick2(ev){
     var af=bjAutofill(cl.text);
     var kinds=bjDocKinds(cl.text,c.caseno);
     var _t1=bjDocTitle(cl.text); if(_t1)kinds=[_t1].concat(kinds.filter(function(x){return x!==_t1;}));
+    var _sub1=(_t1==="보정서"), _sd1=_sub1?bjSubmitDate(cl.text,f.name):{date:""}, _hu1=_sub1?bjHoldUntil(cl.text):{date:""};
     var path="orders/"+bjSafeKey(c.caseno)+"/"+Date.now()+".pdf",up=null;
     try{up=await sbc.storage.from("bojeong").upload(path,f,{upsert:false,contentType:"application/pdf"});}catch(e){up={error:e};}
     if(up&&up.error)alert("PDF 원본 보관에 실패했어요: "+(up.error.message||up.error)
@@ -9511,7 +9570,9 @@ async function bjPick2(ev){
     var doc={delivery_id:c.id,case_no:c.caseno,court:c.court||af.court||null,doc_type:kinds.join(","),
       served_at:c.confirmed?c.confirmedDate:null,order_date:bjOrderDate(cl.text,f.name).date||af.dates[0]||null,
       pdf_path:(up&&!up.error)?path:null,file_name:f.name||null,raw_text:bjMaskRrn(cl.text),status:"판독중",assignee:me.name||null};
-    var di=await sbc.from("bj_documents").insert(doc).select("id");
+    if(_sub1){ doc.doc_kind="보정서"; doc.submitted_at=_sd1.date||null; doc.order_date=null;
+               if(_hu1.date){doc.hold_until=_hu1.date;doc.work_state="추후제출";} }
+    var di=await bjInsertDoc(doc);
     if(di.error)throw di.error;
     if(!di.data||!di.data.length)throw new Error("보정문서 저장 0건. SQL L1과 권한을 확인하세요.");
     bjPendingDelivery=null;
@@ -9540,6 +9601,8 @@ async function bjSaveFileOnly(c,f){
     var af=bjAutofill(cl.text);
     var kinds=bjDocKinds(cl.text,c.caseno);
     var _t2=bjDocTitle(cl.text); if(_t2)kinds=[_t2].concat(kinds.filter(function(x){return x!==_t2;}));
+    /* ★2026-09-02 : [파일만 등록]으로 우리 보정서를 넣어도 제출일이 잡히게 한다 */
+    var _sub2=(_t2==="보정서"), _sd2=_sub2?bjSubmitDate(cl.text,f.name):{date:""}, _hu2=_sub2?bjHoldUntil(cl.text):{date:""};
     var path="orders/"+bjSafeKey(c.caseno)+"/"+Date.now()+".pdf",up=null;
     try{up=await sbc.storage.from("bojeong").upload(path,f,{upsert:false,contentType:"application/pdf"});}catch(e){up={error:e};}
     if(up&&up.error)alert("PDF 원본 보관에 실패했어요: "+(up.error.message||up.error)
@@ -9547,7 +9610,9 @@ async function bjSaveFileOnly(c,f){
     var doc={delivery_id:c.id,case_no:c.caseno,court:c.court||af.court||null,doc_type:kinds.join(","),
       served_at:c.confirmed?c.confirmedDate:null,order_date:bjOrderDate(cl.text,f.name).date||af.dates[0]||null,
       pdf_path:(up&&!up.error)?path:null,file_name:f.name||null,raw_text:bjMaskRrn(cl.text),status:"판독중",assignee:(me&&me.name)||null};
-    var di=await sbc.from("bj_documents").insert(doc).select("id");
+    if(_sub2){ doc.doc_kind="보정서"; doc.submitted_at=_sd2.date||null; doc.order_date=null;
+               if(_hu2.date){doc.hold_until=_hu2.date;doc.work_state="추후제출";} }
+    var di=await bjInsertDoc(doc);
     if(di.error)throw di.error;
     if(!di.data||!di.data.length)throw new Error("보정문서 저장 0건. SQL L1과 권한을 확인하세요.");
     try{ await patchCase(c.id,{},"문서 등록 : "+f.name+" (판독은 나중에)"); }catch(e){}
@@ -12092,6 +12157,14 @@ function bjDocCardHtml(a){ /* 사건 상세·팝업 공용 문서 카드 (2026-0
   var sid="'"+a.id+"'";
 
   var side='<div class="bjpick-side" onclick="event.stopPropagation()">'
+    +'<div><div class="sl">문서 구분</div>'
+    +'<select onchange="bjCardWho('+sid+',this.value)">'
+    +  '<option value="법원문서"'+(ours?"":" selected")+'>법원이 준 문서</option>'
+    +  '<option value="보정서"'+(ours?" selected":"")+'>우리가 낸 보정서</option>'
+    +'</select></div>'
+    +'<div><div class="sl">'+(ours?"제출일 (서류에 적힌 날)":"보정명령일 (서류에 적힌 날)")+'</div>'
+    +'<input type="date" value="'+esc(mainD)+'" onchange="bjCardDate('+sid+',\''+(ours?"submitted_at":"order_date")+'\',this.value)">'
+    +'<div class="bj-note" style="margin-top:3px">자동으로 잘못 읽었으면 여기서 직접 고치세요</div></div>'
     +'<div><div class="sl">보정 상태</div>'
     +'<select onchange="bjCardState('+sid+',this.value)">'
     +  '<option value="보정중"'+(ws==="보정중"?" selected":"")+'>보정중</option>'

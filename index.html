@@ -6206,8 +6206,51 @@ async function bjSyncCase(delId,state,holdDate,quiet){
     patch.followup_note=null;
     msg="보정중으로 되돌림 · 추후제출 해제";
   }
-  try{ await patchCase(c.id,patch,msg); }catch(e){}
+  try{ await patchCase(c.id,patch,msg); }
+  catch(e){
+    if(!quiet)alert("송달문서에 반영하지 못했습니다\n\n"+((e&&e.message)||e)+"\n\n(이 문구를 그대로 알려 주시면 원인을 바로 찾겠습니다)");
+    return;
+  }
   if(!quiet&&typeof wdToast==="function")wdToast("송달문서의 제출 상태와 처리기한도 함께 맞췄습니다");
+}
+/* ★2026-09-02 : 날짜칸은 값이 「바뀌어야」만 저장이 돈다.
+   같은 날짜를 다시 골라도 아무 일이 없어서, 예전에 넣어 둔 연장기한이
+   송달문서에 영영 전달되지 않았다. 화면을 열 때 어긋난 것을 스스로 맞춘다. */
+var bjHoldHealed={};
+async function bjHealHold(c,rows){
+  if(!c||!c.id||bjHoldHealed[c.id])return 0;
+  bjHoldHealed[c.id]=true;
+  var n=0;
+  for(var i=0;i<(rows||[]).length;i++){
+    var r=rows[i];
+    if(!r||!r.delivery_id)continue;
+    var ws=bjWorkStateOf(r);
+    var hu=String(r.hold_until||"").slice(0,10);
+    var dc=(typeof cases!=="undefined"&&cases)?cases.find(function(x){return x.id===r.delivery_id;}):null;
+    if(!dc)continue;
+    if(ws==="추후제출"&&hu){
+      if(String(dc.followupDate||"").slice(0,10)===hu&&dc.submitStatus==="일부제출")continue;
+      await bjSyncCase(r.delivery_id,"추후제출",hu,true); n++;
+    }else if(ws==="보정완료"){
+      if(dc.submitStatus==="제출완료")continue;
+      await bjSyncCase(r.delivery_id,"보정완료",null,true); n++;
+    }
+  }
+  if(n){
+    if(typeof wdToast==="function")wdToast("추후제출 기한 "+n+"건을 송달문서에 반영했습니다");
+    if(typeof render==="function")render();
+    bjLoadPreview(c);
+  }
+  return n;
+}
+/* 손으로 다시 반영하고 싶을 때 */
+async function bjPushHold(id,delId,state,hold){
+  if(!delId){ alert("이 문서는 송달문서 줄과 이어져 있지 않습니다."); return; }
+  busy(true);
+  await bjSyncCase(delId,state,hold||null,false);
+  busy(false);
+  if(typeof render==="function")render();
+  if(bjPrevCase)bjLoadPreview(bjPrevCase);
 }
 function bjCardState(id,delId,val){
   var patch={work_state:val||null};
@@ -12584,7 +12627,8 @@ function bjDocCardHtml(a){ /* 사건 상세·팝업 공용 문서 카드 (2026-0
     +(ws==="추후제출"
       ? '<div><div class="sl">언제까지 연장했나요</div>'
         +'<div class="bj-note" style="margin-bottom:3px">이 날짜를 넣으면 송달문서의 제출 상태가 「일부제출」이 되고 처리기한도 이 날짜로 바뀝니다. 법원이 연장을 안 받아 주고 새 기한을 정해 주면 여기 날짜를 그 날짜로 바꾸세요</div>'
-        +'<input type="date" value="'+esc(hold)+'" onchange="bjCardHold('+sid+','+did+',this.value)"></div>'
+        +'<input type="date" value="'+esc(hold)+'" onchange="bjCardHold('+sid+','+did+',this.value)">'
+        +'<button class="btn ghost mini" style="width:100%;margin-top:4px" onclick="bjPushHold('+sid+','+did+',\'추후제출\','+JSON.stringify(hold).replace(/"/g,"&quot;")+')">송달문서에 지금 반영</button></div>'
       : '')
     +'<div><div class="sl">메모</div>'
     +'<textarea placeholder="이 문서에 남길 메모를 적어 주세요" oninput="bjCardMemo('+sid+',this.value)">'+esc(a.memo||"")+'</textarea></div>'
@@ -12677,6 +12721,7 @@ async function bjLoadPreview(c){
     el.innerHTML=summ+fixB+'<div class="bjpick-list" style="max-height:none">'+rows.map(bjDocCardHtml).join("")+'</div>';
     wdMountThumbs();
     bjHealOrderDates(c);
+    bjHealHold(c,rows);
   }catch(e){el.innerHTML='<div class="bj-note">보정 문서를 불러오지 못했어요: '+esc(e.message||e)+'</div>';}
 }
 function bjPosCmp(a,b){return (a.pi-b.pi)||(a.si-b.si)||(a.off-b.off);}

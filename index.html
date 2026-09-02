@@ -4265,7 +4265,7 @@ async function bxLoad(force){
 }
 /* ★2026-09-02 : 예전에 「일반」「표준양식」으로만 저장된 문서의 종류를
    서류 제목줄에서 읽어 서류 이름으로 바로잡는다. 한 번만 돈다. */
-var bxHealed=false;
+var bxHealed=false;  /* 2026-09-02 : 종류 되돌리기 판이 바뀌어 다시 한 번 돈다 */
 async function bxHealTypes(){
   if(bxHealed)return; bxHealed=true;
   try{
@@ -4273,7 +4273,7 @@ async function bxHealTypes(){
     for(var i=0;i<lim;i++){
       var r=bxRows[i];
       var _c=(typeof cases!=="undefined"&&cases)?cases.find(function(x){return x.id===r.delivery_id;}):null;
-      var nt=bjTypeWithTitle(r.raw_text||"",r.doc_type,_c&&_c.doctype);
+      var nt=bjTypeFix(r)||bjTypeWithTitle(r.raw_text||"",r.doc_type,_c&&_c.doctype);
       var g=(typeof bjOdStale==="function")?bjOdStale(r):null;
       if(!nt&&!g)continue;
       var pt={};
@@ -5644,7 +5644,7 @@ async function bjHealOrderDates(c){
     var n=0;
     for(var i=0;i<r.data.length;i++){
       var g=bjOdStale(r.data[i]);
-      var nt=bjTypeWithTitle(r.data[i].raw_text||"",r.data[i].doc_type,c&&c.doctype);
+      var nt=bjTypeFix(r.data[i])||bjTypeWithTitle(r.data[i].raw_text||"",r.data[i].doc_type,c&&c.doctype);
       if(!g&&!nt)continue;
       var pt={};
       if(g)pt.order_date=g.date;
@@ -5675,7 +5675,7 @@ function bjDocTitle(txt){
   seen=0;
   for(i=0;i<lines.length&&seen<45;i++){
     t=bjNospace(lines[i]); if(!t)continue; seen++;
-    if(t.length>22)continue;
+    if(t.length>14)continue;   /* 제목줄은 짧다. 본문 문장에 섞인 낱말을 제목으로 보면 안 된다 */
     for(j=0;j<BJ_TITLES.length;j++){ if(t.indexOf(BJ_TITLES[j])>=0)return BJ_TITLES[j]; }
   }
   return "";
@@ -5706,14 +5706,44 @@ function bjHoldUntil(txt){
 }
 /* 문서 종류(doc_type) 맨 앞에 진짜 서류 이름을 올려 둔다. 뒤의 분류값은 그대로 살린다 */
 function bjTypeWithTitle(rawText,docType,fallback){
-  var title=bjDocTitle(rawText)||String(fallback||"").split(",")[0].trim();
   var junk={"일반":1,"표준양식":1,"빠른경로":1,"체계밖":1,"미확인":1,"":1};
-  if(!title||junk[title]||/^재보정/.test(title))return null;
   var parts=String(docType||"").split(",").map(function(x){return x.trim();}).filter(Boolean);
+  /* ★2026-09-02 고침 : 이미 제대로 된 서류 이름이 들어 있으면 절대 건드리지 않는다.
+     송인관 금지명령이 「보정권고」로 덮어써진 사고를 막는다 */
+  var cur=parts[0]||"";
+  if(cur&&!junk[cur]&&!/^재보정/.test(cur))return null;
+  var raw=String(rawText||"");
+  var title=bjDocTitle(raw)
+        ||((typeof bjDecideKind==="function")?bjDecideKind(raw,""):"")
+        /* 원문 글자가 거의 없는 스캔본일 때만 송달 등록의 문서명을 빌린다 */
+        ||((bjNospace(raw).length<30)?String(fallback||"").split(",")[0].trim():"");
+  if(!title||junk[title]||/^재보정/.test(title))return null;
   if(parts[0]===title)return null;
   parts=parts.filter(function(x){return x!==title;});
   parts.unshift(title);
   return parts.join(",");
+}
+/* ★2026-09-02 : 잘못 덮어쓴 종류를 원문 기준으로 되돌린다.
+   서류 이름이 두 개 이상 들어 있으면 원문이 말하는 쪽만 남기고 나머지 이름은 뺀다.
+   「재보정」「표준양식」 같은 우리 쪽 분류값은 쪼개기에 쓰이므로 그대로 살린다. */
+function bjTypeFix(r){
+  var parts=String((r&&r.doc_type)||"").split(",").map(function(x){return x.trim();}).filter(Boolean);
+  if(!parts.length)return null;
+  var junk={"일반":1,"표준양식":1,"빠른경로":1,"체계밖":1};
+  function isCls(x){ return !!junk[x]||/^재보정/.test(x); }
+  var names=parts.filter(function(x){return !isCls(x);});
+  if(names.length<2)return null;
+  var raw=(r&&r.raw_text)||"";
+  var real=bjDocTitle(raw)||((typeof bjDecideKind==="function")?bjDecideKind(raw,""):"");
+  if(!real)return null;
+  var keep=null;
+  for(var i=0;i<names.length;i++){
+    if(names[i].indexOf(real)>=0||real.indexOf(names[i])>=0){keep=names[i];break;}
+  }
+  if(!keep)keep=real;
+  var out=[keep].concat(parts.filter(isCls)).join(",");
+  if(out===parts.join(","))return null;
+  return out;
 }
 function bjIsOurDoc(a){
   return String((a&&a.doc_kind)||"")==="보정서"||/보정서/.test(String((a&&a.doc_type)||""));
@@ -5730,19 +5760,20 @@ function bjCardKind(a){
   var junk={"일반":1,"표준양식":1,"빠른경로":1,"체계밖":1};
   if(t&&!junk[t]&&!/^재보정/.test(t))return t;
   if(bjIsOurDoc(a))return "보정서";
-  var ttl=(a&&a.raw_text)?bjDocTitle(a.raw_text):"";
+  var raw=(a&&a.raw_text)||"";
+  var ttl=raw?bjDocTitle(raw):"";
   if(ttl)return ttl;
-  /* 원문에서 제목줄을 못 찾으면 송달 등록에 적힌 문서 종류를 쓴다.
-     미확인 송달 엑셀에서 받아 온 문서명이 여기에 들어 있다 (2026-09-02 혜림) */
+  var k=(typeof bjDecideKind==="function")?bjDecideKind(raw,a&&a.doc_type):"";
+  if(k)return k;
+  /* 원문 글자가 거의 없는 스캔본일 때만 송달 등록의 문서명을 빌린다.
+     한 의뢰인 아래 문서가 여러 건이면 그 값이 다른 문서 것일 수 있어 함부로 쓰면 안 된다 */
   try{
-    if(a&&a.delivery_id&&typeof cases!=="undefined"&&cases){
+    if(bjNospace(raw).length<30&&a&&a.delivery_id&&typeof cases!=="undefined"&&cases){
       var c=cases.find(function(x){return x.id===a.delivery_id;});
       var dt=c&&String(c.doctype||"").split(",")[0].trim();
       if(dt&&!junk[dt]&&!/^재보정/.test(dt)&&dt!=="미확인")return dt;
     }
   }catch(e){}
-  var k=(typeof bjDecideKind==="function")?bjDecideKind(a&&a.raw_text,a&&a.doc_type):"";
-  if(k)return k;
   if(/^재보정/.test(t))return "보정권고";
   return t||"문서";
 }

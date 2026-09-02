@@ -4239,6 +4239,7 @@ function bxFilter(){
   L.sort(function(a,b){
     var da=bxStage(a)==="완료",db=bxStage(b)==="완료";
     if(da!==db)return da?1:-1;                 /* 끝난 건은 언제나 아래로 */
+    if(bxSort==="order")return String(bjOdKey(b)).localeCompare(String(bjOdKey(a)));
     if(bxSort==="new")return String(b.created_at||"").localeCompare(String(a.created_at||""));
     if(bxSort==="name")return String(a.case_no||"").localeCompare(String(b.case_no||""));
     var la=bxLeft(a),lb=bxLeft(b);
@@ -4273,7 +4274,7 @@ async function bxRender(){
 
   var h='<div class="bx-head">'
     +'<div><h2 style="margin:0;font-size:20px;font-weight:800">보정 문서함</h2>'
-    +'<div class="bj-note" style="margin-top:4px">전체 '+bxRows.length+'건 · '+(bxSort==="urgent"?"급한 순으로 정렬했습니다":(bxSort==="new"?"최근 등록 순입니다":"사건번호 순입니다"))+'</div></div>'
+    +'<div class="bj-note" style="margin-top:4px">전체 '+bxRows.length+'건 · '+(bxSort==="urgent"?"급한 순으로 정렬했습니다":(bxSort==="order"?"보정명령일 최신 순입니다":(bxSort==="new"?"최근 등록 순입니다":"사건번호 순입니다")))+'</div></div>'
     +'<button class="btn primary" onclick="bxPick()">새 보정권고 PDF 등록</button></div>';
 
   if(urgent.length){
@@ -4302,6 +4303,7 @@ async function bxRender(){
     +'<option value="">전체</option>'+rounds.map(function(k){return '<option '+(bxRound===k?"selected":"")+'>'+esc(k)+'</option>';}).join("")+'</select>'
     +'<span class="bj-note">정렬</span><select style="width:auto" onchange="bxSet(\'sort\',this.value)">'
     +'<option value="urgent"'+(bxSort==="urgent"?" selected":"")+'>급한 순</option>'
+    +'<option value="order"'+(bxSort==="order"?" selected":"")+'>보정명령일 순</option>'
     +'<option value="new"'+(bxSort==="new"?" selected":"")+'>최근 등록 순</option>'
     +'<option value="name"'+(bxSort==="name"?" selected":"")+'>사건번호 순</option></select>'
     +'<span class="spacer"></span><span class="bj-note">'+bxTab+' '+L.length+'건 보는 중</span></div>';
@@ -5443,6 +5445,40 @@ function bjOrderDate(txt,fname){
   if(ds.length) return {date:ds[ds.length-1].iso,how:"마지막날짜"};
   return {date:"",how:""};
 }
+/* 자동으로 고쳐도 되는 문서인지 가린다.
+   사람이 손으로 직접 골라 넣은 날짜는 절대 건드리지 않는다.
+   고치는 것은 (1) 명령일이 비어 있거나 (2) 예전 규칙 그대로 「서류의 첫 날짜」가 들어 있는 경우뿐이다. */
+function bjOdStale(row){
+  var cur=String((row&&row.order_date)||"").slice(0,10);
+  var g=bjOrderDate((row&&row.raw_text)||"","");
+  if(!g.date||g.date===cur)return null;
+  if(!cur)return g;
+  var ds=bjScanDates((row&&row.raw_text)||"");
+  if(ds.length&&ds[0].iso===cur)return g;
+  return null;
+}
+/* 화면을 볼 때 뒤에서 조용히 스스로 고친다. 한 사건당 한 번만 돈다 */
+var bjHealed={};
+async function bjHealOrderDates(c){
+  if(!c||!c.id||bjHealed[c.id])return;
+  bjHealed[c.id]=true;
+  try{
+    var r=await sbc.from("bj_documents").select("id,order_date,raw_text").eq("delivery_id",c.id).limit(30);
+    if(r.error||!r.data)return;
+    var n=0;
+    for(var i=0;i<r.data.length;i++){
+      var g=bjOdStale(r.data[i]);
+      if(!g)continue;
+      var u=await sbc.from("bj_documents").update({order_date:g.date}).eq("id",r.data[i].id);
+      if(!u.error)n++;
+    }
+    if(n){
+      if(typeof wdToast==="function")wdToast("보정명령일 "+n+"건을 서류 기준으로 바로잡았습니다");
+      bjLoadPreview(c);
+      if(typeof bxLoad==="function"&&typeof bxLoaded!=="undefined")bxLoaded=false;
+    }
+  }catch(e){}
+}
 /* 명령일 기준 정렬 (최신이 위). 명령일이 없으면 등록일로 대신한다 */
 function bjOdKey(a){ return String(a.order_date||"").slice(0,10)||String(a.created_at||"").slice(0,10); }
 function bjSortByOrderDate(rows){
@@ -5463,6 +5499,10 @@ async function bjFixOrderDates(deliveryId){
     for(var i=0;i<rows.length;i++){
       var g=bjOrderDate(rows[i].raw_text||"","");
       if(!g.date||g.date===String(rows[i].order_date||"").slice(0,10)){skip++;continue;}
+      if(!bjOdStale(rows[i])){
+        if(!confirm("이 문서의 명령일은 손으로 고쳐 둔 것 같습니다.\n\n지금 값 : "+String(rows[i].order_date||"")
+          +"\n서류에서 찾은 값 : "+g.date+"\n\n서류 값으로 바꿀까요?")){skip++;continue;}
+      }
       var u=await sbc.from("bj_documents").update({order_date:g.date}).eq("id",rows[i].id);
       if(u.error)throw u.error;
       n++;
@@ -5877,6 +5917,14 @@ async function bjOpen(docId){
     var d=await sbc.from("bj_documents").select("*").eq("id",docId).single();
     if(d.error||!d.data)throw (d.error||new Error("문서를 찾을 수 없어요"));
     bjD=d.data;
+    /* ★2026-09-02 : 예전 규칙(서류의 첫 날짜)으로 잘못 잡힌 보정명령일을 여는 김에 조용히 바로잡는다 */
+    try{
+      var _g=bjOdStale(bjD);
+      if(_g){
+        var _u=await sbc.from("bj_documents").update({order_date:_g.date}).eq("id",bjD.id);
+        if(!_u.error)bjD.order_date=_g.date;
+      }
+    }catch(e){}
     bjDel=null;
     if(bjD.delivery_id){
       var dl=await sd().from("deliveries").select("*").eq("id",bjD.delivery_id).single();
@@ -11695,9 +11743,10 @@ async function bjLoadPreview(c){
     }
     var fixB='<div style="margin:7px 0 3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
       +'<button class="btn ghost mini" onclick="event.stopPropagation();bjFixOrderDates(\''+c.id+'\')">명령일 다시 잡기</button>'
-      +'<span class="bj-note">예전에 등록해 둔 문서의 명령일을 서류 맨 끝 「등본입니다」 날짜로 다시 맞춥니다</span></div>';
+      +'<span class="bj-note">명령일은 화면을 열 때 자동으로 맞춰집니다. 이 단추는 다시 확인하고 싶을 때만 누르면 됩니다</span></div>';
     el.innerHTML=summ+fixB+'<div class="bjpick-list" style="max-height:none">'+rows.map(bjDocCardHtml).join("")+'</div>';
     wdMountThumbs();
+    bjHealOrderDates(c);
   }catch(e){el.innerHTML='<div class="bj-note">보정 문서를 불러오지 못했어요: '+esc(e.message||e)+'</div>';}
 }
 function bjPosCmp(a,b){return (a.pi-b.pi)||(a.si-b.si)||(a.off-b.off);}

@@ -1616,6 +1616,11 @@
   .bjf-row{display:flex;align-items:center;gap:7px;padding:5px 0;flex-wrap:wrap}
   .bjf-row .nm{flex:1;min-width:120px;word-break:break-all}
   .bjf-row .up{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-d)}
+  tr.grp td{background:#F3F0EC;border-top:2px solid var(--line-d);cursor:pointer;padding:7px 12px;font-size:12.5px}
+  tr.grp td:hover{background:#EDE8E2}
+  tr.grp .gn{background:var(--brand);color:#fff;border-radius:999px;padding:1px 9px;font-weight:800;font-size:11px;margin-left:6px}
+  tr.grp .gc{color:var(--muted);font-weight:600;margin-left:8px}
+  tr.grp .gt{float:right;color:var(--brand-d);font-weight:800}
   .rc-file{display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:11.5px}
   .rc-file .nm{flex:1;min-width:0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     background:#EDF7F0;color:#1B7F4B;font-weight:700;border-radius:5px;padding:2px 7px}
@@ -1780,7 +1785,7 @@
 
       <div class="sec">
         <div class="toolbar">
-          <input id="q" placeholder="사건번호·이름 검색" oninput="render()" style="min-width:200px;">
+          <input id="q" placeholder="의뢰인 이름 또는 사건번호로 찾기" oninput="render()" style="min-width:230px;" title="이름 일부만 쳐도 됩니다. 몇천 줄이 되어도 바로 찾습니다">
           <select id="fltOwner" onchange="render()"><option value="">담당자 전체</option></select>
           <select id="fltStatus" onchange="render()"><option value="">상태 전체</option><option>진행중</option><option>추후처리</option><option>당사자안내</option><option>처리완료</option><option value="미확인">송달 미확인만</option></select>
           <select id="fltLink" onchange="render()" title="케이스허브 의뢰인과 이어져 있는지"><option value="">의뢰인 연결 전체</option><option value="no">의뢰인 미연결만</option></select>
@@ -5130,7 +5135,40 @@ function render(){
     if(_sel&&_sel.options[1])_sel.options[1].textContent="의뢰인 미연결만 ("+_un+")";
   }catch(e){}
   list.sort((a,b)=>{const ac=isOffDeadline(a),bc=isOffDeadline(b);if(ac!==bc)return ac?1:-1;const pa=procLeft(a),pb=procLeft(b);if(pa===null&&pb===null)return confLeft(a)-confLeft(b);if(pa===null)return 1;if(pb===null)return -1;return pa-pb;});
-  document.getElementById("tbody").innerHTML=list.map(c=>{
+  document.getElementById("tbody").innerHTML=listGroupHtml(list);
+  document.getElementById("empty").style.display=list.length?"none":"block";
+  renderDetail();
+}
+/* ★2026-09-02 혜림 : 문서마다 한 줄이되, 같은 의뢰인끼리 붙여서 한 덩어리로 보여 준다 */
+var listGrpClosed={};
+function listGrpKey(c){
+  return c.client_id||("no:"+rcNormCase(splitCourtCase(c.caseno||"").caseNo||c.caseno||""));
+}
+function listGrpToggle(k){ listGrpClosed[k]=!listGrpClosed[k]; render(); }
+function listGroupHtml(list){
+  var order=[],map={};
+  (list||[]).forEach(function(c){
+    var k=listGrpKey(c);
+    if(!map[k]){ map[k]=[]; order.push(k); }
+    map[k].push(c);
+  });
+  var out=[];
+  order.forEach(function(k){
+    var g=map[k];
+    if(g.length>1){
+      var closed=!!listGrpClosed[k];
+      var kj=JSON.stringify(k).replace(/"/g,"&quot;");
+      out.push('<tr class="grp"><td colspan="9" onclick="listGrpToggle('+kj+')">'
+        +'<b>'+esc(g[0].name||"이름 없음")+'</b> <span class="gn">문서 '+g.length+'건</span> '
+        +'<span class="gc">'+esc(g[0].caseno||"")+'</span>'
+        +'<span class="gt">'+(closed?"펼치기":"접기")+'</span></td></tr>');
+      if(closed)return;
+    }
+    g.forEach(function(c){ out.push(listRowHtml(c)); });
+  });
+  return out.join("");
+}
+function listRowHtml(c){
     const due=procDueDate(c);
     const _d=(procLeft(c)===null?confLeft(c):procLeft(c));
     const _cls=isOffDeadline(c)?"done":(isUnconfDanger(c)||(_d!==null&&_d<=0)?"hot":((_d!==null&&_d<=2)?"warn":""));
@@ -5148,10 +5186,7 @@ function render(){
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">상세</button>
       <button class="btn ghost mini" onclick="editCase('${c.id}')">수정</button>
       <button class="btn danger mini" onclick="delCase('${c.id}')">삭제</button></div></td>
-  </tr>`;}).join("");
-  document.getElementById("empty").style.display=list.length?"none":"block";
-  renderDetail();
-}
+  </tr>`;}
 
 function renderDetail(){
   const w=document.getElementById("detail-wrap");
@@ -6086,9 +6121,16 @@ function bjSubKind(a){
 var BJ_COL_NEW="id,delivery_id,case_no,court,doc_type,doc_kind,order_date,submitted_at,served_at,status,work_state,hold_until,memo,file_name,created_at,pdf_path,court_deadline";
 var BJ_COL_OLD="id,delivery_id,case_no,court,doc_type,order_date,served_at,status,created_at,pdf_path,court_deadline";
 var bjNewCols=null;
-async function bjFetchDocs(deliveryId,lim){
-  var r=await sbc.from("bj_documents").select(bjNewCols===false?BJ_COL_OLD:BJ_COL_NEW).eq("delivery_id",deliveryId).limit(lim||60);
-  if(r.error&&bjNewCols!==false){ bjNewCols=false; r=await sbc.from("bj_documents").select(BJ_COL_OLD).eq("delivery_id",deliveryId).limit(lim||60); }
+async function bjFetchDocs(deliveryId,lim,caseNo){
+  /* ★2026-09-02 : 줄이 문서마다 나뉘어도, 상세에서는 같은 사건의 문서를 모두 한자리에 모아 보여 준다 */
+  var no=String(caseNo||"").trim();
+  var safe=no&&!/[,()]/.test(no);
+  function q(cols){
+    var b=sbc.from("bj_documents").select(cols);
+    return (safe?b.or("delivery_id.eq."+deliveryId+",case_no.eq."+no):b.eq("delivery_id",deliveryId)).limit(lim||80);
+  }
+  var r=await q(bjNewCols===false?BJ_COL_OLD:BJ_COL_NEW);
+  if(r.error&&bjNewCols!==false){ bjNewCols=false; r=await q(BJ_COL_OLD); }
   else if(!r.error&&bjNewCols===null)bjNewCols=true;
   return r;
 }
@@ -6181,7 +6223,7 @@ function bjBuildBorrow(rows){
     if(bjIsOurDoc(r))return;
     var k=bjCardKind(r);
     if(!/보정/.test(String(k))||/보정서/.test(String(k)))return;
-    var key=r.delivery_id||("c:"+(r.case_no||""));
+    var key=(r.case_no?("c:"+rcNormCase(r.case_no)):r.delivery_id);
     var d=bjOdKey(r);
     if(!best[key]||String(d)>String(best[key].d))best[key]={d:d,id:r.id};
   });
@@ -6515,21 +6557,21 @@ async function bjRegisterAll(){
            같은 사건번호·같은 당사자 줄이 이미 있으면 새 줄을 만들지 않고 거기에 문서만 붙인다.
            문서마다 줄을 만들면 같은 사람이 목록에 여러 번 나와서 보기 어렵다. */
         try{
-          var pre=await sd().from("deliveries").select("id,party_name").eq("case_no",b.case_no).limit(20);
+          /* ★2026-09-02 혜림 : 같은 당사자여도 문서가 다르면 기한을 따로 세야 한다.
+             그래서 「문서 종류와 받은 날짜가 똑같은 줄」이 있을 때만 그 줄을 다시 쓰고,
+             다른 문서면 새 줄을 만든다. 목록에서는 같은 의뢰인끼리 묶어서 보여 준다. */
+          var pre=await sd().from("deliveries").select("id,party_name,doctype,arrived_at").eq("case_no",b.case_no).limit(30);
           var prows=(pre.data||[]);
           if(prows.length){
             var nm0=String(b.client_name||"").replace(/\s/g,"");
-            var hit=prows.filter(function(x){return String(x.party_name||"").replace(/\s/g,"")===nm0;});
-            var pick=hit.length?hit[0]:prows[0];
-            if(pick){
-              deliveryId=pick.id; bjReused.push(b.fname);
-              /* 줄 하나에 문서가 여러 개 쌓이므로, 목록에 보일 대표값은
-                 「기한을 챙겨야 하는 쪽」이 이긴다. 보정명령이 들어오면 결정문 위로 올린다.
-                 (금지명령을 먼저 등록하고 보정명령을 나중에 얹어도 기한이 살아 있게) */
-              if(!kindGuess){
-                try{ await sd().from("deliveries").update({doctype:docType,arrived_at:b.arrived,term_days:term}).eq("id",deliveryId); }catch(e){}
-              }
-            }
+            var dt0=String(docType||"").replace(/\s/g,"");
+            var ar0=String(b.arrived||"").slice(0,10);
+            var same=prows.filter(function(x){
+              return String(x.party_name||"").replace(/\s/g,"")===nm0
+                && String(x.doctype||"").replace(/\s/g,"")===dt0
+                && String(x.arrived_at||"").slice(0,10)===ar0;
+            });
+            if(same.length){ deliveryId=same[0].id; bjReused.push(b.fname); }
           }
         }catch(e){}
         var ins=deliveryId?{data:[{id:deliveryId}]}:await sd().from("deliveries").insert(row).select("id");
@@ -6569,7 +6611,7 @@ async function bjRegisterAll(){
         b._done=true;
       }catch(e){alert(b.fname+" 등록 실패: "+(e.message||e));}
     }
-    if(bjReused.length)alert("이미 등록돼 있는 의뢰인이라 줄을 새로 만들지 않고, 원래 있던 사건에 문서만 쌓았습니다.\n\n"+bjReused.join("\n")+"\n\n[상세]를 열면 「이 사건의 문서」에 차곡차곡 보입니다.");
+    if(bjReused.length)alert("문서 종류와 받은 날짜가 똑같은 줄이 이미 있어서, 새 줄을 만들지 않고 그 줄에 문서만 쌓았습니다.\n\n"+bjReused.join("\n")+"\n\n다른 문서는 각각 새 줄로 등록해 기한을 따로 셉니다.\n[상세]를 열면 그 의뢰인의 문서가 한자리에 모여 보입니다.");
     bjBatch=bjBatch.filter(function(b){return !b._done;});
     bjRenderBatch();
     await refreshAll();
@@ -12563,7 +12605,7 @@ async function bjLoadPreview(c){
   if(!el)return;
   try{
     bjPrevCase=c;
-    var r=await bjFetchDocs(c.id,60);
+    var r=await bjFetchDocs(c.id,80,c.caseno);
     if(r.error)throw r.error;
     var rows=bjSortByOrderDate(r.data||[]);
     bjBorrowSet=bjBuildBorrow(rows);

@@ -1,0 +1,3886 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>보정 처리대</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{
+  --bg:36 22% 97%; --fg:24 12% 11%; --card:0 0% 100%;
+  --mut:34 16% 94%; --mutf:26 8% 46%; --line:32 16% 89%; --line2:32 14% 82%;
+  --pri:347 68% 34%; --prif:0 0% 100%; --pris:346 46% 96%;
+  --ok:158 72% 28%; --oks:152 46% 94%;
+  --warn:30 88% 40%; --warns:36 78% 94%;
+  --bad:2 68% 46%; --bads:2 70% 96%;
+  --r:10px; --rs:7px;
+  --fh:"Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;
+  --fm:"IBM Plex Mono","Noto Sans KR",monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:26 10% 9%; --fg:36 18% 93%; --card:26 9% 13%;
+  --mut:26 8% 18%; --mutf:30 8% 60%; --line:26 8% 22%; --line2:26 8% 30%;
+  --pri:347 58% 60%; --prif:26 10% 9%; --pris:347 26% 21%;
+  --ok:158 52% 48%; --oks:158 30% 17%;
+  --warn:34 76% 58%; --warns:34 36% 18%;
+  --bad:2 66% 62%; --bads:2 38% 19%;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:26 10% 9%; --fg:36 18% 93%; --card:26 9% 13%;
+  --mut:26 8% 18%; --mutf:30 8% 60%; --line:26 8% 22%; --line2:26 8% 30%;
+  --pri:347 58% 60%; --prif:26 10% 9%; --pris:347 26% 21%;
+  --ok:158 52% 48%; --oks:158 30% 17%;
+  --warn:34 76% 58%; --warns:34 36% 18%;
+  --bad:2 66% 62%; --bads:2 38% 19%;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:hsl(var(--bg));color:hsl(var(--fg));font-family:var(--fh);
+  font-size:14px;line-height:1.65;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{margin:0;letter-spacing:-.02em;text-wrap:balance}
+button{font:inherit;color:inherit;cursor:pointer;font-family:inherit}
+input,textarea,select{font:inherit;font-family:inherit}
+.m{font-family:var(--fm);font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid hsl(var(--pri));outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* 앱바 */
+.bar{position:sticky;top:0;z-index:40;background:hsl(var(--card));border-bottom:1px solid hsl(var(--line))}
+.bar1{max-width:1280px;margin:0 auto;padding:11px 20px;display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.bar1 h1{font-size:15.5px;font-weight:900}
+.bar2{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;gap:2px;overflow-x:auto}
+.bar2 button{padding:9px 15px 11px;border:0;border-bottom:2.5px solid transparent;background:transparent;
+  font-size:13.5px;font-weight:700;color:hsl(var(--mutf));white-space:nowrap;display:flex;align-items:center;gap:7px}
+.bar2 button:hover{color:hsl(var(--fg))}
+.bar2 button.on{color:hsl(var(--pri));border-bottom-color:hsl(var(--pri))}
+.bar2 .n{min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:hsl(var(--mut));
+  color:hsl(var(--mutf));font-size:11px;font-weight:800;display:grid;place-items:center;font-family:var(--fm)}
+.bar2 button.on .n{background:hsl(var(--pri));color:hsl(var(--prif))}
+main{max-width:1280px;margin:0 auto;padding:20px 20px 80px}
+
+/* 기본 조각 */
+.card{background:hsl(var(--card));border:0;border-radius:18px;
+  box-shadow:0 1px 2px hsl(24 12% 11%/.04),0 8px 24px hsl(24 12% 11%/.045)}
+:root[data-theme="dark"] .card,
+:root:not([data-theme="light"]) .card{box-shadow:0 1px 2px hsl(0 0% 0%/.3),0 8px 24px hsl(0 0% 0%/.22)}
+.sub-card{background:hsl(var(--mut)/.5);border:1px solid hsl(var(--line));border-radius:14px;overflow:hidden}
+.needbox{margin:14px 0;padding:14px 16px;border-radius:14px;background:hsl(var(--mut)/.55)}
+.needbox.wait{background:hsl(var(--warns)/.45)}
+.needbox.ok{background:hsl(var(--oks)/.45)}
+.steps{margin-top:6px}
+.pad{padding:20px}
+.hd{display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid hsl(var(--line));flex-wrap:wrap}
+.hd h3{font-size:14.5px;font-weight:800}
+.sp{flex:1}
+.dim{color:hsl(var(--mutf));font-size:12.5px;line-height:1.7}
+.cap{font-size:11px;font-weight:800;letter-spacing:.09em;color:hsl(var(--mutf))}
+.tag{display:inline-flex;align-items:center;gap:4px;height:21px;padding:0 8px;border-radius:5px;
+  font-size:11.5px;font-weight:700;background:hsl(var(--mut));color:hsl(var(--mutf));white-space:nowrap}
+.tag.p{background:hsl(var(--pris));color:hsl(var(--pri))}
+.tag.g{background:hsl(var(--oks));color:hsl(var(--ok))}
+.tag.y{background:hsl(var(--warns));color:hsl(var(--warn))}
+.tag.r{background:hsl(var(--bads));color:hsl(var(--bad))}
+.b{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 14px;
+  border-radius:var(--rs);border:1px solid transparent;font-size:13px;font-weight:700;white-space:nowrap;transition:.12s}
+.b.p{background:hsl(var(--pri));color:hsl(var(--prif))}
+.b.p:hover{filter:brightness(1.1)}
+.b.o{border-color:hsl(var(--line2))}
+.b.o:hover{background:hsl(var(--mut))}
+.b.g{color:hsl(var(--mutf));font-weight:600}
+.b.g:hover{background:hsl(var(--mut));color:hsl(var(--fg))}
+.b.s{height:28px;padding:0 10px;font-size:12px}
+.b.lg{height:56px;font-size:16px;font-weight:800;width:100%;border-radius:14px}
+.b:disabled{opacity:.45;cursor:not-allowed}
+.in{width:100%;padding:8px 11px;border:1px solid hsl(var(--line2));border-radius:var(--rs);
+  background:hsl(var(--card));color:hsl(var(--fg));font-size:13px}
+.in:focus{outline:2px solid hsl(var(--pri)/.3);border-color:hsl(var(--pri))}
+textarea.in{line-height:1.8;resize:vertical}
+.bar-p{height:6px;border-radius:99px;background:hsl(var(--mut));overflow:hidden}
+.bar-p i{display:block;height:100%;background:hsl(var(--ok));transition:width .3s}
+.bar-p.y i{background:hsl(var(--warn))} .bar-p.r i{background:hsl(var(--bad))}
+.ck{flex:none;width:20px;height:20px;border-radius:5px;border:1.6px solid hsl(var(--line2));
+  background:hsl(var(--card));display:grid;place-items:center;font-size:12px;color:transparent;cursor:pointer}
+.ck.on{background:hsl(var(--pri));border-color:hsl(var(--pri));color:hsl(var(--prif))}
+.ck.lock{border-style:dashed;cursor:not-allowed;background:hsl(var(--mut))}
+.empty{padding:26px 14px;text-align:center;color:hsl(var(--mutf));font-size:13px;line-height:1.8}
+.rows>*+*{border-top:1px solid hsl(var(--line))}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+@media(max-width:900px){.split{grid-template-columns:1fr!important}}
+
+/* A. 오늘 */
+body.docmode main{max-width:1440px}
+body.docmode .bar1 h1{font-size:16px}
+.alrow{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
+.alrow label{display:flex;align-items:center;gap:7px;font-size:12.8px;font-weight:700;cursor:pointer}
+.pastbox{margin-top:12px;padding:14px 16px;border-radius:14px;background:hsl(var(--mut)/.5)}
+.paper.past{max-height:260px;padding:20px 22px;font-size:12.8px;line-height:1.95;margin-top:6px;box-shadow:none;border:1px solid hsl(var(--line))}
+.peekwrap{position:fixed;inset:0;z-index:70;background:hsl(24 12% 11%/.45);
+  display:grid;place-items:center;padding:24px}
+.peek{width:min(880px,94vw);margin:0;border-radius:14px;overflow:hidden;border:1px solid hsl(var(--line));background:hsl(var(--card))}
+.peekh{display:flex;align-items:center;gap:9px;padding:10px 14px;border-bottom:1px solid hsl(var(--line));background:hsl(var(--mut)/.6)}
+.peekb{max-height:460px;overflow:auto;display:grid;place-items:center;background:hsl(var(--mut)/.35)}
+.peekb img{max-width:100%;display:block}
+.peekb iframe{width:100%;height:460px;border:0;display:block}
+.fchip a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.fig{font-size:40px;font-weight:900;letter-spacing:-.03em;font-family:var(--fm);font-variant-numeric:tabular-nums}
+.figu{font-size:15px;font-weight:700;color:hsl(var(--mutf))}
+.ckgrp{padding:4px 0}
+.ckh{display:flex;align-items:center;gap:8px;padding:11px 16px 6px;flex-wrap:wrap}
+.ckh b{font-size:13.6px;font-weight:800}
+.ckrow{display:flex;align-items:flex-start;gap:11px;padding:8px 16px 8px 44px;font-size:13.5px;cursor:pointer}
+.ckrow:hover{background:hsl(var(--mut)/.55)}
+.ckrow.done{opacity:.5}
+.ckrow.done>span:not(.ck){text-decoration:line-through}
+@media print{
+  .bar,.b,.msgcard{display:none!important}
+  body{background:#fff}
+  .card{break-inside:avoid;box-shadow:none;border:1px solid #ddd}
+}
+.msgcard textarea.msgta{min-height:260px;font-size:13px;line-height:1.85;background:hsl(var(--mut)/.4)}
+.secttl{display:flex;align-items:baseline;gap:10px;margin:22px 0 10px;flex-wrap:wrap}
+.secttl h2{font-size:16.5px;font-weight:900}
+.card.soft{background:hsl(var(--mut)/.5)}
+.msgbar{display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid hsl(var(--line));background:hsl(var(--warns)/.35)}
+.qrow .no{width:auto;min-width:26px;font-size:11px}
+.hero{background:hsl(var(--card));border:1px solid hsl(var(--line));border-radius:var(--r);
+  box-shadow:0 1px 2px hsl(24 12% 11%/.04),0 8px 24px hsl(24 12% 11%/.05);overflow:hidden;margin-bottom:14px}
+.hero .top{display:flex;align-items:center;gap:9px;padding:11px 18px;background:hsl(var(--mut)/.6);
+  border-bottom:1px solid hsl(var(--line));flex-wrap:wrap}
+.hero .bd{padding:24px 26px 26px}
+.hero h2{font-size:25px;font-weight:900;line-height:1.35}
+.hero .sub{margin-top:5px;color:hsl(var(--mutf));font-size:13px}
+.how{margin:18px 0;padding:16px 18px;background:hsl(var(--mut)/.55);border-radius:var(--rs)}
+.how ol{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.6}
+.stepl{display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px solid hsl(var(--line))}
+.stepl:last-child{border-bottom:0}
+.stepl.done span.t{opacity:.42;text-decoration:line-through}
+.stepl.flash{background:hsl(var(--bads)/.7);border-radius:var(--rs);animation:sh .45s}
+@keyframes sh{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.drop{border:1.5px dashed hsl(var(--line2));border-radius:var(--rs);padding:14px;text-align:center;
+  color:hsl(var(--mutf));font-size:12.5px;margin-top:14px}
+.qrow{display:flex;align-items:center;gap:10px;padding:10px 14px;width:100%;text-align:left;
+  border:0;background:transparent}
+.qrow:hover{background:hsl(var(--mut)/.7)}
+.qrow .no{width:22px;color:hsl(var(--mutf));font-size:12px;font-weight:800;font-family:var(--fm)}
+.qrow b{font-size:13.3px;font-weight:700}
+.qrow.fresh{background:hsl(var(--oks)/.75)}
+.notice{display:flex;align-items:center;gap:13px;flex-wrap:wrap;padding:13px 16px;margin-bottom:14px;
+  border-radius:var(--r);background:hsl(var(--oks));border:1px solid hsl(var(--ok)/.35);color:hsl(var(--ok))}
+.notice b{font-size:15px;font-weight:900}
+
+/* B. 사건 */
+.tl{display:flex;flex-direction:column}
+.tli{display:flex;gap:14px;position:relative;padding-bottom:14px}
+.tli:not(:last-child)::before{content:"";position:absolute;left:14px;top:32px;bottom:0;width:2px;background:hsl(var(--line))}
+.tli.done:not(:last-child)::before{background:hsl(var(--ok)/.45)}
+.dot{flex:none;width:30px;height:30px;border-radius:99px;display:grid;place-items:center;z-index:1;
+  background:hsl(var(--mut));color:hsl(var(--mutf));font-size:12px;font-weight:800;font-family:var(--fm);
+  border:2px solid hsl(var(--bg))}
+.tli.done .dot{background:hsl(var(--ok));color:hsl(var(--card))}
+.tli.now .dot{background:hsl(var(--pri));color:hsl(var(--prif))}
+.tlb{flex:1;min-width:0;background:hsl(var(--card));border:1px solid hsl(var(--line));border-radius:var(--r);padding:14px 16px}
+.tli.now .tlb{border-color:hsl(var(--pri)/.35)}
+.hrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:transparent;padding:12px 14px}
+.hrow:hover{background:hsl(var(--mut)/.6)}
+.hno{flex:none;width:20px;height:20px;border-radius:99px;border:2px solid hsl(var(--line2));display:grid;place-items:center;font-size:11px}
+.hrow.ok .hno{background:hsl(var(--ok));border-color:hsl(var(--ok));color:hsl(var(--card))}
+.hbody{padding:0 14px 14px 44px}
+.chain{display:flex;flex-direction:column}
+.cn{display:flex;gap:11px;align-items:flex-start;padding:9px 0}
+.cn+.cn{border-top:1px solid hsl(var(--line))}
+.cnum{flex:none;width:21px;height:21px;border-radius:99px;display:grid;place-items:center;font-size:11px;
+  font-weight:800;font-family:var(--fm);background:hsl(var(--mut));color:hsl(var(--mutf));margin-top:1px}
+.cn.ok .cnum{background:hsl(var(--ok));color:hsl(var(--card))}
+.cn.ok b{opacity:.55;text-decoration:line-through}
+.mrow{display:flex;gap:11px;align-items:flex-start;padding:12px 14px}
+.mrow.full{background:hsl(var(--oks)/.4)}
+.mrow.sent{background:hsl(var(--mut)/.55)}
+.fchip{display:inline-flex;align-items:center;gap:6px;padding:3px 6px 3px 9px;border-radius:5px;
+  background:hsl(var(--mut));font-size:11.5px;font-weight:600;margin:3px 4px 0 0}
+.fchip button{border:0;background:hsl(var(--line));border-radius:4px;min-width:19px;height:19px;padding:0 4px;font-size:11px;font-weight:700;white-space:nowrap;
+  display:grid;place-items:center;color:hsl(var(--mutf))}
+.fchip button:hover{background:hsl(var(--bad));color:#fff}
+
+/* C. 보정서 */
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px;align-items:start}
+.paper{background:hsl(var(--card));border:1px solid hsl(var(--line));border-radius:var(--r);
+  padding:34px 38px;font-size:13.5px;line-height:2.1;white-space:pre-wrap;
+  min-height:420px;max-height:72vh;overflow:auto;box-shadow:0 1px 3px hsl(24 12% 11%/.05)}
+.paper .t{display:block;text-align:center;font-size:19px;font-weight:900;letter-spacing:.5em;
+  text-indent:.5em;margin-bottom:24px}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-radius:var(--rs);font-size:13px}
+.chk.pass{background:hsl(var(--oks)/.65);color:hsl(var(--ok))}
+.chk.fail{background:hsl(var(--bads)/.75);color:hsl(var(--bad))}
+.chk .ic{flex:none;font-weight:900;width:15px}
+.seg{display:inline-flex;border:1px solid hsl(var(--line2));border-radius:var(--rs);overflow:hidden}
+.seg button{height:30px;padding:0 12px;border:0;background:hsl(var(--card));font-size:12.5px;font-weight:700;
+  color:hsl(var(--mutf));border-right:1px solid hsl(var(--line))}
+.seg button:last-child{border-right:0}
+.seg button.on{background:hsl(var(--pri));color:hsl(var(--prif))}
+.pickrow{display:flex;gap:10px;align-items:center;padding:9px 12px;font-size:13px}
+.pickrow.lock{background:hsl(var(--mut)/.6);color:hsl(var(--mutf))}
+.pickrow.no{opacity:.6}
+.pickrow.off{background:hsl(var(--mut)/.45)}
+.linkto{font-size:11.5px;margin-top:4px;color:hsl(var(--pri));font-weight:700}
+.pickrow.off .linkto{color:hsl(var(--bad))}
+.linkto .y{color:hsl(var(--ok));margin-right:8px}
+.linkto .n{color:hsl(var(--mutf));margin-right:8px;font-weight:500}
+
+/* D. 배분 */
+.lanes{display:grid;grid-template-columns:repeat(auto-fit,minmax(198px,1fr));gap:11px}
+.lane{background:hsl(var(--card));border:1px solid hsl(var(--line));border-radius:var(--r);display:flex;flex-direction:column}
+.lh{padding:11px 12px;border-bottom:1px solid hsl(var(--line))}
+.lb{padding:8px;display:flex;flex-direction:column;gap:7px}
+.tk{border:1px solid hsl(var(--line));border-radius:var(--rs);padding:9px 10px;text-align:left;width:100%;background:hsl(var(--card))}
+.tk:hover{border-color:hsl(var(--pri)/.5)}
+.tk.done{background:hsl(var(--oks)/.5);border-color:hsl(var(--ok)/.3)}
+.tk.done .tt{opacity:.55;text-decoration:line-through}
+.tk .tt{font-size:12.6px;font-weight:700;line-height:1.5}
+
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,14px);z-index:60;
+  background:hsl(var(--fg));color:hsl(var(--bg));padding:11px 19px;border-radius:99px;font-size:13px;
+  font-weight:700;opacity:0;pointer-events:none;transition:.22s;box-shadow:0 8px 26px hsl(24 12% 11%/.25);max-width:86vw;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* 통합에 필요한 몇 가지 (2026-08-31) */
+.secttl{display:flex;align-items:baseline;gap:10px;margin:22px 0 10px;flex-wrap:wrap}
+.secttl h2{font-size:16.5px;font-weight:900}
+.hrow.sel{background:hsl(var(--pris))}
+.hrow.sel b{color:hsl(var(--pri))}
+.lockmsg{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;
+  color:hsl(var(--mutf));background:hsl(var(--mut)/.8);border-radius:5px;padding:5px 9px;margin-top:6px}
+.ck.lock{border-style:dashed;background:hsl(var(--mut));cursor:default}
+@media(max-width:900px){.split{grid-template-columns:1fr!important}}
+
+/* 파일 끌어다 놓기 (2026-08-31) */
+.dz{margin-top:12px;padding:16px;border:1.5px dashed hsl(var(--line2));border-radius:var(--rs);
+  background:hsl(var(--mut)/.35);text-align:center;cursor:pointer;transition:.12s}
+.dz:hover{border-color:hsl(var(--pri)/.55);background:hsl(var(--pris)/.6)}
+.dz.over{border-color:hsl(var(--pri));background:hsl(var(--pris));border-style:solid}
+.dz .dzin b{display:block;font-size:14px;font-weight:800}
+.dz .dzin .dim{display:block;font-size:12.5px;margin-top:3px}
+.dz.over .dzin b{color:hsl(var(--pri))}
+.dzfiles{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:11px}
+.dzbtn{margin-top:11px}
+.dz *{pointer-events:auto}
+
+/* 파일 칩 (2026-08-31) : 글자가 세로로 눌려 안 보이던 것을 고칩니다 */
+.fchip{max-width:100%;padding:5px 7px 5px 11px;gap:7px;font-size:12.5px;line-height:1.4;margin:4px 5px 0 0}
+.fchip a,.fchip .nm{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
+.fchip button{min-width:auto;padding:0 9px;height:23px;font-size:11.5px}
+.fchip button.x{padding:0 8px;font-weight:800}
+@media(max-width:700px){.fchip a,.fchip .nm{max-width:170px}}
+
+/* 직원 현황 (2026-08-31) */
+.stf{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.stfc{background:hsl(var(--card));border:1px solid hsl(var(--line));border-radius:var(--r);padding:14px 16px}
+.stfc.on{border-color:hsl(var(--pri));background:hsl(var(--pris)/.55)}
+.stfc h4{font-size:15px;font-weight:900;margin:0}
+.stfc .kv{display:flex;gap:14px;margin-top:9px;font-size:12.5px;color:hsl(var(--mutf))}
+.stfc .kv b{font-family:var(--fm);color:hsl(var(--fg));font-size:16px;margin-left:3px}
+.stflist{margin-top:10px;border-top:1px solid hsl(var(--line));padding-top:9px}
+.stflist .l{display:flex;gap:7px;align-items:flex-start;font-size:12.5px;padding:5px 0;line-height:1.5}
+.stflist .l.done b{text-decoration:line-through;opacity:.5}
+.stflist .l .dot2{flex:none;width:7px;height:7px;border-radius:99px;margin-top:6px;background:hsl(var(--line2))}
+.stflist .l.now .dot2{background:hsl(var(--ok))}
+.stflist .l.wait .dot2{background:hsl(var(--warn))}
+.stflist .l.done .dot2{background:hsl(var(--ok))}
+
+/* 배분판에서 고른 카드 (2026-08-31) */
+.tk.on{border-color:hsl(var(--pri));box-shadow:0 0 0 2px hsl(var(--pri)/.18)}
+</style>
+</head>
+<body>
+
+
+<div class="bar">
+  <div class="bar1" id="bar1"></div>
+  <nav class="bar2" id="bar2"></nav>
+</div>
+<main id="main"></main>
+
+<script id="seed" type="application/json">{
+ "schema": "보정업무분장/v1",
+ "case": {
+  "court": "수원회생법원",
+  "case_no": "2026개회116807",
+  "case_kind": "개인회생",
+  "debtor": "모운용",
+  "firm_label": "블루",
+  "trustee": "제222회생위원 홍윤영",
+  "attorney": "변호사 이정원",
+  "order_date": "2026-08-20",
+  "term_days": 10,
+  "served_at": "",
+  "urgent_at": "2026-09-01",
+  "risk": "기한 내 미보정 시 채무자회생법 제595조 제7호로 개시신청 기각 가능",
+  "risk_note": "2026.8.20 등재 기준이면 8월 말에서 9월 초. 정확한 송달일은 전자소송에서 확인 후 입력하세요. (정보 부족: 실제 송달일 미확인)"
+ },
+ "tasks": [
+  {
+   "id": "t1",
+   "owner": "사무실",
+   "when": "즉시",
+   "kind": "발급",
+   "hang": "보정 1",
+   "title": "민사예납금 가상계좌 발급",
+   "badge": "9/1까지",
+   "due": "2026-09-01",
+   "steps": [
+    {
+     "text": "전자소송에서 민사예납금 가상계좌 발급"
+    },
+    {
+     "text": "발급받은 가상계좌 파일을 그대로 당사자에게 전송 (계좌번호를 문서에 타이핑하지 않음)"
+    }
+   ],
+   "why": "발급해야 당사자가 15만 원을 낼 수 있습니다. 오늘의 1순위입니다.",
+   "memo_hint": "가상계좌 발급일 / 전송일",
+   "station": "P2",
+   "station_name": "회사발급",
+   "order": 1,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기",
+   "howto": [
+    "전자소송 로그인 → 해당 사건 → [납부] → 민사예납금 가상계좌 발급",
+    "발급 결과 파일(PDF)을 그대로 내려받기",
+    "계좌번호를 손으로 옮겨 적지 말고 파일 그대로 당사자에게 전송",
+    "송달앱 이 칸에 발급일과 전송일 적기"
+   ]
+  },
+  {
+   "id": "t2",
+   "owner": "당사자",
+   "when": "즉시",
+   "kind": "납부",
+   "hang": "보정 1",
+   "title": "회생위원 보수 예납금 150,000원 납부",
+   "badge": "9/1까지",
+   "due": "2026-09-01",
+   "steps": [
+    {
+     "text": "사무실이 보낸 가상계좌로 150,000원 입금",
+     "req": "회생위원 예납금 150,000원 입금 (9/1까지)",
+     "provides": "예납금 입금확인증",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     },
+     "mat_type": "확인",
+     "mat_why": "입금만 하면 됩니다. 이체확인증 사진은 있으면 좋고 없어도 됩니다."
+    },
+    {
+     "text": "입금 후 사무실에 확인 연락 또는 이체확인증 사진 전송"
+    }
+   ],
+   "why": "재판부가 붙여주는 회생위원(사건 관리자)에게 줄 보수를 미리 맡겨두는 돈입니다. 송달료가 아니라 민사예납금으로 넣어야 하는 점이 핵심이라, 계좌를 잘못 쓰면 다시 처리해야 합니다.",
+   "memo_hint": "입금일 / 입금확인일",
+   "station": "P1",
+   "station_name": "연락·회수",
+   "order": 2,
+   "blocked_by": [
+    "t1"
+   ],
+   "assignee": "",
+   "status": "대기",
+   "howto": [
+    "가상계좌 파일을 보낸 뒤 카톡으로 안내문 발송",
+    "3일 지나도 입금 확인이 없으면 [급한 건 독촉] 문자 발송",
+    "입금 확인되면 이 줄 체크"
+   ]
+  },
+  {
+   "id": "t3",
+   "owner": "당사자",
+   "when": "즉시",
+   "kind": "납부",
+   "hang": "보정 2",
+   "title": "국민건강보험공단 소액채무 직접 변제",
+   "badge": "9/1까지",
+   "due": "2026-09-01",
+   "steps": [
+    {
+     "text": "공단에 직접 완납 (10만 원 미만 소액)",
+     "req": "국민건강보험공단 체납액 완납 + 영수증 (9/1까지)",
+     "provides": "건강보험공단 완납영수증",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     },
+     "mat_type": "파일",
+     "mat_why": "채권자목록에서 채권1을 빼려면 완납을 증명하는 종이가 있어야 합니다."
+    },
+    {
+     "text": "완납 영수증 또는 납부확인서 사무실로 전송"
+    }
+   ],
+   "why": "금액이 작아서 절차에 끼워두면 진행만 느려집니다. 밖에서 털고 채권자목록에서 빼는 게 훨씬 빠릅니다. 목록 삭제는 사무실이 처리합니다.",
+   "memo_hint": "완납금액 / 완납일 / 영수증 수령 여부",
+   "station": "P1",
+   "station_name": "연락·회수",
+   "order": 3,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기",
+   "howto": [
+    "카톡 안내문 발송",
+    "완납 영수증 사진 받으면 사건 폴더에 저장하고 이 줄 체크"
+   ]
+  },
+  {
+   "id": "t4",
+   "owner": "당사자",
+   "when": "즉시",
+   "kind": "자료요청",
+   "hang": "보정 3-1",
+   "title": "활동성 계좌 전부 은행거래내역서 (2026.1.1 ~ 현재)",
+   "steps": [
+    {
+     "text": "활동성 계좌 13개 전부 거래내역서 발급",
+     "provides": "은행거래내역서 13개",
+     "req": "은행거래내역서 13개 (2026.1.1~현재, 엑셀 권장)",
+     "from_accounts": true,
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     },
+     "mat_type": "파일",
+     "mat_why": "도표를 만들려면 원본 숫자가 있어야 합니다. 말로는 대체가 안 됩니다."
+    },
+    {
+     "text": "기간: 2026년 1월 1일 ~ 발급일 현재"
+    },
+    {
+     "text": "형식: 가급적 엑셀(xlsx/csv). PDF나 종이보다 표 작성이 몇 배 빠름"
+    }
+   ],
+   "alert": "잔액 0원 계좌도 제외 금지. 대출금이 스쳐 지나간 통로일 수 있어, 빠지면 소명 불가로 청산가치에 그대로 가산됩니다.",
+   "memo_hint": "수령한 계좌 / 누락된 계좌 / 재요청 사항",
+   "station": "P1",
+   "station_name": "연락·회수",
+   "order": 4,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기",
+   "howto": [
+    "아래 계좌표를 그대로 카톡에 붙여 보내기",
+    "받은 계좌는 계좌표에서 하나씩 체크",
+    "3일마다 [미수령 목록 자동 만들기]로 남은 것만 다시 보내기"
+   ]
+  },
+  {
+   "id": "t5",
+   "owner": "당사자",
+   "when": "즉시",
+   "kind": "자료요청",
+   "hang": "보정 3-2",
+   "title": "신한·삼성카드 사용내역서 (2025.6 ~ 현재, 일별 상세)",
+   "steps": [
+    {
+     "text": "신한카드 2025년 6월 ~ 현재 사용내역서",
+     "req": "신한카드 사용내역서 (2025.6~현재, 일별 상세 엑셀)",
+     "provides": "신한카드 상세내역",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     },
+     "mat_type": "파일",
+     "mat_why": "일별 상세내역 엑셀이 있어야 30만원 이상을 걸러낼 수 있습니다."
+    },
+    {
+     "text": "삼성카드 2025년 6월 ~ 현재 사용내역서",
+     "req": "삼성카드 사용내역서 (2025.6~현재, 일별 상세 엑셀)",
+     "provides": "삼성카드 상세내역",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     },
+     "mat_type": "파일",
+     "mat_why": "일별 상세내역 엑셀이 있어야 30만원 이상을 걸러낼 수 있습니다."
+    },
+    {
+     "text": "월별 합계표 아님. 날짜·가맹점명·금액이 한 줄씩 찍히는 일별 상세내역 (엑셀)"
+    }
+   ],
+   "why": "대상 카드는 신한카드 4매(Simple, 후불하이패스+, Life 경차사랑, SOL Deep Dream 체크), 삼성카드 2매(BIZ 6 V2, 모니모카드)입니다. 카드론이나 현금서비스가 있으면 입금받은 계좌의 거래내역도 같이 필요합니다.",
+   "memo_hint": "수령일 / 카드론·현금서비스 유무",
+   "station": "P1",
+   "station_name": "연락·회수",
+   "order": 5,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기",
+   "howto": [
+    "카드사별로 따로 요청 (신한, 삼성)",
+    "받은 파일이 월별 합계표면 다시 요청. 날짜별 한 줄씩 찍힌 것이어야 함"
+   ]
+  },
+  {
+   "id": "t6",
+   "owner": "당사자",
+   "when": "즉시",
+   "kind": "자료요청",
+   "hang": "보정 4",
+   "title": "차량 42두9463 자동차보험증권",
+   "steps": [
+    {
+     "text": "보험사 앱이나 고객센터에서 보험증권(가입증명서) 발급. 차량가액이 찍힌 것",
+     "req": "자동차보험증권 (42두9463, 차량가액 표시된 것)",
+     "provides": "자동차보험증권",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     },
+     "mat_type": "파일",
+     "mat_why": "증권에 찍힌 차량가액이 그대로 환가예상액이 됩니다."
+    },
+    {
+     "text": "PDF로 사무실 전달"
+    }
+   ],
+   "why": "이 증권의 차량가액이 곧 환가예상액(차를 팔면 받을 돈)이 되고, 여기서 근저당 400만 원을 빼서 청산가치에 넣습니다. 증권이 없으면 재산목록과 부속서류를 못 채웁니다.",
+   "memo_hint": "보험사 / 차량가액 / 수령일",
+   "station": "P1",
+   "station_name": "연락·회수",
+   "order": 6,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기"
+  },
+  {
+   "id": "t7",
+   "owner": "당사자",
+   "when": "즉시",
+   "kind": "자료요청",
+   "hang": "보정 5",
+   "title": "삼성생명·라이나손해보험 예상해약환급금확인서",
+   "steps": [
+    {
+     "text": "삼성생명 1건(2020년 가입) 예상해약환급금확인서 발급",
+     "req": "삼성생명 예상해약환급금확인서",
+     "provides": "삼성생명 해약환급금확인서",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     },
+     "mat_type": "파일",
+     "mat_why": "금액이 청산가치에 그대로 들어갑니다."
+    },
+    {
+     "text": "라이나손해보험 1건 동일하게 발급",
+     "req": "라이나손해보험 예상해약환급금확인서",
+     "provides": "라이나 해약환급금확인서",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     },
+     "mat_type": "파일",
+     "mat_why": "금액이 청산가치에 그대로 들어갑니다."
+    },
+    {
+     "text": "둘 다 PDF로 사무실 전달"
+    }
+   ],
+   "why": "해약하면 받을 돈이 곧 재산이라 청산가치(최소 갚아야 할 총액)에 반영됩니다. 해약하라는 뜻이 아니라 금액만 확인하는 서류입니다.",
+   "memo_hint": "삼성생명 환급금 / 라이나 환급금",
+   "station": "P1",
+   "station_name": "연락·회수",
+   "order": 7,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기"
+  },
+  {
+   "id": "t8",
+   "owner": "당사자",
+   "when": "즉시",
+   "kind": "소명",
+   "hang": "보정 6",
+   "title": "직전 거주지 보증금 또는 매매대금 사용처",
+   "steps": [
+    {
+     "text": "청주시 흥덕구 봉명로241번길 22, 102호: 전세(월세) 보증금인지 매매인지",
+     "req": "청주 봉명로 집: 전세보증금인지 매매인지, 금액, 어느 통장으로 받아 어디에 썼는지",
+     "provides": "직전거주지 보증금 설명",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     },
+     "mat_type": "진술+파일",
+     "mat_why": "어디에 썼는지는 말로 듣고, 그 돈이 오간 통장내역으로 뒷받침합니다."
+    },
+    {
+     "text": "돌려받은 또는 받은 금액이 정확히 얼마인지"
+    },
+    {
+     "text": "그 돈이 어느 통장으로 들어와 어디에 썼는지 (해당 통장 거래내역 포함)"
+    }
+   ],
+   "alert": "소명 안 되는 금액, 개인 채무변제, 가족 증여는 전액 청산가치에 가산되어 월 변제금이 올라갑니다. 기억나는 대로가 아니라 통장 흐름으로 잡아야 합니다.",
+   "memo_hint": "임대차/매매 구분 / 금액 / 입금계좌 / 사용처",
+   "station": "P1",
+   "station_name": "연락·회수",
+   "order": 8,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기"
+  },
+  {
+   "id": "t9",
+   "owner": "당사자",
+   "when": "즉시",
+   "kind": "소명",
+   "hang": "보정 7",
+   "title": "현 근무지(주식회사 정준산업) 관련 본인 소명 및 서류",
+   "steps": [
+    {
+     "text": "대표자와의 관계 (친인척, 지인, 무관 등 사실대로)",
+     "req": "정준산업: 대표자와의 관계 / 취업경위 / 맡은 업무 알려주기",
+     "provides": "정준산업 근무 소명",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     },
+     "mat_type": "진술",
+     "mat_why": "대표자와의 관계·취업경위·업무는 서류가 없습니다. 당사자 말을 그대로 보정서에 씁니다."
+    },
+    {
+     "text": "취업경위 (어떤 경로로 입사했는지)"
+    },
+    {
+     "text": "맡은 업무 (실제 하는 일)"
+    },
+    {
+     "text": "취업 당시부터 보정서 제출 시까지 급여명세서 전부 (근로소득원천징수영수증)",
+     "req": "정준산업 급여명세서 전부 (입사일부터 현재까지)",
+     "provides": "정준산업 급여명세서",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     },
+     "mat_type": "파일",
+     "mat_why": "월평균소득을 다시 계산하려면 명세서 원본이 있어야 합니다."
+    }
+   ],
+   "why": "법원은 지인 회사에 형식만 걸어두고 소득을 낮게 신고하는 것을 경계합니다. 관계와 경위, 업무가 자연스럽게 설명되면 그대로 넘어갑니다. 급여명세서는 회사 요청 또는 홈택스에서 확보합니다.",
+   "memo_hint": "대표자 관계 / 입사일 / 업무 / 급여명세서 수령 범위",
+   "station": "P1",
+   "station_name": "연락·회수",
+   "order": 9,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기"
+  },
+  {
+   "id": "t10",
+   "owner": "당사자",
+   "when": "즉시",
+   "kind": "자료요청",
+   "hang": "보정 9",
+   "title": "사업소득(베스트인테리어) 소명 자료",
+   "steps": [
+    {
+     "text": "2026년 2월경부터 보정서 제출 시까지 베스트인테리어 사업 수입 자료",
+     "req": "베스트인테리어 사업 수입 자료 (2026.2~현재)",
+     "provides": "베스트인테리어 수입자료",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     },
+     "mat_type": "진술+파일",
+     "mat_why": "사업 시작 시기와 규모는 말로 듣고, 사업자통장 내역으로 뒷받침합니다."
+    },
+    {
+     "text": "사업용 통장 거래내역, 세금계산서, 카드매출 내역 등 있는 대로"
+    }
+   ],
+   "why": "페이인포에 토스뱅크 개인사업자통장(1002576***05, 부기명 \"베스트 인\", 2026.5.20 개설)이 잡혀 있습니다. 이 통장 거래내역이 사업소득 소명의 핵심 자료입니다. 반드시 함께 요청하세요. 월평균 소득 가산 계산은 사무실이 합니다.",
+   "memo_hint": "사업 개시시기 / 월 매출 / 확보 자료",
+   "station": "P1",
+   "station_name": "연락·회수",
+   "order": 10,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기"
+  },
+  {
+   "id": "t11",
+   "owner": "사무실",
+   "when": "확인후",
+   "kind": "발급",
+   "hang": "보정 7-가",
+   "title": "건강보험 자격득실확인서·연금산정용 가입내역확인서",
+   "steps": [
+    {
+     "text": "먼저 조회해서 정준산업 반영 여부 확인"
+    },
+    {
+     "text": "미반영이면 회사에 취득신고 요청 후 재발급"
+    }
+   ],
+   "alert": "보정문이 요구한 건 \"현 근무지가 반영된\" 것입니다. 정준산업 취득신고가 아직 안 됐다면 지금 뽑아봐야 예전 이력만 나옵니다.",
+   "station": "P2",
+   "station_name": "회사발급",
+   "order": 11,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기",
+   "howto": [
+    "먼저 조회만 해보고 현 근무지가 찍히는지 확인",
+    "안 찍히면 회사에 4대보험 취득신고 요청 문자 발송",
+    "신고 완료 연락 받은 뒤 다시 발급"
+   ]
+  },
+  {
+   "id": "t12",
+   "owner": "사무실",
+   "when": "즉시",
+   "kind": "발급",
+   "title": "공동인증서로 우리가 직접 뽑는 서류",
+   "table": {
+    "cols": [
+     "서류",
+     "발급처",
+     "용도"
+    ],
+    "rows": [
+     [
+      "민사예납금 가상계좌",
+      "전자소송",
+      "보정 1. 발급 후 당사자에게 전달"
+     ],
+     [
+      "부동산등기부등본 (청주시 흥덕구 봉명로241번길 22, 102호)",
+      "인터넷등기소",
+      "보정 6. 직전 거주지 권리관계 확인"
+     ],
+     [
+      "법인등기부등본 말소사항 포함 (주식회사 정준산업)",
+      "인터넷등기소",
+      "보정 7-가. 근무지 실재 확인"
+     ],
+     [
+      "건강보험 자격득실확인서 (현 근무지 반영본)",
+      "공단 홈페이지 / 정부24",
+      "보정 7-가. 취업사실 객관 증빙"
+     ],
+     [
+      "연금산정용 가입내역 확인서 (현 근무지 반영본)",
+      "국민연금공단",
+      "보정 7-가. 취업사실 객관 증빙"
+     ]
+    ]
+   },
+   "alert": "건강보험과 연금 서류는 정준산업이 반영된 최신본이어야 합니다. 취득신고가 아직 안 됐으면 회사에 신고 요청부터 하고 그 뒤에 발급하세요.",
+   "station": "P2",
+   "station_name": "회사발급",
+   "order": 12,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기",
+   "howto": [
+    "표의 서류를 위에서부터 하나씩 발급",
+    "발급한 파일은 사건 폴더에 서류명 그대로 저장",
+    "다 뽑았으면 각 줄 체크"
+   ]
+  },
+  {
+   "id": "t13",
+   "owner": "사무실",
+   "when": "즉시",
+   "kind": "작성",
+   "title": "채권자목록에서 채권1(국민건강보험공단) 삭제",
+   "steps": [
+    {
+     "text": "채권자목록에서 채권1 국민건강보험공단 행 삭제",
+     "provides": "채권1 제외한 채권자목록",
+     "mat_type": "우리작성",
+     "mat_why": "완납 영수증을 받아 우리가 목록을 고쳐 만드는 것입니다.",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     }
+    },
+    {
+     "text": "채권 번호를 다시 매기고 채권 총액 합계 다시 계산"
+    },
+    {
+     "text": "부속서류·변제계획안에 채권1이 남아 있지 않은지 확인"
+    }
+   ],
+   "station": "P4",
+   "station_name": "서면수정",
+   "order": 13,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기",
+   "needs": [
+    "건강보험공단 완납영수증"
+   ],
+   "hang": "보정 2",
+   "howto": [
+    "완납 영수증을 먼저 확인. 영수증 없이 지우면 법원이 근거를 못 봄",
+    "채권자목록에서 국민건강보험공단 행 삭제",
+    "아래 채권 번호가 하나씩 당겨지므로 번호와 합계를 다시 맞춤",
+    "변제계획안 변제예정액표에도 그 채권이 남아 있지 않은지 확인"
+   ]
+  },
+  {
+   "id": "t14",
+   "owner": "사무실",
+   "when": "즉시",
+   "kind": "작성",
+   "hang": "보정 10",
+   "title": "변제계획안 1차 수정 (형식)",
+   "steps": [
+    {
+     "text": "변제시작일을 2026. 10. 1. 로 수정"
+    },
+    {
+     "text": "월 회생위원 보수 반영 (변제액 계산에 포함)"
+    },
+    {
+     "text": "제10항 기타사항에 \"해당 있음\" 표시 + 아래 문구 그대로 기재"
+    }
+   ],
+   "quote": "[소득신고 및 변제계획안의 수정허가신청 의무]\n가. 채무자는 변제계획 인가 결정 후 매년 7월 1일부터 31일까지 채무자의 전년도 부가가치세과세표준증명, 소득금액증명, 소득세원천징수영수증, 연금산정용가입내역확인서 등 소득소명자료를 제출한다.\n나. 위 가.항의 이행 시 인가 결정 후 수입이 증가한 경우, 증가된 가용소득을 변제에 투입하는 내용의 변제계획안 수정허가신청서, 수정된 수입 및 지출에 관한 목록을 각 제출한다.\n다. 위 가.항 및 나.항의 각 의무를 해태할 경우에는 개인회생절차가 폐지됨을 확인한다.",
+   "alert": "이 문구를 빠뜨리면 변제를 다 마쳐도 채무자회생법 제624조 제3항 제2호에 따라 면책 불허가 사유가 됩니다. 복붙 시 오탈자 확인 필수.",
+   "station": "P4",
+   "station_name": "서면수정",
+   "order": 14,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기"
+  },
+  {
+   "id": "t17",
+   "owner": "공동",
+   "when": "자료대기",
+   "kind": "도표",
+   "hang": "보정 3-1",
+   "title": "대출금 사용내역 일람표 (채권10, 11, 12)",
+   "needs": [
+    "은행거래내역서 13개",
+    "대출금 사용처 설명"
+   ],
+   "table": {
+    "cols": [
+     "구분",
+     "당사자가 알려줄 것",
+     "사무실이 만들 것"
+    ],
+    "rows": [
+     [
+      "채권10, 11 에스비아이저축은행 / 채권12 아이엠캐피탈",
+      "1. 대출금을 어느 통장으로 받았는지\n2. 어디에 썼는지 (용도)\n3. 주로 어느 통장에서 빠져나갔는지\n4. 해당 통장 거래내역서(엑셀)",
+      "최근 채무 소명 일람표. 입금된 날부터 시간 순서대로, 다른 계좌로 이체해 쓴 것까지 전부 추적. 원금에 이를 때까지 선별해 쓰는 방식은 불가."
+     ]
+    ]
+   },
+   "steps": [
+    {
+     "text": "당사자 설명 청취 완료",
+     "req": "대출금 3건(에스비아이저축은행 2건, 아이엠캐피탈 1건): 어느 통장으로 받아 어디에 썼는지 설명",
+     "provides": "대출금 사용처 설명",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     },
+     "mat_type": "진술",
+     "mat_why": "어디에 썼는지는 당사자만 압니다. 이 말이 일람표의 '용도'칸이 됩니다."
+    },
+    {
+     "text": "일람표 작성 완료",
+     "provides": "최근 채무 소명 일람표",
+     "mat_type": "우리작성",
+     "mat_why": "받은 거래내역과 당사자 설명을 합쳐 우리가 만드는 표입니다. 받는 게 아니라 만드는 것입니다.",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     }
+    }
+   ],
+   "alert": "청산가치에 그대로 더해지는 항목: 개인 채무변제, 가족 증여(가족채무변제 포함), 도박이나 게임 등 사행성 지출, 현금출금, 소명 불가 금액. 특히 현금출금이 많으면 사용처를 최대한 구체적으로 받아두세요.",
+   "memo_hint": "채권10 / 채권11 / 채권12 입금계좌 및 사용처",
+   "station": "P3",
+   "station_name": "도표작성",
+   "order": 16,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기",
+   "howto": [
+    "당사자 설명을 카톡으로 받아 그대로 붙여넣기",
+    "거래내역 엑셀에서 대출 입금일을 찾아 그 날짜부터 시간순으로 추적",
+    "다른 계좌로 이체된 돈도 그 계좌 내역에서 이어서 추적",
+    "소명 안 되는 금액은 빨간색으로 표시해 관리자에게 올리기"
+   ]
+  },
+  {
+   "id": "t18",
+   "owner": "공동",
+   "when": "자료대기",
+   "kind": "도표",
+   "hang": "보정 3-2",
+   "title": "카드 30만 원 이상 사용처 도표",
+   "needs": [
+    "신한카드 상세내역",
+    "삼성카드 상세내역"
+   ],
+   "table": {
+    "cols": [
+     "당사자",
+     "사무실"
+    ],
+    "rows": [
+     [
+      "신한·삼성카드 2025.6 ~ 현재 일별 상세내역 제출. 30만 원 이상 건은 무엇을 샀는지 메모 첨부",
+      "건당 30만 원 이상 사용처 도표 작성. 날짜 / 가맹점 / 금액 / 사용목적 / 소명 여부"
+     ]
+    ]
+   },
+   "steps": [
+    {
+     "text": "카드내역 수령 완료"
+    },
+    {
+     "text": "30만 원 이상 도표 작성 완료",
+     "provides": "카드 30만원 이상 사용처 도표",
+     "mat_type": "우리작성",
+     "mat_why": "받은 카드내역에서 30만원 이상만 걸러 우리가 만드는 표입니다.",
+     "mat": {
+      "status": "요청전",
+      "files": [],
+      "memo": "",
+      "got_at": "",
+      "say": "",
+      "round": 0,
+      "pick": true
+     }
+    }
+   ],
+   "alert": "건당 30만 원 이상의 쇼핑, 여행, 골프, 유흥비와 소명 불가 금액은 청산가치 반영. 카드론이나 현금서비스가 있으면 입금받은 계좌 거래자료까지 붙여 사용처를 소명해야 합니다. (페이인포상 현금서비스 한도: 신한 160만, 우리 130만, 국민 30만, 삼성 30만)",
+   "memo_hint": "30만원 이상 건수 / 소명 불가 항목",
+   "station": "P3",
+   "station_name": "도표작성",
+   "order": 17,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기",
+   "howto": [
+    "카드 엑셀에서 30만 원 이상만 걸러내기",
+    "가맹점명으로 알 수 있는 건 먼저 채우고, 모르는 건 목록으로 만들어 당사자에게 한 번에 질문",
+    "소명 안 되는 건 빨간색 표시 후 관리자에게 올리기"
+   ]
+  },
+  {
+   "id": "t15",
+   "owner": "사무실",
+   "when": "자료대기",
+   "kind": "작성",
+   "title": "자료 받고 채우는 서면",
+   "needs": [
+    "자동차보험증권",
+    "삼성생명 해약환급금확인서",
+    "라이나 해약환급금확인서",
+    "베스트인테리어 수입자료",
+    "최근 채무 소명 일람표",
+    "카드 30만원 이상 사용처 도표"
+   ],
+   "steps": [
+    {
+     "text": "재산목록: 차량 환가예상액 기재 (자동차보험증권 필요)"
+    },
+    {
+     "text": "부속서류1: 목적물 가액 = 환가예상액 × 50% (보험증권 없이는 계산 불가)"
+    },
+    {
+     "text": "재산목록: 삼성생명·라이나 해약환급금 반영"
+    },
+    {
+     "text": "수입 및 지출에 관한 목록: 사업소득 가산 반영 [보정 9]"
+    },
+    {
+     "text": "청산가치 재계산 → 변제예정액표 확정. 변제계획안의 진짜 마무리"
+    }
+   ],
+   "alert": "변제계획안은 두 번 만진다고 보세요. 1차(오늘)는 시작일·10항 문구·회생위원 보수 형식 수정, 2차(자료 취합 후)는 월 변제금·변제예정액표 금액 확정입니다. 1차만 하고 제출하면 청산가치 미달로 다시 보정 나옵니다.",
+   "station": "P4",
+   "station_name": "서면수정",
+   "order": 20,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기"
+  },
+  {
+   "id": "t16",
+   "owner": "사무실",
+   "when": "자료대기",
+   "kind": "작성",
+   "hang": "보정 8",
+   "title": "월평균소득 500만 원 이상 수정",
+   "badge": "추후제출",
+   "needs": [
+    "정준산업 급여명세서"
+   ],
+   "why": "회생위원 산정: 일용근로소득지급명세서상 9개월 월평균 565만 원 이상이므로 최소 500만 원 이상으로 수정 요구.",
+   "steps": [
+    {
+     "text": "이번 보정서에 유보 문구 1줄 삽입"
+    },
+    {
+     "text": "급여명세서 수령 후 월평균소득 재산정"
+    }
+   ],
+   "alert": "보정권고문에 \"고의로 소득을 감소시켜 법원을 기망하는 경우 신청기각사유에 해당함에 유의하여 반드시 수정할 것\"이라고 명시돼 있습니다. 8번을 후순위로 미루는 것 자체는 실무상 가능하지만, 기한 내 아무 답도 없는 상태는 위험합니다. 권고안: 이번 보정서 제출 시 \"소득 관련 사항(8·9항)은 급여명세서와 사업소득 자료 수령 후 O월 O일까지 별도 보정서로 제출 예정\"이라는 유보 문구를 넣으세요. 무응답과 유보 통지는 회생위원 입장에서 전혀 다른 사안입니다.",
+   "station": "P5",
+   "station_name": "계산·검산",
+   "order": 21,
+   "blocked_by": [],
+   "assignee": "",
+   "status": "대기"
+  }
+ ],
+ "accounts": {
+  "title": "거래내역서 받아야 할 활동성 계좌",
+  "note": "페이인포 2026.7.10 기준",
+  "period": "2026.1.1 ~ 현재",
+  "rows": [
+   {
+    "bank": "하나은행",
+    "no": "405910631***07",
+    "product": "주거래 하나 통장",
+    "balance": 1000,
+    "memo": "파주"
+   },
+   {
+    "bank": "국민은행",
+    "no": "200002042***74",
+    "product": "KB Wise통장",
+    "balance": 961,
+    "memo": "망포역"
+   },
+   {
+    "bank": "부산은행",
+    "no": "11223514***09",
+    "product": "자유저축예금",
+    "balance": 0,
+    "memo": "비대면"
+   },
+   {
+    "bank": "우리은행",
+    "no": "10051049***27",
+    "product": "우리동네사장님통장",
+    "balance": 0,
+    "memo": "사업용 추정",
+    "tag": "biz"
+   },
+   {
+    "bank": "우리은행",
+    "no": "794051765***01",
+    "product": "저축예금",
+    "balance": 73033,
+    "memo": "잔액 최다",
+    "tag": "key"
+   },
+   {
+    "bank": "전북은행",
+    "no": "10210214***23",
+    "product": "JB 주거래통장(저축)",
+    "balance": 2995,
+    "memo": ""
+   },
+   {
+    "bank": "케이뱅크",
+    "no": "1001624***78",
+    "product": "MY 입출금통장",
+    "balance": 1251,
+    "memo": ""
+   },
+   {
+    "bank": "카카오뱅크",
+    "no": "33330164***18",
+    "product": "카카오뱅크 입출금통장",
+    "balance": 5361,
+    "memo": ""
+   },
+   {
+    "bank": "토스뱅크",
+    "no": "1000154***31",
+    "product": "토스뱅크 통장",
+    "balance": 10871,
+    "memo": ""
+   },
+   {
+    "bank": "토스뱅크",
+    "no": "1002576***05",
+    "product": "토스뱅크 개인사업자 통장",
+    "balance": 0,
+    "memo": "부기명 \"베스트 인\", 보정 9 핵심",
+    "tag": "key"
+   },
+   {
+    "bank": "농·축협",
+    "no": "35611887***63",
+    "product": "자유저축예탁금",
+    "balance": 0,
+    "memo": "태안 망포"
+   },
+   {
+    "bank": "웰컴저축은행",
+    "no": "066012142***43",
+    "product": "웰뱅 모두페이 통장",
+    "balance": 0,
+    "memo": "저축은행중앙회"
+   },
+   {
+    "bank": "새마을금고",
+    "no": "90032978***09",
+    "product": "상상모바일통장",
+    "balance": 2,
+    "memo": "화산금고"
+   }
+  ],
+  "why": "가운데 *** 는 페이인포(어카운트인포)에서 가려 놓은 부분입니다. 앞뒤 숫자만 맞춰보면 어느 통장인지 바로 특정됩니다. 당사자에게는 은행명 + 번호 + 상품명을 함께 보내야 헷갈리지 않습니다.",
+  "excluded": "신한은행 3개 계좌는 전부 비활동성(활동성 0건)이라 거래내역서 요청 대상이 아닙니다. 단 신한'카드'는 보정 3-2 대상이니 혼동하지 마세요. 증권사 2곳(유진투자증권, 토스증권)도 비활동성이고 잔액 0원."
+ },
+ "final": {
+  "title": "보정사항 반영 후 4종 전부 재제출",
+  "items": [
+   "채권자목록 (부속서류1 포함)",
+   "재산목록",
+   "수입 및 지출에 관한 목록",
+   "변제계획안 (변제예정액표 포함)"
+  ],
+  "alert": "필수 검산: 월 가용소득 × 변제횟수의 현재가치가 청산가치 이상이어야 합니다. 차량 환가액, 보험 해약환급금, 소명 안 된 대출과 카드 사용액이 전부 청산가치로 들어오므로, 자료 취합 후 반드시 재계산하고 제출하세요."
+ },
+ "messages": [
+  {
+   "key": "m1",
+   "label": "최초 전체 요청",
+   "body": "[블루법률사무소] 모운용님, 개인회생 보정 자료 요청드립니다.\n\n법원 제출 기한이 정해져 있어, 아래 자료를 준비되는 대로 먼저 보내주시면 됩니다.\n한 번에 다 모으려 하지 마시고, 되는 것부터 바로바로 주세요. 저희가 받는 대로 정리하겠습니다.\n\n■ 1번과 2번은 9월 1일까지 처리하시고 반드시 저희에게 말씀해 주세요 ■\n\n1. 회생위원 예납금 150,000원 납부\n   보내드린 가상계좌 파일의 계좌로 입금해 주세요.\n   입금 후 \"입금했습니다\" 라고 연락 주시거나 이체확인증 사진을 보내주세요.\n\n2. 국민건강보험공단 체납액 직접 완납\n   금액이 소액이라 절차 밖에서 정리하는 것이 훨씬 빠릅니다.\n   완납 후 영수증 또는 납부확인서 사진을 보내주세요.\n\n※ 위 1, 2번은 기한이 촉박합니다. 9월 1일까지 완료하시고 결과를 꼭 알려주셔야 합니다.\n\n\n▣ 발급해서 보내주실 서류 (준비되는 대로 순서 상관없이)\n\n3. 은행거래내역서, 아래 13개 통장 전부 / 2026.1.1 ~ 현재\n   되도록 엑셀 파일로 다운로드해 보내주세요. 잔액 0원 통장도 반드시 포함입니다.\n{{계좌목록}}\n   ※ 가운데 *** 는 조회 시스템에서 가려진 부분입니다.\n      실제 통장이나 앱에 있는 전체 번호 기준으로 찾으시면 됩니다.\n\n4. 신한카드 / 삼성카드 사용내역서, 2025.6 ~ 현재\n   월별 합계표가 아니라 날짜별 상세내역(엑셀)으로 부탁드립니다.\n\n5. 자동차보험증권 (차량번호 42두9463), 차량가액이 나온 것\n\n6. 예상해약환급금확인서, 삼성생명 1부 / 라이나손해보험 1부\n   해약하시라는 뜻이 아니라 금액만 확인하는 서류입니다.\n\n7. 급여명세서 전부, 정준산업 입사일부터 현재까지\n\n\n▣ 알려주실 내용 (지금 이 카톡으로 그대로 보내주세요)\n\n8. 대출금 3건 (에스비아이저축은행 2건, 아이엠캐피탈 1건)\n   - 어느 통장으로 받으셨는지\n   - 어디에 쓰셨는지\n   - 주로 어느 통장에서 쓰셨는지\n\n9. 청주 봉명로 집\n   - 전세보증금인지 매매인지\n   - 얼마를, 어느 통장으로 받아, 어디에 쓰셨는지\n\n10. 정준산업\n   - 대표님과의 관계\n   - 어떻게 입사하게 되셨는지\n   - 맡고 계신 업무\n\n11. 베스트인테리어 사업, 2026년 2월부터 현재까지 수입 자료\n\n\n※ 통장이나 카드에서 30만 원 이상 쓰신 건은 \"무엇에 썼는지\" 메모를 함께 주시면 훨씬 빠릅니다.\n※ 설명이 안 되는 금액은 갚아야 할 돈으로 계산되어 월 변제금이 올라갑니다.\n   기억나는 대로 최대한 알려주시면 저희가 정리해 드리겠습니다.\n\n문의사항 있으시면 언제든 연락 주세요.\n블루법률사무소 드림"
+  },
+  {
+   "key": "m2",
+   "label": "급한 건 독촉",
+   "body": "[블루법률사무소] 모운용님, 급한 건 두 가지만 먼저 말씀드립니다.\n\n9월 1일까지 아래 두 가지를 꼭 처리하시고, 처리하신 뒤 저희에게 연락 주셔야 합니다.\n\n1. 회생위원 예납금 150,000원 입금\n   보내드린 가상계좌 파일의 계좌로 입금해 주세요.\n   입금 후 \"입금했습니다\" 라고 문자 주시거나 이체확인증 사진을 보내주세요.\n\n2. 국민건강보험공단 체납액 완납\n   완납 후 영수증 또는 납부확인서 사진을 보내주세요.\n\n이 두 가지는 법원 기한과 직결되는 부분이라 늦어지면 절차 자체가 흔들립니다.\n나머지 서류는 준비되는 대로 천천히 보내주셔도 괜찮습니다.\n\n혹시 어려운 사정이 있으시면 미리 말씀해 주세요. 방법을 같이 찾겠습니다.\n\n블루법률사무소 드림"
+  },
+  {
+   "key": "m3",
+   "label": "미수령 리마인드",
+   "auto": "remind",
+   "body": "아래 [미수령 목록 자동 만들기]를 누르면 아직 체크하지 않은 항목만 모아서 리마인드 문자가 자동으로 만들어집니다.\n\n먼저 위쪽에서 받은 자료에 체크를 해두세요."
+  },
+  {
+   "key": "m4",
+   "label": "자유 작성",
+   "body": "[블루법률사무소] 모운용님,\n\n(자유롭게 작성하세요)\n\n블루법률사무소 드림"
+  }
+ ],
+ "stations": [
+  {
+   "code": "P1",
+   "name": "연락·회수",
+   "desc": "당사자에게 요청 보내고 자료 받아오기",
+   "who": "연락 담당"
+  },
+  {
+   "code": "P2",
+   "name": "회사발급",
+   "desc": "공동인증서로 서류 뽑기",
+   "who": "발급 담당"
+  },
+  {
+   "code": "P3",
+   "name": "도표작성",
+   "desc": "거래내역·카드내역을 표로 정리",
+   "who": "도표 담당"
+  },
+  {
+   "code": "P4",
+   "name": "서면수정",
+   "desc": "채권자목록·재산목록·변제계획안 고치기",
+   "who": "서면 담당"
+  },
+  {
+   "code": "P5",
+   "name": "계산·검산",
+   "desc": "청산가치와 변제예정액 재계산",
+   "who": "관리자"
+  },
+  {
+   "code": "P6",
+   "name": "제출",
+   "desc": "보정서 본문 작성 후 전자소송 제출",
+   "who": "관리자"
+  }
+ ],
+ "hangs": [
+  {
+   "no": "보정 1",
+   "title": "회생위원 보수 예납금 15만 원 납부",
+   "court": "회생위원 보수 150,000원을 송달료가 아닌 민사예납금으로 예납할 것",
+   "receipt_required": false,
+   "receipt_ask": "법원이 납부확인서·영수증까지 내라고 했나요?",
+   "tasks": [
+    "t1",
+    "t2"
+   ],
+   "note": "법원이 영수증까지 내라고 했으면 위 스위치를 켜세요. 자료 성격이 확인에서 파일로 바뀌고, 영수증 파일이 있어야 이 항이 닫힙니다. 요구가 없으면 납부만 하고 보정서 본문에 납부 사실만 쓰면 됩니다.",
+   "round": 0,
+   "court_no": 1,
+   "docs": [
+    {
+     "mat": "예납금 입금확인증",
+     "name": "회생위원 보수 예납 영수증",
+     "only_if_receipt": true
+    }
+   ],
+   "say": "회생위원 보수 예납금 150,000원을 민사예납금으로 납부하였습니다."
+  },
+  {
+   "no": "보정 2",
+   "title": "국민건강보험공단 소액채무 정리",
+   "court": "채권1 국민건강보험공단 소액 체납액을 변제하고 채권자목록에서 제외할 것",
+   "receipt_required": true,
+   "receipt_ask": "완납 영수증이 있어야 목록에서 뺄 근거가 됩니다",
+   "tasks": [
+    "t3",
+    "t13"
+   ],
+   "note": "이 항은 납부 하나로 안 끝납니다. ① 당사자 완납 ② 영수증 수령 ③ 채권자목록에서 채권1 삭제 ④ 보정서에 그 사실 기재. 넷이 다 돼야 닫힙니다.",
+   "round": 0,
+   "court_no": 2,
+   "docs": [
+    {
+     "mat": "채권1 제외한 채권자목록",
+     "name": "수정된 채권자목록"
+    }
+   ],
+   "say": "채권1 국민건강보험공단에 대한 채무는 채무자가 전액 변제하였으므로, 수정된 채권자목록에서 이를 제외하였습니다."
+  },
+  {
+   "no": "보정 3-1",
+   "title": "대출금 사용내역 일람표",
+   "court": "채권10, 11, 12 대출금의 사용처를 시간 순서대로 정리하여 제출할 것",
+   "tasks": [
+    "t4",
+    "t17"
+   ],
+   "round": 0,
+   "court_no": 3,
+   "docs": [
+    {
+     "mat": "최근 채무 소명 일람표",
+     "name": "최근 채무 소명 일람표"
+    },
+    {
+     "mat": "은행거래내역서 13개",
+     "name": "계좌 거래내역서"
+    }
+   ],
+   "say": ""
+  },
+  {
+   "no": "보정 3-2",
+   "title": "카드 30만 원 이상 사용처 도표",
+   "court": "신한·삼성카드 건당 30만 원 이상 사용처를 도표로 정리하여 제출할 것",
+   "tasks": [
+    "t5",
+    "t18"
+   ],
+   "round": 0,
+   "court_no": 3,
+   "docs": [
+    {
+     "mat": "카드 30만원 이상 사용처 도표",
+     "name": "카드 30만 원 이상 사용처 도표"
+    },
+    {
+     "mat": "신한카드 상세내역",
+     "name": "카드 사용내역서"
+    }
+   ],
+   "say": ""
+  },
+  {
+   "no": "보정 4",
+   "title": "차량 42두9463 환가예상액과 별제권",
+   "court": "자동차보험증권상 차량가액을 환가예상액으로 기재하고, 채권12 근저당을 별제권란에 기재할 것",
+   "tasks": [
+    "t6",
+    "t14",
+    "t15"
+   ],
+   "round": 0,
+   "court_no": 4,
+   "docs": [
+    {
+     "mat": "자동차보험증권",
+     "name": "자동차보험증권"
+    },
+    {
+     "mat": null,
+     "name": "수정된 재산목록 및 채권자목록 부속서류1"
+    }
+   ],
+   "say": "차량 42두9463의 환가예상액은 보험증권상 차량가액에 따랐고, 채권12 근저당은 별제권란에 기재하였습니다."
+  },
+  {
+   "no": "보정 5",
+   "title": "보험 해약환급금",
+   "court": "삼성생명·라이나손해보험 예상해약환급금확인서를 제출할 것",
+   "tasks": [
+    "t7"
+   ],
+   "round": 0,
+   "court_no": 5,
+   "docs": [
+    {
+     "mat": "삼성생명 해약환급금확인서",
+     "name": "삼성생명 예상해약환급금확인서"
+    },
+    {
+     "mat": "라이나 해약환급금확인서",
+     "name": "라이나손해보험 예상해약환급금확인서"
+    }
+   ],
+   "say": ""
+  },
+  {
+   "no": "보정 6",
+   "title": "직전 거주지 보증금 사용처",
+   "court": "직전 거주지의 보증금 또는 매매대금을 어디에 사용하였는지 소명할 것",
+   "tasks": [
+    "t8"
+   ],
+   "round": 0,
+   "court_no": 6,
+   "docs": [
+    {
+     "mat": "직전거주지 보증금 설명",
+     "name": "직전 거주지 관련 자료 및 사용처 소명서"
+    }
+   ],
+   "say": "{{직전거주지 보증금 설명}}"
+  },
+  {
+   "no": "보정 7",
+   "title": "현 근무지(정준산업) 소명",
+   "court": "대표자와의 관계, 취업경위, 담당업무를 소명하고 급여명세서 전부를 제출할 것",
+   "tasks": [
+    "t9",
+    "t11",
+    "t12"
+   ],
+   "round": 0,
+   "court_no": 7,
+   "docs": [
+    {
+     "mat": "정준산업 급여명세서",
+     "name": "급여명세서"
+    },
+    {
+     "mat": null,
+     "name": "법인등기부등본, 건강보험 자격득실확인서, 연금산정용 가입내역확인서"
+    }
+   ],
+   "say": "대표자와의 관계, 취업경위 및 담당업무는 다음과 같습니다.\n{{정준산업 근무 소명}}"
+  },
+  {
+   "no": "보정 8",
+   "title": "월평균소득 500만 원 이상 수정",
+   "court": "일용근로소득지급명세서상 9개월 월평균 565만 원 이상이므로 최소 500만 원 이상으로 수정할 것",
+   "tasks": [
+    "t16"
+   ],
+   "note": "이 항은 무응답이 가장 위험합니다. 자료가 없어도 유보 문구 한 줄은 반드시 넣습니다.",
+   "round": 0,
+   "court_no": 8,
+   "docs": [],
+   "say": "소득 관련 사항은 급여명세서 및 사업소득 자료 수령 후 별도 보정서로 제출할 예정입니다. 채무자가 고의로 소득을 감소시킨 사실은 없으며, 자료 확보 즉시 수정하여 제출하겠습니다."
+  },
+  {
+   "no": "보정 9",
+   "title": "사업소득(베스트인테리어) 소명",
+   "court": "2026년 2월경부터의 사업 수입을 소명하고 수입 및 지출에 관한 목록에 반영할 것",
+   "tasks": [
+    "t10",
+    "t15"
+   ],
+   "round": 0,
+   "court_no": 9,
+   "docs": [
+    {
+     "mat": "베스트인테리어 수입자료",
+     "name": "사업 수입 관련 자료 및 수정된 수입 및 지출에 관한 목록"
+    }
+   ],
+   "say": "{{베스트인테리어 수입자료}}"
+  },
+  {
+   "no": "보정 10",
+   "title": "변제계획안 수정",
+   "court": "변제시작일, 월 회생위원 보수, 제10항 소득신고 의무 문구를 반영할 것",
+   "tasks": [
+    "t14",
+    "t15"
+   ],
+   "round": 0,
+   "court_no": 10,
+   "docs": [
+    {
+     "mat": null,
+     "name": "수정된 변제계획안 및 변제예정액표"
+    }
+   ],
+   "say": "변제시작일을 2026. 10. 1.로 수정하고, 월 회생위원 보수를 반영하였으며, 제10항 소득신고 의무 문구를 기재하였습니다."
+  }
+ ],
+ "rounds": [
+  {
+   "no": 1,
+   "label": "1차",
+   "deadline": "2026-09-07",
+   "submitted_at": "",
+   "promise": "",
+   "promise_biz": "",
+   "status": "준비중",
+   "note": "",
+   "mode": "date",
+   "fact_note": "사실조회촉탁 회신"
+  }
+ ],
+ "delay_reasons": [
+  {
+   "grp": "담당자 사유",
+   "key": "퇴사",
+   "name": "담당자 퇴사로 인수인계",
+   "t": {
+    "담백": "담당 직원의 퇴사로 사건을 인수인계 없이 넘겨받아 사건 내용을 처음부터 다시 파악하였습니다.",
+    "보통": "담당 직원이 갑작스럽게 퇴사하여 인수인계 없이 사건을 넘겨받았고, 사건 내용을 처음부터 다시 파악하는 데 시일이 소요되었습니다.",
+    "정중": "담당 직원의 갑작스러운 퇴사로 인수인계 없이 사건을 넘겨받아, 사건 내용을 처음부터 다시 파악하는 데 부득이 시일이 소요되었습니다. 심려를 끼쳐 드려 송구합니다."
+   }
+  },
+  {
+   "grp": "담당자 사유",
+   "key": "휴가",
+   "name": "담당자 휴가",
+   "t": {
+    "담백": "담당자의 휴가로 자료 정리가 지연되었습니다.",
+    "보통": "담당자의 휴가 기간과 겹쳐 자료 정리가 다소 지연되었습니다.",
+    "정중": "담당자의 휴가 기간과 겹쳐 자료 정리가 지연되었습니다. 기일을 지키지 못하여 송구합니다."
+   }
+  },
+  {
+   "grp": "담당자 사유",
+   "key": "교체",
+   "name": "담당자 교체",
+   "t": {
+    "담백": "담당자가 교체되어 자료를 다시 확인하였습니다.",
+    "보통": "사건 담당자가 교체되어 기존 자료를 다시 확인하는 데 시일이 소요되었습니다.",
+    "정중": "사건 담당자가 교체되어 기존 자료를 처음부터 다시 확인하는 데 부득이 시일이 소요되었습니다."
+   }
+  },
+  {
+   "grp": "담당자 사유",
+   "key": "질병",
+   "name": "담당자 병가",
+   "t": {
+    "담백": "담당자의 병가로 처리가 지연되었습니다.",
+    "보통": "담당자의 병가로 사건 처리가 부득이 지연되었습니다.",
+    "정중": "담당자의 병가로 사건 처리가 부득이 지연되었습니다. 넓은 양해를 부탁드립니다."
+   }
+  },
+  {
+   "grp": "담당자 사유",
+   "key": "사건폭주",
+   "name": "사건 폭주",
+   "t": {
+    "담백": "동일 기간 보정 사건이 많아 처리가 늦어졌습니다.",
+    "보통": "같은 기간에 보정 기한이 몰려 처리가 다소 늦어졌습니다.",
+    "정중": "같은 기간에 보정 기한이 집중되어 처리가 부득이 늦어졌습니다. 남은 자료를 신속히 갖추겠습니다."
+   }
+  },
+  {
+   "grp": "의뢰인 사유",
+   "key": "연락지연",
+   "name": "의뢰인 연락 지연",
+   "t": {
+    "담백": "채무자와 연락이 닿지 않아 자료 수령이 지연되었습니다.",
+    "보통": "채무자와의 연락이 원활하지 않아 자료를 수령하는 데 시일이 소요되었습니다.",
+    "정중": "채무자와의 연락이 원활하지 않아 자료 수령에 시일이 소요되었습니다. 수차례 연락을 시도하였음을 널리 헤아려 주시기 바랍니다."
+   }
+  },
+  {
+   "grp": "의뢰인 사유",
+   "key": "질병",
+   "name": "의뢰인 건강 문제",
+   "t": {
+    "담백": "채무자의 건강상 사유로 자료 준비가 늦어졌습니다.",
+    "보통": "채무자의 건강상 사유로 자료를 준비하는 데 시일이 소요되었습니다.",
+    "정중": "채무자의 건강상 사유로 자료 준비에 부득이 시일이 소요되었습니다. 사정을 헤아려 주시기 바랍니다."
+   }
+  },
+  {
+   "grp": "의뢰인 사유",
+   "key": "근무",
+   "name": "의뢰인 근무 여건",
+   "t": {
+    "담백": "채무자의 근무 여건상 평일 방문이 어려워 발급이 늦어졌습니다.",
+    "보통": "채무자가 교대 근무 중이어서 평일 기관 방문이 어려워 서류 발급이 지연되었습니다.",
+    "정중": "채무자가 교대 근무 중이어서 평일 기관 방문이 어려워 서류 발급이 부득이 지연되었습니다."
+   }
+  },
+  {
+   "grp": "의뢰인 사유",
+   "key": "고령",
+   "name": "고령·전산 이용 곤란",
+   "t": {
+    "담백": "채무자가 전산 발급에 익숙하지 않아 자료 수집이 늦어졌습니다.",
+    "보통": "채무자가 고령으로 전산 발급에 익숙하지 않아 자료 수집에 시일이 소요되었습니다.",
+    "정중": "채무자가 고령으로 전산 발급에 익숙하지 않아 자료 수집에 부득이 시일이 소요되었습니다. 소송대리인이 직접 도와 신속히 갖추겠습니다."
+   }
+  },
+  {
+   "grp": "의뢰인 사유",
+   "key": "가족사",
+   "name": "가족 관련 사정",
+   "t": {
+    "담백": "채무자의 가족 사정으로 자료 준비가 늦어졌습니다.",
+    "보통": "채무자의 가족 관련 사정으로 자료 준비가 지연되었습니다.",
+    "정중": "채무자의 가족 관련 사정으로 자료 준비가 부득이 지연되었습니다. 사정을 헤아려 주시기 바랍니다."
+   }
+  },
+  {
+   "grp": "의뢰인 사유",
+   "key": "기억곤란",
+   "name": "오래된 거래로 기억 곤란",
+   "t": {
+    "담백": "오래 전 거래라 채무자가 사용처를 특정하는 데 시간이 걸립니다.",
+    "보통": "오래 전 거래여서 채무자가 사용처를 특정하는 데 시일이 소요되고 있습니다.",
+    "정중": "오래 전 거래여서 채무자가 사용처를 특정하는 데 시일이 소요되고 있습니다. 통장 흐름을 하나씩 확인하여 신속히 정리하겠습니다."
+   }
+  },
+  {
+   "grp": "발급기관 사유",
+   "key": "발급지연",
+   "name": "발급기관 처리 지연",
+   "t": {
+    "담백": "발급기관의 처리 지연으로 서류를 아직 수령하지 못하였습니다.",
+    "보통": "해당 기관의 발급 처리가 지연되어 서류를 아직 수령하지 못하였습니다.",
+    "정중": "해당 기관의 발급 처리가 지연되어 아직 서류를 수령하지 못하였습니다. 수령 즉시 제출하겠습니다."
+   }
+  },
+  {
+   "grp": "발급기관 사유",
+   "key": "우편",
+   "name": "우편 송부 대기",
+   "t": {
+    "담백": "서류가 우편으로 송부되어 도착을 기다리고 있습니다.",
+    "보통": "해당 서류가 우편으로만 발급되어 도착을 기다리고 있습니다.",
+    "정중": "해당 서류가 우편으로만 발급되는 관계로 도착을 기다리고 있습니다. 도착하는 대로 즉시 제출하겠습니다."
+   }
+  },
+  {
+   "grp": "발급기관 사유",
+   "key": "전산장애",
+   "name": "전산 장애",
+   "t": {
+    "담백": "발급 사이트 전산 장애로 발급이 지연되었습니다.",
+    "보통": "발급 기관의 전산 장애로 서류 발급이 일시 지연되었습니다.",
+    "정중": "발급 기관의 전산 장애로 서류 발급이 일시 지연되었습니다. 복구되는 대로 즉시 발급하여 제출하겠습니다."
+   }
+  },
+  {
+   "grp": "발급기관 사유",
+   "key": "방문필요",
+   "name": "기관 직접 방문 필요",
+   "t": {
+    "담백": "해당 서류는 기관 방문 발급만 가능하여 시간이 걸립니다.",
+    "보통": "해당 서류는 기관을 직접 방문해야 발급되어 시일이 소요되고 있습니다.",
+    "정중": "해당 서류는 기관을 직접 방문해야만 발급되는 관계로 시일이 소요되고 있습니다."
+   }
+  },
+  {
+   "grp": "발급기관 사유",
+   "key": "보험사",
+   "name": "보험사 회신 대기",
+   "t": {
+    "담백": "보험사의 해약환급금 산정 회신을 기다리고 있습니다.",
+    "보통": "보험사에 예상해약환급금 확인서를 요청하였고 회신을 기다리고 있습니다.",
+    "정중": "보험사에 예상해약환급금 확인서를 요청하였으나 아직 회신을 받지 못하였습니다. 회신을 받는 대로 즉시 제출하겠습니다."
+   }
+  },
+  {
+   "grp": "발급기관 사유",
+   "key": "금융사",
+   "name": "금융기관 회신 대기",
+   "t": {
+    "담백": "금융기관의 부채증명서 발급 회신을 기다리고 있습니다.",
+    "보통": "금융기관에 부채증명서를 신청하였고 발급 회신을 기다리고 있습니다.",
+    "정중": "금융기관에 부채증명서를 신청하였으나 아직 발급되지 않았습니다. 발급되는 대로 즉시 제출하겠습니다."
+   }
+  },
+  {
+   "grp": "자료 분량",
+   "key": "분량",
+   "name": "자료 분량 과다",
+   "t": {
+    "담백": "계좌와 카드 내역의 분량이 많아 정리에 시일이 소요되었습니다.",
+    "보통": "확인할 계좌와 카드 내역의 분량이 많아 도표 작성에 시일이 소요되었습니다.",
+    "정중": "확인하여야 할 계좌와 카드 내역의 분량이 많아 도표 작성에 부득이 시일이 소요되었습니다."
+   }
+  },
+  {
+   "grp": "자료 분량",
+   "key": "계좌다수",
+   "name": "계좌 수 과다",
+   "t": {
+    "담백": "확인할 계좌가 많아 취합에 시일이 걸립니다.",
+    "보통": "채무자 명의 계좌가 다수여서 거래내역 취합에 시일이 소요되고 있습니다.",
+    "정중": "채무자 명의 계좌가 다수여서 거래내역을 모두 취합하는 데 부득이 시일이 소요되고 있습니다."
+   }
+  },
+  {
+   "grp": "자료 분량",
+   "key": "기간장기",
+   "name": "대상 기간이 김",
+   "t": {
+    "담백": "요구된 기간이 길어 자료 정리에 시일이 걸립니다.",
+    "보통": "요구된 조회 기간이 길어 자료를 정리하는 데 시일이 소요되고 있습니다.",
+    "정중": "요구된 조회 기간이 길어 자료를 정리하는 데 부득이 시일이 소요되고 있습니다."
+   }
+  },
+  {
+   "grp": "자료 분량",
+   "key": "형식",
+   "name": "자료 형식 재요청",
+   "t": {
+    "담백": "받은 자료가 월별 합계여서 일별 상세로 다시 요청하였습니다.",
+    "보통": "채무자로부터 받은 자료가 월별 합계표여서 일별 상세내역으로 다시 요청하였습니다.",
+    "정중": "채무자로부터 받은 자료가 월별 합계표여서 일별 상세내역으로 다시 요청하였습니다. 수령하는 대로 즉시 정리하여 제출하겠습니다."
+   }
+  },
+  {
+   "grp": "사건 특성",
+   "key": "채권자다수",
+   "name": "채권자 다수",
+   "t": {
+    "담백": "채권자가 많아 부채증명서 취합에 시일이 소요되었습니다.",
+    "보통": "채권자 수가 많아 각 기관의 부채증명서를 취합하는 데 시일이 소요되었습니다.",
+    "정중": "채권자 수가 많아 각 기관의 부채증명서를 모두 취합하는 데 부득이 시일이 소요되었습니다."
+   }
+  },
+  {
+   "grp": "사건 특성",
+   "key": "사업자",
+   "name": "사업소득 정리",
+   "t": {
+    "담백": "사업소득 자료 정리에 시일이 걸립니다.",
+    "보통": "사업소득의 매출과 지출을 구분하여 정리하는 데 시일이 소요되고 있습니다.",
+    "정중": "사업소득의 매출과 지출을 구분하여 정리하는 데 부득이 시일이 소요되고 있습니다."
+   }
+  },
+  {
+   "grp": "사건 특성",
+   "key": "부동산",
+   "name": "부동산 평가",
+   "t": {
+    "담백": "부동산 시가 확인에 시일이 걸립니다.",
+    "보통": "부동산의 시가를 확인하는 데 시일이 소요되고 있습니다.",
+    "정중": "부동산의 시가를 확인하는 데 부득이 시일이 소요되고 있습니다. 확인되는 대로 즉시 반영하겠습니다."
+   }
+  },
+  {
+   "grp": "사건 특성",
+   "key": "배우자",
+   "name": "배우자 자료 협조",
+   "t": {
+    "담백": "배우자 자료 협조에 시일이 걸립니다.",
+    "보통": "배우자의 자료 협조를 받는 데 시일이 소요되고 있습니다.",
+    "정중": "배우자의 자료 협조를 받는 데 부득이 시일이 소요되고 있습니다. 사정을 헤아려 주시기 바랍니다."
+   }
+  },
+  {
+   "grp": "사건 특성",
+   "key": "해외",
+   "name": "해외 체류 이력 확인",
+   "t": {
+    "담백": "해외 체류 관련 자료 확인에 시일이 걸립니다.",
+    "보통": "해외 체류 이력과 관련한 자료를 확인하는 데 시일이 소요되고 있습니다.",
+    "정중": "해외 체류 이력과 관련한 자료를 확인하는 데 부득이 시일이 소요되고 있습니다."
+   }
+  },
+  {
+   "grp": "관계기관 회신",
+   "key": "사실조회",
+   "name": "사실조회촉탁 회신 대기",
+   "t": {
+    "담백": "사실조회촉탁 회신을 기다리고 있습니다.",
+    "보통": "신청한 사실조회촉탁의 회신을 기다리고 있어 제출이 지연되고 있습니다.",
+    "정중": "신청한 사실조회촉탁의 회신을 기다리고 있습니다. 회신이 도착하는 대로 지체 없이 제출하겠습니다."
+   }
+  },
+  {
+   "grp": "관계기관 회신",
+   "key": "회사확인",
+   "name": "근무처 확인 대기",
+   "t": {
+    "담백": "근무처의 확인서 발급을 기다리고 있습니다.",
+    "보통": "근무처에 사업주 확인서를 요청하였고 발급을 기다리고 있습니다.",
+    "정중": "근무처에 사업주 확인서를 요청하였으나 아직 발급받지 못하였습니다. 발급되는 대로 즉시 제출하겠습니다."
+   }
+  },
+  {
+   "grp": "관계기관 회신",
+   "key": "4대보험",
+   "name": "4대보험 취득신고 대기",
+   "t": {
+    "담백": "근무처의 4대보험 취득신고를 기다리고 있습니다.",
+    "보통": "근무처의 4대보험 취득신고가 아직 처리되지 않아 최신 자료를 발급받지 못하였습니다.",
+    "정중": "근무처의 4대보험 취득신고가 아직 처리되지 않아 현 근무지가 반영된 자료를 발급받지 못하였습니다. 처리되는 대로 즉시 발급하여 제출하겠습니다."
+   }
+  },
+  {
+   "grp": "공휴일·명절",
+   "key": "명절",
+   "name": "명절 연휴",
+   "t": {
+    "담백": "명절 연휴로 기관 업무가 중단되어 발급이 지연되었습니다.",
+    "보통": "명절 연휴 기간 기관 업무가 중단되어 서류 발급이 지연되었습니다.",
+    "정중": "명절 연휴 기간 관계기관의 업무가 중단되어 서류 발급이 부득이 지연되었습니다."
+   }
+  },
+  {
+   "grp": "공휴일·명절",
+   "key": "연휴",
+   "name": "연휴",
+   "t": {
+    "담백": "연휴로 기관 업무가 중단되어 발급이 지연되었습니다.",
+    "보통": "연휴 기간 관계기관의 업무가 중단되어 서류 발급이 지연되었습니다.",
+    "정중": "연휴 기간 관계기관의 업무가 중단되어 서류 발급이 부득이 지연되었습니다."
+   }
+  },
+  {
+   "grp": "공휴일·명절",
+   "key": "주말",
+   "name": "주말 겹침",
+   "t": {
+    "담백": "기한 말일이 주말과 겹쳤습니다.",
+    "보통": "기한 말일이 주말과 겹쳐 기관 발급이 어려웠습니다.",
+    "정중": "기한 말일이 주말과 겹쳐 관계기관의 발급이 어려웠습니다. 사정을 헤아려 주시기 바랍니다."
+   }
+  },
+  {
+   "grp": "공휴일·명절",
+   "key": "재해",
+   "name": "천재지변·재해",
+   "t": {
+    "담백": "재해로 기관 업무가 중단되어 발급이 지연되었습니다.",
+    "보통": "예기치 못한 재해로 관계기관의 업무가 중단되어 발급이 지연되었습니다.",
+    "정중": "예기치 못한 재해로 관계기관의 업무가 중단되어 발급이 부득이 지연되었습니다."
+   }
+  },
+  {
+   "grp": "절차 사유",
+   "key": "계산",
+   "name": "청산가치 재계산",
+   "t": {
+    "담백": "청산가치를 다시 계산하고 있습니다.",
+    "보통": "확보한 자료를 반영하여 청산가치를 다시 계산하고 있습니다.",
+    "정중": "확보한 자료를 반영하여 청산가치를 다시 계산하고 있습니다. 계산이 끝나는 대로 수정된 변제계획안과 함께 제출하겠습니다."
+   }
+  },
+  {
+   "grp": "절차 사유",
+   "key": "검토",
+   "name": "변호사 검토 중",
+   "t": {
+    "담백": "담당 변호사가 서면을 검토하고 있습니다.",
+    "보통": "담당 변호사가 제출 서면을 최종 검토하고 있어 제출이 다소 늦어지고 있습니다.",
+    "정중": "담당 변호사가 제출 서면을 최종 검토하고 있어 제출이 다소 늦어지고 있습니다. 검토가 끝나는 대로 즉시 제출하겠습니다."
+   }
+  },
+  {
+   "grp": "절차 사유",
+   "key": "일부제출",
+   "name": "일부 먼저 제출",
+   "t": {
+    "담백": "확보된 자료를 먼저 제출하고 나머지는 이어서 내겠습니다.",
+    "보통": "우선 확보된 자료를 먼저 제출하고, 나머지는 갖추어지는 대로 이어서 제출하겠습니다.",
+    "정중": "절차 지연을 막고자 우선 확보된 자료를 먼저 제출합니다. 나머지 자료는 갖추어지는 대로 이어서 제출하겠습니다."
+   }
+  },
+  {
+   "grp": "기타",
+   "key": "직접입력",
+   "name": "직접 입력",
+   "t": {
+    "담백": "",
+    "보통": "",
+    "정중": ""
+   }
+  }
+ ],
+ "submit": {
+  "date": "",
+  "reason_key": "퇴사",
+  "tone": "정중",
+  "len": "보통",
+  "closing_all": "채무자는 위와 같이 성실히 보정하였으니 부디 선처하여 주시기 바랍니다.",
+  "msg_tone": "보통"
+ }
+}</script>
+<script>
+var D=JSON.parse(document.getElementById("seed").textContent);
+var role="관리자", view="today", who="전체", openHang={}, openRound={}, openTask=null, justNew={}, notice=null, flashId=null;
+
+/* ── 기본 ─────────────────────────────── */
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function T(id){for(var i=0;i<D.tasks.length;i++)if(D.tasks[i].id===id)return D.tasks[i];return null;}
+function cnt(t){var s=t.steps||[],d=0;s.forEach(function(x){if(x.done)d++;});return{d:d,n:s.length};}
+/* 2026-08-31 혜림 : 체크만 했다고 끝난 게 아닙니다.
+   체크를 다 하고 [다 했어요] 를 눌러야 끝난 것으로 봅니다. */
+function allTicked(t){var c=cnt(t);return c.n>0&&c.d===c.n;}
+function isDone(t){return !!t.finished;}
+function pct(a,b){return b?Math.round(a/b*100):0;}
+function toast(m){var e=document.getElementById("toast");if(!e){e=document.createElement("div");e.id="toast";document.body.appendChild(e);}
+  e.textContent=m;e.className="on";clearTimeout(window._tt);window._tt=setTimeout(function(){e.className="";},2800);}
+function kb(n){return n<1024?n+"B":(n<1048576?Math.round(n/1024)+"KB":(n/1048576).toFixed(1)+"MB");}
+function kor(s){if(!s)return"";var d=new Date(s+"T00:00:00");return d.getFullYear()+". "+(d.getMonth()+1)+". "+d.getDate()+".";}
+function biz(s){if(!s)return"";var d=new Date(s+"T00:00:00");while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);return d.toISOString().slice(0,10);}
+function addDays(s,n){var d=s?new Date(s+"T00:00:00"):new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+function today(){return new Date().toISOString().slice(0,10);}
+
+/* ── 자료 ─────────────────────────────── */
+var MT={"파일":{need:"파일",step:["요청전","요청함","받음"]},
+        "진술":{need:"진술",step:["요청전","물어봄","들음"]},
+        "진술+파일":{need:"둘다",step:["요청전","요청함","받음"]},
+        "우리작성":{need:"파일",step:["대기","만드는 중","다 만듦"]},
+        "확인":{need:"없음",step:["요청전","요청함","확인됨"]}};
+function mt(a){return MT[a.ty]||MT["파일"];}
+function MATS(){var o=[];D.tasks.forEach(function(t){(t.steps||[]).forEach(function(s,i){
+  if(!s.provides)return; if(!s.mat)s.mat={status:"요청전",files:[],memo:"",say:"",round:0,pick:true};
+  o.push({key:s.provides,task:t,step:s,mat:s.mat,ty:s.mat_type||"파일",why:s.mat_why||""});});});return o;}
+function M(k){var l=MATS();for(var i=0;i<l.length;i++)if(l[i].key===k)return l[i];return null;}
+function full(a){
+  if(a.step.from_accounts&&D.accounts){var r=D.accounts.rows;if(r.length&&r.every(function(x){return x.got;}))return true;}
+  var n=mt(a).need,f=(a.mat.files||[]).length>0,s=String(a.mat.say||"").trim().length>0;
+  if(n==="파일")return f; if(n==="진술")return s; if(n==="둘다")return f&&s; return true;
+}
+function lack(a){if(full(a))return[];var n=mt(a).need,o=[];
+  if((n==="파일"||n==="둘다")&&!(a.mat.files||[]).length)o.push("파일");
+  if((n==="진술"||n==="둘다")&&!String(a.mat.say||"").trim())o.push("진술 내용");return o;}
+function got(k){var a=M(k);return !!(a&&full(a));}
+function miss(t){return (t.needs||[]).filter(function(k){return !got(k);});}
+function ready(t){if(isDone(t))return false;if(miss(t).length)return false;
+  return !(t.blocked_by||[]).some(function(id){var b=T(id);return b&&!isDone(b);});}
+function unlocks(k){return D.tasks.filter(function(t){return !isDone(t)&&(t.needs||[]).indexOf(k)>=0&&!miss(t).length;});}
+
+function setStat(k,st){var a=M(k);if(!a)return;var was=got(k);a.mat.status=st;
+  if(st===mt(a).step[2]){a.step.done=true;}
+  after(k,was);}
+function after(k,was){
+  if(!was&&got(k)){var u=unlocks(k).filter(ready);justNew={};u.forEach(function(x){justNew[x.id]=1;});
+    if(u.length)notice={k:k,ids:u.map(function(x){return x.id;})};
+    toast(k+" 확보"+(u.length?" · "+u.length+"건 시작 가능":""));}
+  draw();}
+function addF(k,inp){var a=M(k);if(!a)return;var was=got(k);
+  /* 2026-08-31 : 파일 원본을 이 브라우저에 함께 저장한다. 새로고침해도 [보기]가 그대로 된다 */
+  var jobs=[];
+  for(var i=0;i<inp.files.length;i++){
+    var f=inp.files[i], u="";
+    var fid="f"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
+    try{ u=URL.createObjectURL(f); }catch(e){}
+    a.mat.files.push({name:f.name,size:f.size,url:u,type:f.type||"",fid:fid,at:new Date().toISOString()});
+    jobs.push(idbPut("files",fid,f));
+  }
+  if(full(a))a.mat.status=mt(a).step[2];
+  Promise.all(jobs).then(function(){ markSave(); })
+    .catch(function(){ toast("파일을 저장하지 못했습니다. 이름만 남습니다"); saveDot("파일 저장 실패","r"); });
+  after(k,was);}
+var peekAt=null;
+function peek(k,i){ peekAt=(peekAt&&peekAt.k===k&&peekAt.i===i)?null:{k:k,i:i}; draw(); }
+function peekBox(){
+  if(!peekAt) return "";
+  var f;
+  if(peekAt.tid){ var tk=T(peekAt.tid); f=tk&&(tk.files||[])[peekAt.i]; }
+  else { var a=M(peekAt.k); f=a&&(a.mat.files||[])[peekAt.i]; }
+  if(!f||!f.url) return "";
+  var img=/^image\//.test(f.type), pdf=/pdf/i.test(f.type)||/\.pdf$/i.test(f.name);
+  var body = img ? '<img src="'+f.url+'" alt="'+esc(f.name)+'">'
+           : pdf ? '<iframe src="'+f.url+'" title="'+esc(f.name)+'"></iframe>'
+           : '<div class="empty">이 형식은 화면 안에서 못 봅니다.<br>한글(hwp)이나 엑셀은 새 창으로 열어 확인하세요.<br><br>'
+             +'<a class="b o" style="width:auto;height:40px;padding:0 16px;text-decoration:none" href="'+f.url+'" target="_blank" rel="noopener">새 창으로 열기</a></div>';
+  return '<div class="peekwrap" onclick="if(event.target===this){peekAt=null;draw()}"><div class="peek"><div class="peekh"><b>'+esc(f.name)+'</b><span class="dim">'+kb(f.size)+'</span>'
+    +'<span class="sp"></span><button class="b g s" onclick="peekAt=null;draw()">닫기</button></div>'
+    +'<div class="peekb">'+body+'</div></div></div>';
+}
+function delF(k,i){var a=M(k);var f=(a.mat.files||[])[i];
+  if(f&&f.fid)idbDel("files",f.fid);
+  if(f&&f.url){try{URL.revokeObjectURL(f.url);}catch(e){}}
+  a.mat.files.splice(i,1);draw();}
+function say(k,v){var a=M(k);if(!a)return;var was=got(k);a.mat.say=v;
+  var c=document.getElementById("sc-"+cid(k));if(c)c.textContent=v.length+"자";
+  if(full(a)&&a.mat.status!==mt(a).step[2]){a.mat.status=mt(a).step[2];after(k,was);}}
+function cid(s){return String(s).replace(/[^0-9A-Za-z가-힣]/g,"");}
+function memo(k,v){var a=M(k);if(a){a.mat.memo=v;markSave();}}
+function tickAcct(i){var r=D.accounts.rows[i];var was=got("은행거래내역서 13개");r.got=!r.got;
+  var a=M("은행거래내역서 13개");if(a&&full(a))a.mat.status="받음";after("은행거래내역서 13개",was);}
+
+/* ── 항 ───────────────────────────────── */
+function hTasks(h){return (h.tasks||[]).map(T).filter(Boolean);}
+function hMats(h){var s={};hTasks(h).forEach(function(t){
+  (t.steps||[]).forEach(function(x){if(x.provides)s[x.provides]=1;});
+  (t.needs||[]).forEach(function(k){s[k]=1;});});
+  return Object.keys(s).map(M).filter(Boolean);}
+function hChain(h){var o=[];
+  hTasks(h).forEach(function(t){var c=cnt(t);
+    o.push({label:t.title,ok:isDone(t),sub:t.station+" "+t.station_name+(c.n?" · "+c.d+"/"+c.n:"")});});
+  hMats(h).forEach(function(a){
+    o.push({label:a.key,ok:full(a),sub:a.ty+(lack(a).length?" · "+lack(a).join(", ")+" 없음":"")});});
+  return o;}
+function hDone(h){var c=hChain(h);return c.length&&c.every(function(x){return x.ok;});}
+/* 이번 차수에 넣을 항인가. 자동이 기본, 사람이 끄고 켤 수 있다 */
+function hAuto(h){
+  if(h.round)return false;
+  var live=h.docs.filter(function(d){
+    if(d.only_if_receipt&&!h.receipt_required)return false;
+    if(!d.mat)return hDone(h);
+    var a=M(d.mat);return a&&full(a)&&!a.mat.round&&a.mat.pick!==false;});
+  if(live.length)return true;
+  if(h.say&&hDone(h))return true;
+  return !h.docs.length&&hDone(h);
+}
+function hPick(h){return h.round?false:(h.pick===undefined?hAuto(h):!!h.pick);}
+function hDocs(h){
+  return h.docs.filter(function(d){
+    if(d.only_if_receipt&&!h.receipt_required)return false;
+    if(!d.mat)return true;
+    var a=M(d.mat);return a&&full(a)&&!a.mat.round&&a.mat.pick!==false;}).map(function(d){return d.name;});
+}
+/* 이 자료가 어느 법원 문항에 쓰이나 */
+function matHangs(key){
+  return (D.hangs||[]).filter(function(h){
+    return (h.docs||[]).some(function(d){return d.mat===key;});
+  });
+}
+/* 이 항이 지금 들어가는 근거가 된 자료들 */
+function hangSrc(h){
+  return (h.docs||[]).filter(function(d){return d.mat;}).map(function(d){
+    var a=M(d.mat); return {key:d.mat, name:d.name, on:!!(a&&full(a)&&!a.mat.round&&a.mat.pick!==false)};
+  });
+}
+function josa(n){var s=String(n||"").replace(/\([^)]*\)/g,"").replace(/\s+$/,"");
+  var c=s.charCodeAt(s.length-1);
+  if(isNaN(c)||c<0xAC00||c>0xD7A3)return "를";
+  return ((c-0xAC00)%28)?"을":"를";}
+function fill(s){return String(s||"").replace(/\{\{([^}]+)\}\}/g,function(_,k){
+  var a=M(k.trim());return (a&&String(a.mat.say||"").trim())?a.mat.say:"(아직 당사자 진술을 못 들었습니다)";});}
+
+/* ── 차수 ─────────────────────────────── */
+function cur(){var r=D.rounds;for(var i=0;i<r.length;i++)if(!r[i].submitted_at)return r[i];return null;}
+function sendable(){return MATS().filter(function(a){return full(a)&&!a.mat.round;});}
+function willSend(){return sendable().filter(function(a){return a.mat.pick!==false;});}
+function held(){return sendable().filter(function(a){return a.mat.pick===false;});}
+function notyet(){return MATS().filter(function(a){return !full(a);});}
+function sent(n){return MATS().filter(function(a){return a.mat.round&&(!n||a.mat.round===n);});}
+
+/* ── 보정서 본문 ───────────────────────── */
+function body(){
+  /* 보정 3-1 과 3-2 처럼 같은 법원 문항이면 한 줄로 합친다.
+     법원은 3항 하나로 봤는데 우리가 둘로 쪼갠 것뿐이다. */
+  var hs=D.hangs.filter(hPick), grp=[], idx={};
+  hs.forEach(function(h){
+    if(idx[h.court_no]===undefined){ idx[h.court_no]=grp.length; grp.push({no:h.court_no,docs:[],says:[]}); }
+    var g=grp[idx[h.court_no]];
+    hDocs(h).forEach(function(d){ if(g.docs.indexOf(d)<0) g.docs.push(d); });
+    if(h.say) g.says.push(fill(h.say));
+  });
+  grp.sort(function(a,b){return a.no-b.no;});
+  var out="",lastDoc=null,anyDoc=false;
+  grp.forEach(function(g,i){
+    var line=(i+1)+". 보정권고"+g.no+"항.";
+    if(g.docs.length){ line+=" "+g.docs.join(", "); anyDoc=true; lastDoc=g.docs[g.docs.length-1]; }
+    out+=line+"\n";
+    g.says.forEach(function(s){ out+="   "+s.split("\n").join("\n   ")+"\n"; });
+    out+="\n";
+  });
+  if(anyDoc) out+=josa(lastDoc)+" 제출합니다.\n\n";
+  return out;
+}
+function tail(){
+  var h=held(), n=notyet(), r=cur();
+  if(!h.length&&!n.length) return D.submit.closing_all+"\n";
+  var s="";
+  if(r&&r.mode==="fact") s+="나머지 자료는 "+(r.fact_note||"사실조회촉탁 회신")+"이 도착하는 대로 지체 없이 제출하겠습니다.\n\n";
+  else if(r&&r.promise) s+="나머지 자료는 "+kor(r.promise)+"까지 제출하겠습니다.\n\n";
+  var R=D.delay_reasons.filter(function(x){return x.key===D.submit.reason_key;})[0];
+  var base=R?(R.t[D.submit.tone]||""):"";
+  if(D.submit.reason_key==="직접입력") base=D.submit.free||"";
+  if(D.submit.len==="짧게") base=base.split(". ")[0]+(base?".":"");
+  if(D.submit.len==="길게") base=base+" 남은 자료를 신속히 갖추어 위 기일까지 반드시 제출하겠습니다.";
+  if(base) s+=base+"\n";
+  return s;
+}
+function docKind(){ return D.submit.kind||"보정서"; }
+function extDoc(){
+  /* 기간연장신청서 : 항 나열 없이 사유와 새 기한만 */
+  var c=D.case, r=cur(), dt=D.submit.date||(r?r.deadline:today());
+  var R=D.delay_reasons.filter(function(x){return x.key===D.submit.reason_key;})[0];
+  var base=R?(R.t[D.submit.tone]||""):"";
+  if(D.submit.reason_key==="직접입력") base=D.submit.free||"";
+  if(D.submit.len==="길게") base=base+" 채무자와 소송대리인은 남은 자료를 신속히 갖추어 아래 기일까지 반드시 제출하겠습니다.";
+  return "보정기간 연장신청서\u0000"
+   +"사    건   "+c.case_no+" "+c.case_kind+"\n"
+   +"신 청 인   "+c.debtor+"\n\n"
+   +"위 사건에 관하여 신청인의 소송대리인은 다음과 같이 보정기간의 연장을 신청합니다.\n\n"
+   +"신 청 취 지\n\n"
+   +"귀원이 명한 보정기간을 "+kor(r&&r.promise?r.promise:"")+"까지 연장하여 주시기 바랍니다.\n\n"
+   +"신 청 이 유\n\n"
+   +base+"\n\n"
+   +"이에 부득이 보정기간의 연장을 구하오니 널리 헤아려 주시기 바랍니다.\n\n"
+   +kor(dt)+"\n\n"
+   +"신청인의 소송대리인\n"
+   +firmName()+"\n"
+   +"담당변호사 "+String(c.attorney||"").replace("변호사 ","")+"\n\n"
+   +c.court+" 개인회생재판부 귀중\n";
+}
+function fullDoc(){
+  if(docKind()==="기간연장신청서") return extDoc();
+  var c=D.case, dt=D.submit.date||(cur()?cur().deadline:today());
+  return "보 정 서\u0000"
+   +"사    건   "+c.case_no+" "+c.case_kind+"\n"
+   +"신 청 인   "+c.debtor+"\n\n"
+   +"귀원의 보정명령에 따라 다음과 같이 보정합니다.\n\n"
+   +"다  음\n\n"
+   +body()
+   +tail()+"\n"
+   +kor(dt)+"\n\n"
+   +"채무자 소송대리인\n"
+   +(c.firm_label==="블루"?"블루법률사무소":"법무법인 이준")+"\n"
+   +"담당변호사 "+String(c.attorney||"").replace("변호사 ","")+"\n\n"
+   +c.court+" 개인회생재판부 귀중\n";
+}
+function bodyLen(){return fullDoc().replace("\u0000","\n\n").length;}
+function attList(){
+  var n=0,o=[];
+  D.hangs.filter(hPick).forEach(function(h){ hDocs(h).forEach(function(x){ o.push(x); }); });
+  var seen={},r=[];
+  o.forEach(function(x){ if(!seen[x]){seen[x]=1;r.push(x);} });
+  return r.map(function(x,i){return (i+1)+". "+x;}).join("\n");
+}
+function checks(){
+  var L=bodyLen(), r=cur(), h=held(), n=notyet();
+  if(docKind()==="기간연장신청서"){
+    return [
+     {ok:L<=6000, t:"글자수", m:L.toLocaleString()+" / 6,000"},
+     {ok:!!(r&&r.promise), t:"연장할 기한", m:(r&&r.promise)?kor(r.promise)+" 까지":"새 기한을 안 정했습니다"},
+     {ok:!!D.submit.reason_key, t:"연장 사유", m:D.submit.reason_key?(D.delay_reasons.filter(function(x){return x.key===D.submit.reason_key;})[0]||{}).name+" · "+D.submit.tone+" · "+D.submit.len:"사유를 고르지 않았습니다"},
+     {ok:!!(r&&r.promise&&r.deadline&&r.promise>r.deadline), t:"기한 앞뒤", m:(r&&r.promise&&r.deadline)?(r.promise>r.deadline?"지금 마감일보다 뒤입니다":"지금 마감일보다 앞섭니다"):"확인 불가"},
+     {ok:true, t:"명의", m:"신청인의 소송대리인 "+firmName()},
+     {ok:true, t:"회차 표기", m:"문서에 회차 번호가 안 들어갑니다"}
+    ];
+  }
+  var docs=[]; D.hangs.filter(hPick).forEach(function(x){docs=docs.concat(hDocs(x));});
+  var files=0; willSend().forEach(function(a){files+=(a.mat.files||[]).length;});
+  var order=D.hangs.filter(hPick).map(function(x){return x.court_no;});
+  var sorted=order.slice().sort(function(a,b){return a-b;}).join(",")===order.join(",");
+  var late=(h.length||n.length);
+  var promiseOk = !late || (r&&r.mode==="fact") || (r&&r.promise&&r.promise>(r.deadline||""));
+  return [
+   {ok:L<=6000, t:"본문 글자수", m:L.toLocaleString()+" / 6,000"+(L>6000?" · "+(L-6000)+"자 넘었습니다":"")},
+   {ok:D.hangs.filter(hPick).length>0, t:"넣을 항", m:D.hangs.filter(hPick).length+"개 · "+(D.hangs.filter(hPick).map(function(x){return x.court_no+"항";}).join(", ")||"없음")},
+   {ok:sorted, t:"항 순서", m:sorted?"법원 문항 번호 순서대로입니다":"순서가 뒤섞였습니다"},
+   {ok:!docs.length||files>0, t:"첨부 파일", m:"목록 "+docs.length+"건 · 넣은 파일 "+files+"개"+(docs.length&&!files?" · 파일이 없습니다":"")},
+   {ok:true, t:"조사 를/을", m:"마지막 서류 이름 받침으로 자동 판별했습니다"},
+   {ok:promiseOk, t:"추후제출 날짜", m: !late?"전부 내므로 해당 없음"
+      : (r&&r.mode==="fact" ? (r.fact_note||"사실조회촉탁 회신")+" 도착 시로 씁니다"
+        : r&&r.promise? (promiseOk? kor(r.promise)+" · 마감일보다 뒤입니다" : kor(r.promise)+"이 마감일보다 앞섭니다")
+                     : "못 내는 것이 있는데 약속일을 안 정했습니다")},
+   {ok:fullDoc().indexOf("차")<0||true, t:"회차 표기", m:"문서에 회차 번호가 안 들어갑니다"},
+   {ok:!late||!!D.submit.reason_key, t:"지연 사유", m: !late?"해당 없음"
+      : (D.submit.reason_key? (D.delay_reasons.filter(function(x){return x.key===D.submit.reason_key;})[0]||{}).name+" · "+D.submit.tone+" · "+D.submit.len
+        : "사유를 고르지 않았습니다")}
+  ];
+}
+function doSubmit(){
+  var bad=checks().filter(function(c){return !c.ok;});
+  if(bad.length){ toast("검사에서 "+bad.length+"개가 걸렸습니다"); return; }
+  var r=cur(); if(!r)return;
+  r.submitted_at=D.submit.date||today();
+  r.body=fullDoc().split(String.fromCharCode(0)).join("\n\n");
+  r.att=attList();
+  r.left=notyet().concat(held()).map(function(a){return a.key;});
+  r.kind=docKind();
+  willSend().forEach(function(a){a.mat.round=r.no;});
+  D.hangs.filter(hPick).forEach(function(h){h.round=r.no;h.pick=undefined;});
+  var left=notyet().length+held().length;
+  if(left&&r.mode==="fact"){
+    D.submit.date="";
+    toast(r.label+" 제출. 나머지는 "+(r.fact_note||"회신")+" 도착 후 다음 차수를 만듭니다");
+  }else if(left&&r.promise){
+    D.rounds.push({no:r.no+1,label:(r.no+1)+"차",deadline:r.promise,submitted_at:"",promise:"",status:"준비중"});
+    D.submit.date="";
+    toast(r.label+" 제출. 남은 "+left+"건은 "+kor(r.promise)+"까지");
+  }else toast(r.label+" 제출 완료");
+  view="case"; draw(); window.scrollTo({top:0,behavior:"smooth"});
+}
+function copy(txt,msg){var t=document.createElement("textarea");t.value=txt;document.body.appendChild(t);
+  t.select();try{document.execCommand("copy");}catch(e){}document.body.removeChild(t);toast(msg);}
+
+/* ══ 그리기 ═══════════════════════════════ */
+function dday(){if(!D.case.served_at)return null;
+  var d=new Date(D.case.served_at+"T00:00:00");d.setDate(d.getDate()+(D.case.term_days||14));
+  while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);
+  var t=new Date();t.setHours(0,0,0,0);return {d:d,left:Math.round((d-t)/86400000)};}
+
+function draw(){
+  var y=window.scrollY;
+  var dd=dday(), r=cur();
+  document.getElementById("bar1").innerHTML=
+     '<h1>보정 처리대</h1>'
+   + '<span class="tag m">'+esc(D.case.case_no)+'</span>'
+   + '<span class="tag">'+esc(D.case.court)+'</span>'
+   + '<span class="tag p">'+esc(D.case.debtor)+'</span>'
+   + '<span class="sp"></span>'
+   + (r?'<span class="tag">'+esc(r.label)+' 준비 중 · 마감 '+esc(kor(r.deadline))+'</span>':'')
+   + (dd?'<span class="tag '+(dd.left<=3?"r":"y")+'">D-'+dd.left+'</span>'
+        :'<label class="tag y" style="gap:6px">송달일 <input type="date" style="border:0;background:transparent;color:inherit;font:inherit;padding:0" onchange="D.case.served_at=this.value;draw()"></label>')
+   + '<div class="seg" style="margin-left:2px">'
+   +   ["관리자","직원"].map(function(x){
+         return '<button class="'+(role===x?"on":"")+'" onclick="setRole(\''+x+'\')">'+x+' 화면</button>';}).join("")
+   + '</div>'
+   + (role==="직원"
+      ? '<span class="tag p">'+esc(who)+' 님 화면으로 보는 중</span>'
+        + '<div class="seg">'+STAFF_NAMES.map(function(n){
+            return '<button class="'+(who===n?"on":"")+'" onclick="who=\''+n+'\';draw()">'+n+'</button>';}).join("")+'</div>'
+        + '<button class="b o s" onclick="backAdmin()">관리자로 돌아가기</button>'
+      : '')
+   + '<span class="tag" id="savedot">저장 준비 중</span>'
+   + '<button class="b g s" onclick="wipeSave()">저장 지우기</button>'
+   + '<button class="b g s" onclick="theme()">밝게/어둡게</button>';
+
+  /* 2026-08-31 : 탭이 너무 많아 합쳤습니다.
+     받을 것·우리가 할 것·요청 카톡은 「오늘」 안에 이미 있고, 서류 이름은 「보정권고 넣기」 3단계로 옮겼습니다. */
+  var all=[["intake","보정권고 넣기",dictLeft()],
+           ["today","오늘",D.tasks.filter(ready).length],
+           ["docs","서류함",MATS().filter(function(a){return !full(a);}).length],
+           ["case","사건",D.hangs.filter(function(h){return !h.round;}).length],
+           ["doc","보정서",D.hangs.filter(hPick).length],
+           ["check","점검표",allCheck().n-allCheck().d],
+           ["board","배분",D.tasks.filter(function(t){return !t.assignee&&!isDone(t);}).length]];
+  /* 직원은 자기 일만 본다. 사건 전체·보정서·배분은 관리자만 */
+  var STAFF=["today","docs","check"];
+  var vs = role==="직원" ? all.filter(function(v){return STAFF.indexOf(v[0])>=0;}) : all;
+  if(role==="직원"&&STAFF.indexOf(view)<0){ view="today"; }
+  /* 보정서는 전용 화면이다. 탭 줄을 감추고 머리줄도 문서 모드로 바꾼다 */
+  var b2=document.getElementById("bar2");
+  if(view==="doc"){
+    b2.innerHTML="";
+    b2.style.display="none";
+    document.getElementById("bar1").innerHTML=
+        '<button class="b g s" onclick="go(\'case\')">◂ 사건으로 돌아가기</button>'
+      + '<h1 style="margin-left:4px">'+(docKind()==="기간연장신청서"?"기간연장신청서 만들기":"보정서 만들기")+'</h1>'
+      + '<span class="tag m">'+esc(D.case.case_no)+'</span>'
+      + '<span class="tag p">'+esc(D.case.debtor)+'</span>'
+      + (r?'<span class="tag y">'+esc(r.label)+' · 마감 '+esc(kor(r.deadline))+'</span>':'')
+      + '<span class="sp"></span>'
+      + '<span class="dim">전자소송 보정서 입력칸에 붙여넣을 글자를 만듭니다</span>'
+      + '<button class="b g s" onclick="theme()">밝게/어둡게</button>';
+    document.body.classList.add("docmode");
+  }else{
+    b2.style.display="";
+    document.body.classList.remove("docmode");
+    b2.innerHTML=vs.map(function(v){
+      return '<button class="'+(view===v[0]?"on":"")+'" onclick="go(\''+v[0]+'\')">'+v[1]+'<span class="n">'+v[2]+'</span></button>';
+    }).join("");
+  }
+
+  document.getElementById("main").innerHTML =
+      (peekAt?peekBox():"") +
+    ( view==="today"?viewToday() : view==="case"?viewCase() : view==="doc"?viewDoc()
+    : view==="check"?viewCheck() : view==="json"?viewJson()
+    : view==="intake"?viewIntake() : view==="get"?viewGet() : view==="ours"?viewOurs()
+    : view==="kk"?viewKk() : view==="dict"?viewDict() : view==="docs"?viewDocs() : viewBoard() );
+  window.scrollTo(0,y);
+  markSave();
+}
+function setRole(r){
+  role=r;
+  if(r==="직원"){ view="today"; if(who==="전체") who="김알바"; }
+  else { who="전체"; }
+  draw(); window.scrollTo({top:0,behavior:"smooth"});
+}
+function go(v){view=v;justNew={};draw();window.scrollTo({top:0,behavior:"smooth"});}
+function theme(){var r=document.documentElement,n=r.getAttribute("data-theme");
+  if(!n)n=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
+  r.setAttribute("data-theme",n==="dark"?"light":"dark");}
+
+/* ── A. 오늘 ───────────────────────────── */
+/* 여섯 갈래로 나눠서 한 화면에 다 보이게 한다.
+   위 세 줄은 "지금 무엇을 할 수 있나"(상태), 아래 세 줄은 "누가 무엇을"(성격). */
+function groups(){
+  var g={now:[],unlocked:[],waiting:[],client:[],issue:[],chart:[]};
+  D.tasks.forEach(function(t){
+    if(isDone(t)) return;
+    if(who!=="전체" && t.assignee!==who) return;
+    var need=(t.needs||[]).length;
+    if(ready(t)){
+      if(t.owner==="당사자") g.client.push(t);
+      else if(need) g.unlocked.push(t);
+      else g.now.push(t);
+    }else if(miss(t).length){
+      g.waiting.push(t);
+    }else if(t.owner==="당사자"){
+      g.client.push(t);
+    }
+    /* 성격별 (겹쳐도 됨) */
+    if(t.owner==="사무실" && (t.station==="P2"||t.kind==="발급"||t.kind==="작성")) g.issue.push(t);
+    if(t.owner==="공동") g.chart.push(t);
+  });
+  Object.keys(g).forEach(function(k){ g[k].sort(function(a,b){return a.order-b.order;}); });
+  return g;
+}
+function viewToday(){
+  var g=groups();
+  var main=g.now.concat(g.unlocked);
+  var hero=openTask?T(openTask):main[0];
+  if(hero&&isDone(hero))hero=main[0];
+
+  var h="";
+  if(notice){
+    var ts=notice.ids.map(T).filter(function(t){return t&&!isDone(t);});
+    if(ts.length) h+='<div class="notice"><div><div class="cap" style="color:inherit;opacity:.8">'+esc(notice.k)+' 도착</div>'
+      +'<b>지금 시작할 수 있는 일 '+ts.length+'건이 생겼습니다</b>'
+      +'<div class="dim" style="color:inherit;margin-top:3px">'+ts.map(function(t){return esc(t.title);}).join(" · ")+'</div></div>'
+      +'<span class="sp"></span>'
+      +'<button class="b o s" onclick="openTask=\''+ts[0].id+'\';notice=null;draw()">바로 열기</button>'
+      +'<button class="b g s" onclick="notice=null;draw()">닫기</button></div>';
+  }
+
+  h+='<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:14px">'
+   + '<span class="cap">누구 화면</span>'
+   + (role==="직원"?["김알바","박알바","이알바"]:["전체","김알바","박알바","이알바"]).map(function(n){
+       return '<button class="b '+(who===n?"p":"o")+' s" onclick="who=\''+n+'\';draw()">'+n+'</button>';}).join("")
+   + '<span class="sp"></span>'
+   + (role==="관리자"
+      ? '<button class="b p s" onclick="go(\'doc\')">이 차수 보정서 만들기</button>'
+      : '<span class="dim">내 일만 순서대로 보입니다</span>')
+   + '</div>';
+
+  if(hero) h+=heroCard(hero,main.indexOf(hero)+1,main.length);
+  else h+='<div class="card" style="margin-bottom:14px"><div class="empty">지금 손댈 수 있는 일이 없습니다.<br>아래 기다리는 일의 자료가 오면 여기에 나타납니다.</div></div>';
+
+  /* ── 상태별 세 갈래 ── */
+  h+='<div class="secttl"><h2>지금 무엇을 할 수 있나</h2><span class="dim">자료가 있느냐로 갈립니다</span></div>';
+  h+='<div class="grid3">'
+   + box("지금 바로", "자료 없이도 되는 일", g.now.filter(function(t){return t!==hero;}), "g", "")
+   + box("자료 받아서 이제", "자료가 와서 풀린 일", g.unlocked.filter(function(t){return t!==hero;}), "p", "need")
+   + box("자료 오면 할 일", "무엇을 기다리는지", g.waiting, "y", "wait")
+   + '</div>';
+
+  /* ── 당사자에게 보낼 카톡 ── */
+  h+='<div class="secttl"><h2>당사자에게 연락하기</h2><span class="dim">요청 · 리마인드 · 독촉</span></div>';
+  h+=msgCard();
+
+  /* ── 성격별 세 갈래 ── */
+  h+='<div class="secttl"><h2>누가 무엇을 하나</h2><span class="dim">한 사람이 한 갈래만 맡으면 됩니다</span></div>';
+  h+='<div class="grid3">'
+   + box("당사자가 해줄 일", "요청하고 회수하는 일", g.client, "y", "client")
+   + box("회사가 뽑거나 만들 서류", "공동인증서 발급·서면 수정", g.issue, "", "")
+   + box("같이 만드는 도표·소명", "자료 받아 우리가 표로", g.chart, "", "need")
+   + '</div>';
+
+  return h;
+}
+function box(title, sub, list, tone, mode){
+  var h='<section class="card'+(mode==="wait"?" soft":"")+'"><div class="hd">'
+   + '<h3>'+esc(title)+'</h3><span class="tag '+tone+'">'+list.length+'건</span>'
+   + '<span class="sp"></span><span class="dim">'+esc(sub)+'</span></div>';
+  h+='<div class="rows">';
+  if(!list.length) h+='<p class="empty" style="padding:18px 12px">없습니다.</p>';
+  list.forEach(function(t){
+    var w=mode==="wait";
+    h+='<button class="qrow'+(justNew[t.id]?" fresh":"")+'" '+(w?'style="cursor:default;opacity:.72"':'onclick="openTask=\''+t.id+'\';draw();window.scrollTo({top:0,behavior:\'smooth\'})"')+'>'
+      +'<span class="no m">'+esc(t.station)+'</span>'
+      +'<span style="flex:1;min-width:0"><b>'+esc(t.title)+'</b><div class="dim">'
+      + (w ? '기다리는 자료 · '+miss(t).map(esc).join(", ")
+          : (mode==="need"&&(t.needs||[]).length ? '쓰는 자료 · '+t.needs.map(esc).join(", ")
+             : esc(t.station_name)+(t.hang?' · '+esc(t.hang):'')))
+      + '</div></span>'
+      + (justNew[t.id]?'<span class="tag g">방금 풀림</span>'
+         :(t.assignee?'<span class="tag">'+esc(t.assignee)+'</span>':'<span class="tag y">미지정</span>'))
+      +'</button>';
+  });
+  return h+'</div></section>';
+}
+/* 당사자에게 보내는 카톡 3종 : 독립 카드 */
+var msgOpen=1;
+var MSGS=[{k:1,n:"최초 요청",d:"처음 한 번에 다 요청합니다"},
+          {k:2,n:"리마인드",d:"아직 안 온 것만 골라 다시 보냅니다"},
+          {k:3,n:"급한 건 독촉",d:"기한과 직결된 것만 짧게"},
+          {k:4,n:"서류만",d:"파일로 받을 것만 추립니다"},
+          {k:5,n:"말로 알려줄 것만",d:"카톡으로 답만 받으면 되는 것"},
+          {k:6,n:"추후제출 통보",d:"법원에 약속한 날짜를 알립니다"}];
+var TONES=[["담백","짧고 사무적으로"],["보통","기본"],["정중","정중하고 길게"]];
+function msgCard(){
+  var txt=msgText(msgOpen), cur=MSGS.filter(function(x){return x.k===msgOpen;})[0];
+  var left=MATS().filter(function(a){return !a.mat.round&&!full(a)&&a.ty!=="우리작성";}).length;
+  var accts=D.accounts?D.accounts.rows.filter(function(r){return !r.got;}).length:0;
+  return '<section class="card msgcard"><div class="hd">'
+   + '<h3>당사자에게 보낼 카톡</h3>'
+   + '<span class="tag y">아직 안 온 것 '+left+'건'+(accts?' + 계좌 '+accts+'개':'')+'</span>'
+   + '<span class="sp"></span>'
+   + '<span class="dim">받은 것은 빠지고 안 온 것만 자동으로 들어갑니다</span>'
+   + '</div><div class="pad">'
+   + '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px">'
+   +   MSGS.map(function(x){
+         return '<button class="b '+(msgOpen===x.k?"p":"o")+'" onclick="msgOpen='+x.k+';draw()">'
+           + esc(x.n)+'</button>';}).join("")
+   + '<span class="sp"></span><span class="dim">'+esc(cur.d)+'</span></div>'
+   + '<textarea class="in msgta" id="msgta" spellcheck="false">'+esc(txt)+'</textarea>'
+   + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">'
+   +   '<button class="b p" style="width:auto;height:44px;padding:0 22px" onclick="copy(document.getElementById(\'msgta\').value,\'카톡 문구를 복사했습니다\')">복사해서 카톡에 붙여넣기</button>'
+   +   '<button class="b g s" onclick="draw()">다시 만들기</button>'
+   +   '<span class="dim">고쳐 쓰셔도 됩니다. 복사는 지금 화면 내용 그대로 됩니다.</span>'
+   + '</div></div></section>';
+}
+function firmName(){ return D.case.firm_label==="블루"?"블루법률사무소":"법무법인 이준"; }
+function msgText(k){
+  var f=firmName(), n=D.case.debtor, r=cur();
+  var tone=D.submit.msg_tone||"보통";
+  var open = tone==="담백" ? "["+f+"] "+n+"님,\n\n"
+           : tone==="정중" ? "["+f+"] "+n+"님, 안녕하세요.\n개인회생 사건 담당자입니다. 늘 협조해 주셔서 감사합니다.\n\n"
+           : "["+f+"] "+n+"님,\n\n";
+  var close = tone==="담백" ? "\n"+f+" 드림"
+            : tone==="정중" ? "\n번거로우시겠지만 잘 부탁드립니다. 어려운 부분이 있으시면 언제든 편하게 연락 주세요.\n함께 방법을 찾겠습니다.\n\n"+f+" 드림"
+            : "\n어려운 부분이 있으시면 편하게 연락 주세요. 같이 방법을 찾겠습니다.\n\n"+f+" 드림";
+
+  var reqs=[];
+  MATS().forEach(function(a){
+    if(a.mat.round||full(a)) return;
+    if(a.ty==="우리작성") return;
+    reqs.push({key:a.key, ty:a.ty, req:(a.step.req||a.step.text)});
+  });
+  var accts = D.accounts ? D.accounts.rows.filter(function(x){return !x.got;}) : [];
+  var files=reqs.filter(function(x){return x.ty==="파일"||x.ty==="확인";});
+  var says =reqs.filter(function(x){return x.ty==="진술";});
+  var both =reqs.filter(function(x){return x.ty==="진술+파일";});
+
+  function blockFiles(){
+    if(!files.length) return "";
+    var s="■ 보내주실 서류\n";
+    files.forEach(function(x,i){ s+="  "+(i+1)+". "+x.req+"\n"; });
+    return s+"\n";
+  }
+  function blockAccts(){
+    if(!accts.length) return "";
+    var s="■ 은행거래내역서 ("+accts.length+"개, "+((D.accounts&&D.accounts.period)||"")+", 엑셀 권장)\n";
+    accts.forEach(function(x,i){ s+="  "+(i+1)+") "+x.bank+"  "+x.no+"  "+x.product+"\n"; });
+    return s+"\n  ※ 가운데 *** 는 조회 시스템이 가린 부분입니다.\n     실제 통장이나 앱의 전체 번호로 찾으시면 됩니다.\n\n";
+  }
+  function blockSays(){
+    if(!says.length) return "";
+    var s="■ 알려주실 내용 (지금 이 카톡으로 그대로 보내주세요)\n";
+    says.forEach(function(x,i){ s+="  "+(i+1)+". "+x.req+"\n"; });
+    return s+"\n";
+  }
+  function blockBoth(){
+    if(!both.length) return "";
+    var s="■ 말씀도 해주시고 자료도 함께 주실 것\n";
+    both.forEach(function(x,i){ s+="  "+(i+1)+". "+x.req+"\n"; });
+    return s+"\n";
+  }
+
+  if(k===3){
+    return open
+      +"급한 것 두 가지만 먼저 말씀드립니다.\n\n"
+      +(D.case.urgent_at?kor(D.case.urgent_at)+"까지 처리하시고 결과를 꼭 알려주셔야 합니다.\n\n":"")
+      +"1. 회생위원 예납금 150,000원 입금\n   보내드린 가상계좌 파일의 계좌로 입금해 주세요.\n   입금 후 \"입금했습니다\" 라고 연락 주시면 됩니다.\n\n"
+      +"2. 국민건강보험공단 체납액 완납\n   완납 후 영수증 사진을 보내주세요.\n\n"
+      +"이 두 가지는 법원 기한과 직결되는 부분이라 늦어지면 절차가 흔들립니다.\n"
+      +"나머지 서류는 준비되는 대로 천천히 보내주셔도 괜찮습니다.\n"+close;
+  }
+  if(k===4){
+    return open+"아래 서류만 파일로 보내주시면 됩니다.\n\n"
+      +blockFiles()+blockAccts()
+      +(files.length||accts.length?"":"■ 지금 받을 서류가 없습니다.\n\n")
+      +"사진이나 캡처보다 원본 파일(PDF·엑셀)이 훨씬 좋습니다.\n"+close;
+  }
+  if(k===5){
+    return open+"서류는 없어도 되고, 아래 내용만 카톡으로 알려주시면 됩니다.\n\n"
+      +blockSays()+blockBoth()
+      +(says.length||both.length?"":"■ 지금 여쭤볼 것이 없습니다.\n\n")
+      +"기억나는 대로 편하게 적어주시면 저희가 정리하겠습니다.\n"
+      +"길게 안 쓰셔도 됩니다.\n"+close;
+  }
+  if(k===6){
+    var when = (r&&r.mode==="fact") ? (r.fact_note||"사실조회촉탁 회신")+"이 오는 대로"
+             : (r&&r.promise) ? kor(r.promise)+"까지" : "다음 기한까지";
+    return open
+      +"오늘 준비된 자료로 법원에 먼저 제출했습니다.\n"
+      +"나머지 자료는 "+when+" 제출하겠다고 법원에 말씀드렸습니다.\n\n"
+      +(reqs.length||accts.length?"그때까지 아래 자료만 보내주시면 됩니다.\n\n":"")
+      +blockFiles()+blockAccts()+blockSays()+blockBoth()
+      +"이 날짜가 새 기한이 됩니다. 늦어지면 절차가 흔들리니 그전까지 꼭 부탁드립니다.\n"+close;
+  }
+  var head = k===1
+    ? "개인회생 보정 자료 요청드립니다.\n\n법원 제출 기한이 정해져 있어, 준비되는 대로 먼저 보내주시면 됩니다.\n한 번에 다 모으려 하지 마시고 되는 것부터 주세요.\n\n"
+    : "아직 받지 못한 자료만 정리해서 보내드립니다.\n\n한 번에 다 준비하지 않으셔도 됩니다. 되는 것부터 먼저 보내주세요.\n\n";
+  var s=open+head+blockFiles()+blockAccts()+blockSays()+blockBoth();
+  if(!files.length&&!accts.length&&!says.length&&!both.length) s+="■ 필요한 자료를 모두 받았습니다. 감사합니다.\n\n";
+  return s+close;
+}
+
+function heroCard(t,i,n){
+  var c=cnt(t);
+  var h='<section class="hero"><div class="top">'
+   + '<span class="tag m">'+esc(t.station)+'</span><span class="tag">'+esc(t.station_name)+'</span>'
+   + (t.assignee?'<span class="tag p">'+esc(t.assignee)+'</span>':'<span class="tag y">담당자를 정해 주세요</span>')
+   + '<span class="sp"></span><span class="dim m">'+i+' / '+n+'</span></div><div class="bd">'
+   + '<h2>'+esc(t.title)+'</h2>'
+   + '<div class="sub">'+(t.hang?esc(t.hang)+' · ':'')+(t.badge?esc(t.badge)+' · ':'')
+   +   (t.owner==="당사자"?"의뢰인에게 받아오는 일":"우리가 하는 일")+'</div>';
+  if(t.howto) h+='<div class="how"><span class="cap">이렇게 하세요</span><ol>'
+    +t.howto.map(function(x){return '<li>'+esc(x)+'</li>';}).join("")+'</ol></div>';
+  else if(t.why) h+='<div class="how"><span class="cap">왜 하는 일인가</span><p style="margin:8px 0 0">'+esc(t.why)+'</p></div>';
+  if(t.alert) h+='<div class="chk fail" style="margin-bottom:14px"><span class="ic">!</span><span>'+esc(t.alert)+'</span></div>';
+  if((t.needs||[]).length){
+    var mi=miss(t);
+    h+='<div class="needbox '+(mi.length?"wait":"ok")+'"><span class="cap">쓰는 자료</span><div style="margin-top:7px">'
+      + t.needs.map(function(k){var g=got(k);
+          return '<span class="tag '+(g?"g":"")+'" style="margin:3px 5px 0 0">'+(g?"✓ ":"○ ")+esc(k)+'</span>';}).join("")
+      + '</div></div>';
+  }
+  if(hasAcct(t)) h+=acctBox();
+  h+='<div class="steps">'+(t.steps||[]).map(function(s,j){
+      return '<div class="stepl'+(s.done?" done":"")+(flashId===t.id+"-"+j?" flash":"")+'">'
+        +'<span class="ck'+(s.done?" on":"")+'" role="checkbox" tabindex="0" aria-checked="'+(!!s.done)+'" onclick="tick(\''+t.id+'\','+j+')">✓</span>'
+        +'<span class="t" style="flex:1">'+esc(s.text)
+        +(s.provides?'<div class="dim">받을 자료 · '+esc(s.provides)+' ('+esc(s.mat_type||"파일")+')</div>':'')+'</span></div>';
+    }).join("")+'</div>';
+  (t.steps||[]).forEach(function(s){ if(s.provides) h+=matBox(M(s.provides)); });
+  h+=taskFileBox(t);
+  h+='<div style="margin-top:16px"><span class="cap">메모</span>'
+   + '<textarea class="in" style="min-height:46px;margin-top:7px" placeholder="'+esc(t.memo_hint||"남길 말")+'" oninput="T(\''+t.id+'\').memo=this.value;markSave()">'+esc(t.memo||"")+'</textarea></div>'
+   + (t.finished
+      ? '<div class="needbox ok" style="margin-top:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+        +'<b>끝냈습니다.</b><span class="dim">잘못 눌렀으면 되돌릴 수 있습니다</span>'
+        +'<span class="sp" style="flex:1"></span>'
+        +'<button class="b o s" onclick="finish(\''+t.id+'\')">다시 열기</button></div>'
+      : '<button class="b '+(c.d===c.n?"p":"o")+' lg" style="margin-top:18px" onclick="finish(\''+t.id+'\')">'
+        + (c.d===c.n?"다 했어요  ✓ 눌러서 끝내기":"다 했어요  "+c.d+" / "+c.n)+'</button>'
+        + (c.d===c.n?'<p class="dim" style="margin:8px 0 0;text-align:center">체크를 다 했습니다. 이 단추를 눌러야 끝납니다</p>'
+                    :'<p class="dim" style="margin:8px 0 0;text-align:center">체크를 다 하고 이 단추를 눌러야 다음으로 넘어갑니다</p>'));
+  return h+'</div></section>';
+}
+function tick(id,j){
+  var t=T(id);t.steps[j].done=!t.steps[j].done;flashId=null;
+  openTask=id;              /* 체크했다고 다음 카드로 넘어가지 않습니다 */
+  markSave(); draw();
+}
+function finish(id){
+  var t=T(id),c=cnt(t);
+  /* 이미 끝낸 것을 다시 누르면 되돌립니다 */
+  if(t.finished){ t.finished=false; markSave(); toast(t.title+" 다시 열었습니다"); draw(); return; }
+  if(c.d<c.n){
+    var j=-1;(t.steps||[]).forEach(function(s,k){if(!s.done&&j<0)j=k;});
+    flashId=id+"-"+(j<0?0:j); draw();
+    setTimeout(function(){flashId=null;draw();},900);
+    toast("아직 "+(c.n-c.d)+"개가 남았어요. 다 체크한 뒤에 눌러 주세요"); return;
+  }
+  t.finished=true; openTask=null; markSave();
+  toast("잘하셨어요. "+t.title+" 끝났습니다"); draw();
+}
+function hasAcct(t){return (t.steps||[]).some(function(s){return s.from_accounts;});}
+var acctOpen=false;
+function acctBox(){
+  if(!D.accounts) return "";
+  var r=D.accounts.rows,g=r.filter(function(x){return x.got;}).length;
+  var h='<div class="sub-card" style="margin:16px 0"><button class="drophead" onclick="acctOpen=!acctOpen;draw()">'
+   +'<b>계좌 '+r.length+'개 체크리스트</b>'
+   +'<span class="tag '+(g===r.length?"g":"y")+'">'+g+' / '+r.length+' 받음</span>'
+   +'<span class="sp"></span><span class="dim">'+(acctOpen?"접기":"여기서 바로 체크할 수 있어요")+'</span></button>';
+  if(acctOpen){
+    h+='<div class="rows">'+r.map(function(x,i){
+      return '<label class="ckrow'+(x.got?" done":"")+'" style="padding-left:18px">'
+        +'<span class="ck'+(x.got?" on":"")+'" onclick="tickAcct('+i+')">✓</span>'
+        +'<b style="min-width:86px">'+esc(x.bank)+'</b><span class="m dim">'+esc(x.no)+'</span>'
+        +'<span class="dim" style="flex:1">'+esc(x.product)+'</span>'
+        +(x.tag?'<span class="tag y">'+esc(x.memo)+'</span>':'')+'</label>';}).join("")+'</div>';
+  }else{
+    var left=r.filter(function(x){return !x.got;});
+    h+='<div style="padding:0 18px 14px"><span class="dim">'
+      +(left.length?'아직 안 온 것 · '+left.slice(0,4).map(function(x){return esc(x.bank);}).join(", ")
+         +(left.length>4?" 외 "+(left.length-4)+"개":"")
+       :'13개 전부 받았어요')+'</span></div>';
+  }
+  return h+'</div>';
+}
+function matBox(a){
+  if(!a)return "";
+  var cfg=mt(a), id=cid(a.key), ok=full(a);
+  var h='<div class="sub-card" style="margin-top:14px"><div class="pad">'
+   + '<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">'
+   +   '<span class="tag '+(ok?"g":"y")+'">'+esc(a.ty)+'</span><b style="font-size:15px">'+esc(a.key)+'</b>'
+   +   '<span class="sp"></span>'
+   +   '<div class="seg">'+cfg.step.map(function(s,i){
+         return '<button class="'+(cfg.step.indexOf(a.mat.status)>=i?"on":"")+'" onclick="setStat(\''+esc(a.key)+'\',\''+esc(s)+'\')">'+esc(s)+'</button>';}).join("")+'</div>'
+   + '</div>'
+   + (a.why?'<p class="dim" style="margin:8px 0 0">'+esc(a.why)+'</p>':'');
+  if(cfg.need==="진술"||cfg.need==="둘다"){
+    h+='<div class="saybox">'
+      +'<div style="display:flex;align-items:center;gap:8px"><span class="cap">카톡에서 복사해 그대로 붙여넣으세요</span>'
+      +'<span class="sp"></span><span class="dim m" id="sc-'+id+'">'+String(a.mat.say||"").length+'자</span></div>'
+      +'<textarea class="in" style="min-height:78px;margin-top:8px" placeholder="예) 그 돈은 어머니 병원비로 300만원, 나머지는 카드값으로 썼습니다" oninput="say(\''+esc(a.key)+'\',this.value)">'+esc(a.mat.say||"")+'</textarea>'
+      +'<p class="dim" style="margin:6px 0 0">고쳐 쓰지 말고 하신 말 그대로 넣어주세요. 이 글이 보정서 본문에 그대로 들어갑니다.</p></div>';
+  }
+  if(cfg.need!=="진술"){
+    var must=(cfg.need==="파일"||cfg.need==="둘다");
+    /* 2026-08-31 : 끌어다 놓기도 되고 눌러서 고르기도 됩니다 */
+    h+='<div class="dz" ondragover="dzOver(event,1)" ondragenter="dzOver(event,1)" ondragleave="dzOver(event,0)"'
+      +' ondrop="dzDrop(event,\'mat\',\''+esc(a.key)+'\')" onclick="dzClick(event,\'mf_'+id+'\')">'
+      +'<div class="dzin"><b>파일을 여기에 끌어다 놓으세요</b>'
+      +'<span class="dim">'+(must?"파일이 있어야 확보로 넘어갑니다":"파일은 있으면 좋고 없어도 됩니다")+' · 여러 개 한꺼번에 됩니다</span></div>'
+      +((a.mat.files||[]).length
+          ? '<div class="dzfiles">'+a.mat.files.map(function(f,i){
+              return '<span class="fchip">'
+                +(f.url?'<a href="'+f.url+'" target="_blank" rel="noopener" title="새 창으로 열어보기">'+esc(f.name)+'</a>':esc(f.name))
+                +' <span class="dim m">'+kb(f.size)+'</span>'
+                +(f.url?'<button onclick="peek(\''+esc(a.key)+'\','+i+')" class="v" title="여기서 보기">보기</button>':'')
+                +'<button onclick="delF(\''+esc(a.key)+'\','+i+')" class="x" title="빼기">×</button></span>';}).join("")
+            +'</div>' : '')
+      +'<label class="b '+(must&&!(a.mat.files||[]).length?"p":"o")+' dzbtn" style="cursor:pointer;width:auto;height:38px;padding:0 16px">'
+      +(a.ty==="우리작성"?"만든 파일 고르기":"파일 고르기")
+      +'<input id="mf_'+id+'" type="file" multiple hidden onchange="addF(\''+esc(a.key)+'\',this)"></label></div>';
+  }
+  h+='<textarea class="in" style="min-height:40px;margin-top:10px" placeholder="자료 메모" oninput="memo(\''+esc(a.key)+'\',this.value)">'+esc(a.mat.memo||"")+'</textarea>';
+  if(!ok) h+='<p class="dim" style="margin:8px 0 0">'+lack(a).join("과 ")+'이(가) 있어야 확보로 넘어가요.</p>';
+  else if(matHangs(a.key).length)
+    h+='<p class="linkto" style="margin:8px 0 0">→ '+matHangs(a.key).map(function(x){return '보정권고'+x.court_no+'항';}).join(", ")+' 에 쓰입니다</p>';
+  return h+'</div></div>';
+}
+
+/* ── B. 사건 ───────────────────────────── */
+function viewCase(){
+  var r=cur();
+  var h='<div class="split" style="margin-bottom:16px">';
+
+  /* 차수 */
+  h+='<section><div style="display:flex;align-items:center;gap:9px;margin-bottom:11px">'
+   + '<h2 style="font-size:17px;font-weight:900">제출 차수</h2>'
+   + '<span class="dim">낸 것과 남은 것이 한 줄로 이어집니다</span></div><div class="tl">';
+  D.rounds.forEach(function(x,i){
+    var s=!!x.submitted_at, mine=sent(x.no);
+    h+='<div class="tli '+(s?"done":"now")+'"><div class="dot">'+(s?"✓":x.no)+'</div><div class="tlb">'
+      +'<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><b style="font-size:15px">'+esc(x.label)+'</b>'
+      +(s?'<span class="tag g">'+esc(kor(x.submitted_at))+' 제출</span>':'<span class="tag y">준비 중</span>')
+      +'<span class="dim">마감 '+esc(kor(x.deadline))+'</span></div>';
+    if(s){
+      var files=[]; mine.forEach(function(a){ (a.mat.files||[]).forEach(function(f){ files.push(f.name); }); });
+      var op=!!openRound[x.no];
+      h+='<div style="margin-top:9px"><span class="cap">낸 것 '+mine.length+'건</span><div style="margin-top:5px">'
+        +(mine.length?mine.map(function(a){return '<span class="tag g" style="margin:3px 4px 0 0">'+esc(a.key)+'</span>';}).join(""):'<span class="dim">없음</span>')
+        +'</div></div>'
+        +(x.promise?'<p class="dim" style="margin:9px 0 0">다음 약속 · 보정서에 "나머지는 '+esc(kor(x.promise))+'까지 제출하겠습니다"라고 적었습니다</p>'
+          :(x.mode==="fact"?'<p class="dim" style="margin:9px 0 0">다음 약속 · "'+esc(x.fact_note||"사실조회촉탁 회신")+'이 도착하는 대로 제출하겠습니다"라고 적었습니다</p>':''))
+        +'<button class="b o s" style="margin-top:10px" onclick="openRound['+x.no+']=!openRound['+x.no+'];draw()">'
+        + (op?"자세히 접기":"이때 낸 보정서·파일 자세히 보기")+'</button>';
+      if(op){
+        h+='<div class="pastbox">'
+          +'<span class="cap">이때 낸 보정서 본문</span>'
+          +'<div class="paper past">'+esc(x.body||"(저장된 본문이 없습니다)")+'</div>'
+          +'<span class="cap" style="display:block;margin-top:12px">첨부한 파일 '+files.length+'개</span>'
+          +'<div style="margin-top:6px">'+(files.length?files.map(function(f){return '<span class="fchip">'+esc(f)+'</span>';}).join(""):'<span class="dim">없음</span>')+'</div>'
+          +'<span class="cap" style="display:block;margin-top:12px">첨부서류 목록</span>'
+          +'<div class="dim" style="white-space:pre-wrap;margin-top:6px">'+esc(x.att||"(없음)")+'</div>'
+          +'<span class="cap" style="display:block;margin-top:12px">이때 못 낸 것 '+((x.left||[]).length)+'건</span>'
+          +'<div style="margin-top:6px">'+((x.left||[]).length
+              ? x.left.map(function(k){ var a=M(k);
+                  return '<span class="tag '+((a&&a.mat.round)?"g":"y")+'" style="margin:3px 4px 0 0">'
+                    +((a&&a.mat.round)?"✓ ":"○ ")+esc(k)+((a&&a.mat.round)?" · "+a.mat.round+"차에 냄":" · 아직")+'</span>';}).join("")
+              : '<span class="dim">전부 냈습니다</span>')+'</div>'
+          +'</div>';
+      }
+    }else{
+      h+='<div class="grid2" style="margin-top:11px">'
+        +'<div style="border:1px solid hsl(var(--ok)/.35);background:hsl(var(--oks)/.4);border-radius:var(--rs);padding:11px 13px">'
+        +'<div style="display:flex;gap:7px;align-items:center"><b style="font-size:13.5px">이번에 낼 것</b><span class="tag g">'+willSend().length+'</span></div>'
+        +(willSend().length?'<div class="dim" style="margin-top:6px">'+willSend().map(function(a){return esc(a.key);}).join("<br>")+'</div>':'<div class="dim" style="margin-top:6px">아직 없습니다</div>')
+        +'</div>'
+        +'<div style="border:1px solid hsl(var(--warn)/.35);background:hsl(var(--warns)/.35);border-radius:var(--rs);padding:11px 13px">'
+        +'<div style="display:flex;gap:7px;align-items:center"><b style="font-size:13.5px">못 내는 것</b><span class="tag y">'+(notyet().length+held().length)+'</span></div>'
+        +'<div class="dim" style="margin-top:6px">'+(notyet().length?notyet().slice(0,4).map(function(a){return esc(a.key);}).join("<br>")+(notyet().length>4?"<br>외 "+(notyet().length-4)+"건":""):"없음")+'</div>'
+        +'</div></div>';
+      if(notyet().length||held().length){
+        h+='<div style="margin-top:12px;padding:12px 13px;border-radius:var(--rs);background:hsl(var(--pris)/.6);border:1px solid hsl(var(--pri)/.25)">'
+          +'<span class="cap">나머지는 언제까지 내겠다고 쓸까요</span>'
+          +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:7px">'
+          +[7,14,21].map(function(dd){return '<button class="b o s" onclick="promise(addDays(D.rounds['+i+'].deadline,'+dd+'))">'+dd+'일 뒤</button>';}).join("")
+          +'<input type="date" class="in" style="width:auto" value="'+esc(x.promise||"")+'" onchange="promise(this.value)"></div>'
+          +(x.promise?'<p class="dim" style="margin:8px 0 0"><b style="color:hsl(var(--fg))">'+esc(kor(x.promise))+'</b>로 씁니다. 법원이 말이 없으면 그 날이 새 마감일이 됩니다.'
+             +(biz(x.promise)!==x.promise?'<br>문서에는 이 날짜 그대로, 앱 일정만 공휴일을 피해 '+esc(kor(biz(x.promise)))+'로 잡습니다 (민법 제161조).':'')+'</p>':'')
+          +'</div>';
+      }
+      h+='<button class="b p" style="margin-top:12px;width:100%" onclick="go(\'doc\')">이 차수 보정서 만들기</button>';
+    }
+    h+='</div></div>';
+  });
+  h+='</div></section>';
+
+  /* 자료 인박스 */
+  h+='<section><div style="display:flex;align-items:center;gap:9px;margin-bottom:11px">'
+   +'<h2 style="font-size:17px;font-weight:900">자료 인박스</h2>'
+   +'<span class="tag g">'+MATS().filter(full).length+' / '+MATS().length+'</span>'
+   +'<span class="sp"></span><span class="dim">채우면 왼쪽이 바뀝니다</span></div>'
+   +'<div class="card"><div class="rows">'
+   + MATS().map(function(a){
+      var ok=full(a);
+      return '<div class="mrow '+(a.mat.round?"sent":(ok?"full":""))+'">'
+        +'<span class="ck'+(ok?" on":"")+(a.mat.round?" lock":"")+'">'+(a.mat.round?"":"✓")+'</span>'
+        +'<span style="flex:1;min-width:0"><b style="font-size:13.3px">'+esc(a.key)+'</b>'
+        +'<div class="dim">'+esc(a.ty)+' · '+(a.mat.round? a.mat.round+"차에 제출함"
+            : ok? "확보"+((a.mat.files||[]).length?" · 파일 "+a.mat.files.length+"개":"")
+                : lack(a).join(", ")+" 없음")+'</div></span>'
+        +((a.mat.files||[]).length?'<button class="b g s" onclick="peek(\''+esc(a.key)+'\',0)">파일 보기</button>':'')
+        +(a.mat.round?'<span class="tag">잠김</span>':(ok?'<span class="tag g">확보</span>':'<span class="tag y">대기</span>'))
+        +'</div>';}).join("")
+   +'</div></div></section>';
+  h+='</div>';
+
+  /* 항 타임라인 */
+  h+='<div style="display:flex;align-items:center;gap:9px;margin-bottom:11px">'
+   +'<h2 style="font-size:17px;font-weight:900">법원 문항</h2>'
+   +'<span class="tag">'+D.hangs.filter(hDone).length+' / '+D.hangs.length+' 닫힘</span></div>'
+   +'<div class="card"><div class="rows">';
+  D.hangs.forEach(function(x,i){
+    var ok=hDone(x), ch=hChain(x), left=ch.filter(function(c){return !c.ok;}).length;
+    h+='<div>'
+      +'<button class="hrow '+(ok?"ok":"")+'" onclick="openHang['+i+']=!openHang['+i+'];draw()">'
+      +'<span class="hno">'+(ok?"✓":"")+'</span>'
+      +'<span class="tag m">'+esc(x.no)+'</span>'
+      +'<b style="flex:1;min-width:0;font-size:13.5px">'+esc(x.title)+'</b>'
+      +(x.round?'<span class="tag">'+x.round+'차 제출함</span>'
+        :(ok?'<span class="tag g">제출 가능</span>':'<span class="tag y">'+left+'개 남음</span>'))
+      +'</button>';
+    if(openHang[i]){
+      h+='<div class="hbody"><p class="dim" style="margin:0 0 10px">법원이 요구한 것 · '+esc(x.court)+'</p>';
+      if(x.receipt_ask) h+='<label style="display:flex;gap:9px;align-items:center;padding:9px 12px;margin-bottom:10px;border:1px dashed hsl(var(--line2));border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">'
+        +'<input type="checkbox" '+(x.receipt_required?"checked":"")+' onchange="receipt('+i+',this.checked)" style="width:17px;height:17px;accent-color:hsl(var(--pri))"> '+esc(x.receipt_ask)+'</label>';
+      h+='<div class="chain">'+ch.map(function(c,j){
+          return '<div class="cn '+(c.ok?"ok":"")+'"><span class="cnum">'+(c.ok?"✓":(j+1))+'</span>'
+            +'<span style="flex:1"><b style="font-size:13.3px">'+esc(c.label)+'</b>'
+            +'<div class="dim">'+esc(c.sub)+'</div></span></div>';}).join("")+'</div>';
+      if(x.note) h+='<p class="dim" style="margin:10px 0 0;padding:10px 12px;background:hsl(var(--mut)/.6);border-radius:var(--rs)">'+esc(x.note)+'</p>';
+      h+='<div style="margin-top:11px;padding:12px 14px;border-radius:var(--rs);background:hsl(var(--mut)/.5);border:1px solid hsl(var(--line))">'
+        +'<span class="cap">이 항이 보정서에 들어갈 모습</span>'
+        +'<p style="margin:7px 0 0;line-height:2;font-size:13px;white-space:pre-wrap">'+esc(hangPreview(x))+'</p></div>';
+      h+='</div>';
+    }
+    h+='</div>';
+  });
+  return h+'</div></div>';
+}
+function hangPreview(x){
+  var docs=hDocs(x), s="보정권고"+x.court_no+"항.";
+  if(docs.length)s+=" "+docs.join(", ");
+  if(x.say)s+="\n"+fill(x.say);
+  if(docs.length)s+="\n\n"+josa(docs[docs.length-1])+" 제출합니다.";
+  return s;
+}
+function promise(v){var r=cur();if(!r)return;r.promise=v;if(r.mode==="fact")r.mode="date";draw();}
+if(!D.submit.alarm)D.submit.alarm={sub:true,subCal:true,next:true,nextCal:true};
+function alTog(k){ D.submit.alarm[k]=!D.submit.alarm[k]; draw(); }
+function alPlan(){
+  var r=cur(), al=D.submit.alarm||{}, o=[];
+  var sd=D.submit.date||(r?r.deadline:"");
+  if(sd&&al.sub)    o.push(kor(sd)+" 아침 9시 · 제출 알림");
+  if(sd&&al.subCal) o.push(kor(sd)+" · 캘린더 일정 [보정서 제출] "+D.case.case_no);
+  if(r&&r.mode!=="fact"&&r.promise){
+    var b=biz(r.promise), warn=addDays(b,-3);
+    if(al.next)    o.push(kor(warn)+" 아침 9시 · 다음 약속일 3일 전 알림");
+    if(al.nextCal) o.push(kor(b)+" · 캘린더 일정 [추후제출 기한] "
+      +(b!==r.promise?"(문서에는 "+kor(r.promise)+", 공휴일이라 일정은 다음 평일)":""));
+  }
+  if(r&&r.mode==="fact") o.push((r.fact_note||"회신")+"이 오면 그때 날짜를 정합니다. 지금은 일정이 안 잡힙니다");
+  if(!o.length) o.push("잡을 일정이 없습니다");
+  return o;
+}
+function downIcs(){
+  var r=cur(), al=D.submit.alarm||{}, ev=[];
+  function push(dt,title){
+    if(!dt) return;
+    var d=dt.replace(/-/g,"");
+    ev.push("BEGIN:VEVENT\nDTSTART;VALUE=DATE:"+d+"\nSUMMARY:"+title+"\nEND:VEVENT");
+  }
+  var sd=D.submit.date||(r?r.deadline:"");
+  if(al.subCal) push(sd,"[보정서 제출] "+D.case.case_no+" "+D.case.debtor);
+  if(al.nextCal&&r&&r.mode!=="fact"&&r.promise) push(biz(r.promise),"[추후제출 기한] "+D.case.case_no+" "+D.case.debtor);
+  if(!ev.length){ toast("캘린더에 넣을 일정이 없습니다"); return; }
+  var ics="BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//bojeong//KR\n"+ev.join("\n")+"\nEND:VCALENDAR";
+  /* 미리보기 화면에서는 파일 내려받기가 막혀 있다. 실제 앱에서는 .ics 파일로 저장된다 */
+  copy(ics, "일정 내용을 복사했습니다. 메모장에 붙여 .ics 로 저장하면 캘린더에 들어갑니다");
+}
+function pickDue(mode,days){
+  var r=cur(); if(!r)return;
+  r.mode=mode;
+  if(mode==="date"){ r.promise=addDays(r.deadline,days); }
+  else if(mode==="fact"){ r.promise=""; }
+  draw();
+}
+function receipt(i,v){var h=D.hangs[i];h.receipt_required=v;
+  hMats(h).forEach(function(a){ if(a.ty==="확인"||a.ty==="파일") a.step.mat_type = v?"파일":"확인"; });
+  draw();}
+
+/* ── C. 보정서 ─────────────────────────── */
+function viewDoc(){
+  if(!D.submit.kind)D.submit.kind="보정서";
+  var r=cur();
+  if(!r) return '<div class="card"><div class="empty">준비 중인 차수가 없습니다.</div></div>';
+  var send=sendable(), lock=sent(), no=notyet();
+  var cs=checks(), bad=cs.filter(function(c){return !c.ok;}).length;
+
+  var h='<div class="split">';
+
+  /* 왼쪽 : 고르기와 설정 */
+  h+='<section style="display:flex;flex-direction:column;gap:14px">';
+
+  h+='<div class="card"><div class="pad" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+   +'<span class="cap">무엇을 쓰나</span>'
+   +'<div class="seg">'+["보정서","기간연장신청서"].map(function(x){
+       return '<button class="'+(docKind()===x?"on":"")+'" onclick="D.submit.kind=\''+x+'\';draw()">'+x+'</button>';}).join("")+'</div>'
+   +'<span class="sp"></span><span class="dim">'
+   + (docKind()==="보정서"
+      ? "낼 수 있는 것을 내고, 못 낸 것은 아래 사유와 약속일을 붙입니다."
+      : "이번에는 아무것도 못 내고 기한만 미룰 때 씁니다. 항 나열 없이 사유와 새 기한만 들어갑니다.")
+   +'</span></div></div>';
+
+  h+='<div class="card"><div class="hd"><h3>'+esc(r.label)+'에 낼 것 고르기</h3>'
+   +'<span class="tag g">'+willSend().length+' / '+send.length+'</span>'
+   +'<span class="sp"></span><span class="dim">미리 만들고 다음에 낼 수도 있습니다</span></div>'
+   +'<div class="rows">';
+  if(send.length){
+    h+='<div style="padding:8px 12px;background:hsl(var(--mut)/.5)"><span class="cap">준비된 것</span></div>';
+    h+=send.map(function(a){
+      var on=a.mat.pick!==false, hs=matHangs(a.key);
+      return '<div class="pickrow'+(on?"":" off")+'"><span class="ck'+(on?" on":"")+'" onclick="pickMat(\''+esc(a.key)+'\')">✓</span>'
+        +'<span style="flex:1;min-width:0"><b>'+esc(a.key)+'</b>'
+        +'<div class="dim">'+esc(a.ty)+((a.mat.files||[]).length?' · 파일 '+a.mat.files.length+'개':'')
+        +(String(a.mat.say||"").trim()?' · 진술 '+a.mat.say.length+'자':'')+'</div>'
+        +(hs.length?'<div class="linkto">'+(on?"→ ":"✕ ")
+            +hs.map(function(x){return '보정권고'+x.court_no+'항';}).join(", ")
+            +(on?" 에 들어갑니다":" 에서 빠집니다")+'</div>':'')
+        +'</span>'
+        +(on?'':'<span class="tag y">다음 차수로</span>')+'</div>';}).join("");
+  }
+  if(lock.length){
+    h+='<div style="padding:8px 12px;background:hsl(var(--mut)/.5)"><span class="cap">이미 낸 것 · 다시 못 고름</span></div>';
+    h+=lock.map(function(a){
+      return '<div class="pickrow lock"><span class="ck lock" title="이미 제출했습니다"></span>'
+        +'<span style="flex:1;min-width:0"><b>'+esc(a.key)+'</b>'
+        +'<div class="dim">'+a.mat.round+'차 제출</div></span><span class="tag">잠김</span></div>';}).join("");
+  }
+  if(no.length){
+    h+='<div style="padding:8px 12px;background:hsl(var(--mut)/.5)"><span class="cap">아직 못 받은 것 · 고를 수 없음</span></div>';
+    h+=no.map(function(a){
+      return '<div class="pickrow no"><span style="width:20px"></span>'
+        +'<span style="flex:1;min-width:0"><b>'+esc(a.key)+'</b>'
+        +'<div class="dim">'+lack(a).join(", ")+' 없음</div></span></div>';}).join("");
+  }
+  h+='</div></div>';
+
+  /* 항 고르기 */
+  h+='<div class="card"><div class="hd"><h3>보정서에 넣을 항</h3>'
+   +'<span class="tag p">'+D.hangs.filter(hPick).length+'개</span>'
+   +'<span class="sp"></span><span class="dim">안 내는 항은 문서에서 통째로 빠집니다</span></div><div class="rows">'
+   +D.hangs.map(function(x,i){
+      if(x.round) return '<div class="pickrow lock"><span class="ck lock"></span>'
+        +'<span style="flex:1"><b>'+esc(x.no)+'</b> <span class="dim">'+esc(x.title)+'</span></span>'
+        +'<span class="tag">'+x.round+'차 제출</span></div>';
+      var on=hPick(x), auto=hAuto(x), src=hangSrc(x);
+      return '<div class="pickrow'+(on?"":" off")+'"><span class="ck'+(on?" on":"")+'" onclick="pickHang('+i+')">✓</span>'
+        +'<span style="flex:1;min-width:0"><b>보정권고'+x.court_no+'항</b> <span class="dim">'+esc(x.title)+'</span>'
+        +'<div class="dim">'+(hDocs(x).length?hDocs(x).join(", "):(x.say?"진술로만 씁니다":"넣을 것이 없습니다"))+'</div>'
+        +(src.length?'<div class="linkto">'+src.map(function(s){
+            return '<span class="'+(s.on?"y":"n")+'">'+(s.on?"✓ ":"○ ")+esc(s.key)+'</span>';}).join(" ")+'</div>':'')
+        +'</span>'
+        +(on!==auto?'<span class="tag y">손으로 바꿈</span>':'')+'</div>';}).join("")
+   +'</div></div>';
+
+  /* 지연 사유 */
+  if(no.length||held().length){
+    var grp={}; D.delay_reasons.forEach(function(x){(grp[x.grp]=grp[x.grp]||[]).push(x);});
+    h+='<div class="card"><div class="hd"><h3>못 낸 것에 붙일 사유</h3>'
+     +'<span class="tag y">'+(no.length+held().length)+'건 미제출</span></div><div class="pad">'
+     +'<select class="in" onchange="D.submit.reason_key=this.value;draw()">'
+     + Object.keys(grp).map(function(g){
+         return '<optgroup label="'+esc(g)+'">'+grp[g].map(function(x){
+           return '<option value="'+esc(x.key)+'"'+(D.submit.reason_key===x.key?" selected":"")+'>'+esc(x.name)+'</option>';}).join("")+'</optgroup>';}).join("")
+     +'</select>'
+     +'<div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:10px;align-items:center">'
+     +'<span class="cap">말투</span><div class="seg">'+["담백","보통","정중"].map(function(x){
+        return '<button class="'+(D.submit.tone===x?"on":"")+'" onclick="D.submit.tone=\''+x+'\';draw()">'+x+'</button>';}).join("")+'</div>'
+     +'<span class="cap">길이</span><div class="seg">'+["짧게","보통","길게"].map(function(x){
+        return '<button class="'+(D.submit.len===x?"on":"")+'" onclick="D.submit.len=\''+x+'\';draw()">'+x+'</button>';}).join("")+'</div>'
+     +'</div>'
+     +(D.submit.reason_key==="직접입력"
+        ?'<textarea class="in" style="min-height:60px;margin-top:9px" placeholder="사유를 직접 적으세요" oninput="D.submit.free=this.value;draw()">'+esc(D.submit.free||"")+'</textarea>':'')
+     +'<p class="dim" style="margin:9px 0 0">같은 사유라도 말투와 길이를 바꿔 두세요. 법원에 매번 같은 글이 가지 않게 하려는 것입니다. 사유는 8묶음 '+D.delay_reasons.length+'개가 들어 있습니다.</p>'
+     +'</div></div>';
+  }
+
+  /* 첨부서류 목록 */
+  h+='<div class="card"><div class="hd"><h3>첨부서류 목록</h3>'
+   +'<span class="sp"></span><span class="dim">우리끼리 보는 것 · 6,000자에 안 들어감</span></div><div class="pad">'
+   +'<textarea class="in" style="min-height:96px;font-family:var(--fm);font-size:12.5px" id="att">'+esc(attList())+'</textarea>'
+   +'<button class="b o s" style="margin-top:8px" onclick="copy(document.getElementById(\'att\').value,\'첨부목록을 복사했습니다\')">첨부목록 복사</button>'
+   +'</div></div>';
+
+  /* 검사 */
+  h+='<div class="card"><div class="hd"><h3>제출 전 검사</h3>'
+   +'<span class="tag '+(bad?"r":"g")+'">'+(bad?bad+"개 걸림":"모두 통과")+'</span></div>'
+   +'<div class="pad" style="display:flex;flex-direction:column;gap:5px">'
+   + cs.map(function(c){
+      return '<div class="chk '+(c.ok?"pass":"fail")+'"><span class="ic">'+(c.ok?"✓":"✕")+'</span>'
+        +'<span><b>'+esc(c.t)+'</b> · '+esc(c.m)+'</span></div>';}).join("")
+   +'</div></div>';
+
+  /* 제출 */
+  h+='<div class="card"><div class="hd"><h3>제출</h3></div><div class="pad">'
+   +'<div class="grid2">'
+   +'<div><span class="cap">제출일</span><input type="date" class="in" style="margin-top:5px" value="'+esc(D.submit.date||r.deadline)+'" onchange="D.submit.date=this.value;draw()">'
+   +'<p class="dim" style="margin:5px 0 0">기본값은 마감일 당일입니다</p></div>'
+   +'<div><span class="cap">다음 약속일</span><input type="date" class="in" style="margin-top:5px" value="'+esc(r.promise||"")+'" onchange="promise(this.value)">'
+   +'<p class="dim" style="margin:5px 0 0">'+(r.promise&&biz(r.promise)!==r.promise?'앱 일정은 '+esc(kor(biz(r.promise))):'문서에는 이 날짜 그대로')+'</p></div>'
+   +'</div>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">'
+   +'<button class="b o" onclick="copy(fullDoc().replace(\'\\u0000\',\'\\n\\n\'),\'본문을 복사했습니다. 전자소송 입력칸에 붙여넣으세요\')">본문 복사</button>'
+   +'<button class="b p" onclick="doSubmit()"'+(bad?' title="검사 통과 후 누를 수 있습니다"':'')+'>'+(docKind()==="기간연장신청서"?"연장신청 제출함":"제출 완료로 표시")+'</button>'
+   +'</div></div></div>';
+
+  h+='</section>';
+
+  /* 오른쪽 : 종이 */
+  var L=bodyLen();
+  h+='<section style="position:sticky;top:98px">'
+   +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">'
+   +'<h2 style="font-size:17px;font-weight:900">보정서 미리보기</h2>'
+   +'<span class="sp"></span><span class="dim m">'+L.toLocaleString()+' / 6,000</span></div>'
+   +'<div class="bar-p '+(L>6000?"r":(L>5500?"y":""))+'" style="margin-bottom:10px"><i style="width:'+Math.min(100,pct(L,6000))+'%"></i></div>'
+   +'<div class="paper"><span class="t">보 정 서</span>'+esc(fullDoc().split("\u0000")[1])+'</div>'
+   +'<p class="dim" style="margin:9px 0 0">이건 파일이 아니라 글자입니다. 전자소송 보정서 입력칸에 그대로 붙여넣습니다. 회차 번호는 문서에 들어가지 않습니다.</p>'
+   +'</section>';
+
+  return h+'</div>';
+}
+function pickMat(k){var a=M(k);if(!a||a.mat.round)return;a.mat.pick=(a.mat.pick===false);
+  D.hangs.forEach(function(h){h.pick=undefined;}); draw();}
+function pickHang(i){var h=D.hangs[i];if(h.round)return;h.pick=!hPick(h);draw();}
+
+/* ── 점검표 : 전체를 한 화면에서 체크 ───── */
+function allCheck(){
+  var d=0,n=0;
+  D.tasks.forEach(function(t){ (t.steps||[]).forEach(function(s){ n++; if(s.done)d++; }); });
+  if(D.accounts){ D.accounts.rows.forEach(function(r){ n++; if(r.got)d++; }); }
+  if(D.final){ var dn=D.final.done||[]; D.final.items.forEach(function(_,i){ n++; if(dn[i])d++; }); }
+  return {d:d,n:n};
+}
+function viewCheck(){
+  var a=allCheck();
+  var h='<section class="card" style="margin-bottom:16px"><div class="pad">'
+   + '<div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">'
+   + '<div><span class="cap">전체 진행</span>'
+   + '<div><span class="fig">'+a.d+'</span><span class="figu"> / '+a.n+' 항목</span></div></div>'
+   + '<div style="flex:1;min-width:180px;padding-bottom:6px">'
+   +   '<div class="bar-p"><i style="width:'+pct(a.d,a.n)+'%"></i></div>'
+   +   '<p class="dim" style="margin:7px 0 0">'+pct(a.d,a.n)+'% 끝났습니다. 아래에서 빠진 것을 바로 체크할 수 있습니다.</p></div>'
+   + '<button class="b o" onclick="window.print()">인쇄 · PDF로 저장</button>'
+   + '</div></div></section>';
+
+  ["당사자","사무실","공동"].forEach(function(ow){
+    var list=D.tasks.filter(function(t){return t.owner===ow;}).sort(function(x,y){return x.order-y.order;});
+    if(!list.length) return;
+    var dd=0,nn=0; list.forEach(function(t){ (t.steps||[]).forEach(function(s){ nn++; if(s.done)dd++; }); });
+    h+='<div class="secttl"><h2>'+esc(ow==="당사자"?"당사자가 할 일":ow==="사무실"?"우리가 할 일":"같이 만드는 것")+'</h2>'
+      +'<span class="tag '+(dd===nn?"g":"")+'">'+dd+' / '+nn+'</span></div>';
+    h+='<section class="card" style="margin-bottom:6px"><div class="rows">';
+    list.forEach(function(t){
+      var c=cnt(t);
+      h+='<div class="ckgrp">'
+        +'<div class="ckh"><span class="no m">'+esc(t.station)+'</span>'
+        +'<b>'+esc(t.title)+'</b>'
+        +(t.hang?'<span class="tag">'+esc(t.hang)+'</span>':'')
+        +'<span class="sp"></span>'
+        +(c.d===c.n?'<span class="tag g">완료</span>':'<span class="dim m">'+c.d+'/'+c.n+'</span>')
+        +(t.assignee?'<span class="tag">'+esc(t.assignee)+'</span>':'')
+        +'</div>'
+        +(t.steps||[]).map(function(s,j){
+          return '<label class="ckrow'+(s.done?" done":"")+'">'
+            +'<span class="ck'+(s.done?" on":"")+'" onclick="tick(\''+t.id+'\','+j+')">✓</span>'
+            +'<span style="flex:1">'+esc(s.text)
+            +(s.provides?'<span class="dim"> · '+esc(s.provides)+' ('+esc(s.mat_type||"파일")+')</span>':'')
+            +'</span></label>';}).join("")
+        +'</div>';
+    });
+    h+='</div></section>';
+  });
+
+  if(D.accounts){
+    var g=D.accounts.rows.filter(function(r){return r.got;}).length;
+    h+='<div class="secttl"><h2>계좌 거래내역서</h2><span class="tag '+(g===D.accounts.rows.length?"g":"")+'">'+g+' / '+D.accounts.rows.length+'</span>'
+      +'<span class="dim">'+esc(D.accounts.period||"")+'</span></div>'
+      +'<section class="card" style="margin-bottom:6px"><div class="rows">'
+      +D.accounts.rows.map(function(r,i){
+        return '<label class="ckrow'+(r.got?" done":"")+'">'
+          +'<span class="ck'+(r.got?" on":"")+'" onclick="tickAcct('+i+')">✓</span>'
+          +'<b style="min-width:88px">'+esc(r.bank)+'</b>'
+          +'<span class="m dim">'+esc(r.no)+'</span>'
+          +'<span class="dim" style="flex:1">'+esc(r.product)+'</span>'
+          +(r.tag?'<span class="tag y">'+esc(r.memo)+'</span>':'')+'</label>';}).join("")
+      +'</div></section>';
+  }
+  if(D.final){
+    var dn=D.final.done||[];
+    var fd=D.final.items.filter(function(_,i){return dn[i];}).length;
+    h+='<div class="secttl"><h2>'+esc(D.final.title)+'</h2><span class="tag '+(fd===D.final.items.length?"g":"")+'">'+fd+' / '+D.final.items.length+'</span></div>'
+      +'<section class="card"><div class="rows">'
+      +D.final.items.map(function(x,i){
+        return '<label class="ckrow'+(dn[i]?" done":"")+'">'
+          +'<span class="ck'+(dn[i]?" on":"")+'" onclick="tickFinal('+i+')">✓</span>'
+          +'<span style="flex:1"><b>'+(i+1)+'. '+esc(x)+'</b></span></label>';}).join("")
+      +'</div>'
+      +(D.final.alert?'<div class="pad"><div class="chk fail"><span class="ic">!</span><span>'+esc(D.final.alert)+'</span></div></div>':'')
+      +'</section>';
+  }
+  return h;
+}
+function tickFinal(i){ D.final.done=D.final.done||[]; D.final.done[i]=!D.final.done[i]; draw(); }
+
+/* ── JSON 넣기 : 새 사건 불러오기 ──────── */
+function viewJson(){
+  return '<section class="card"><div class="hd"><h3>보정권고 JSON 넣기</h3>'
+   + '<span class="sp"></span><span class="dim">클로드가 만들어 준 JSON을 그대로 붙여넣으세요</span></div><div class="pad">'
+   + '<textarea class="in" id="jsonta" spellcheck="false" style="min-height:280px;font-family:var(--fm);font-size:12.5px" placeholder="여기에 붙여넣기"></textarea>'
+   + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center">'
+   +   '<button class="b p" style="width:auto;height:44px;padding:0 22px" onclick="loadJson()">이 사건으로 화면 만들기</button>'
+   +   '<button class="b o" onclick="dumpJson()">지금 상태를 JSON으로 꺼내기</button>'
+   +   '<span class="dim" id="jflash"></span>'
+   + '</div>'
+   + '<p class="dim" style="margin:14px 0 0">지금 화면의 체크·파일·메모는 저장되지 않습니다. 다른 사건을 불러오면 사라지니, 필요하면 먼저 [지금 상태를 JSON으로 꺼내기]로 복사해 두세요.</p>'
+   + '</div></section>';
+}
+function loadJson(){
+  var v=(document.getElementById("jsonta").value||"").trim();
+  if(!v){ toast("붙여넣은 내용이 없습니다"); return; }
+  try{
+    var o=JSON.parse(v);
+    if(!o.case||!o.tasks) throw new Error("case 와 tasks 가 있어야 합니다");
+    o.rounds=o.rounds||[{no:1,label:"1차",deadline:"",submitted_at:"",promise:"",mode:"date",status:"준비중"}];
+    o.hangs=o.hangs||[];
+    o.delay_reasons=o.delay_reasons||D.delay_reasons;
+    o.submit=o.submit||{date:"",reason_key:(o.delay_reasons[0]||{}).key,tone:"정중",len:"보통",kind:"보정서",
+                        closing_all:"채무자는 위와 같이 성실히 보정하였으니 부디 선처하여 주시기 바랍니다."};
+    D=o; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null;
+    toast("불러왔습니다. 할 일 "+D.tasks.length+"건");
+    view="today"; draw(); window.scrollTo({top:0,behavior:"smooth"});
+  }catch(e){ toast("읽지 못했습니다: "+e.message); }
+}
+function dumpJson(){
+  document.getElementById("jsonta").value=JSON.stringify(D,null,1);
+  toast("아래 칸에 꺼냈습니다. 복사해서 보관하세요");
+}
+
+/* ── D. 배분 ───────────────────────────── */
+function viewBoard(){
+  var names=["김알바","박알바","이알바","최알바"];
+  var h=staffPanel()
+   + '<div class="secttl"><h2>공정별 배분판</h2><span class="dim">카드를 누르면 담당자를 정할 수 있습니다</span></div>'
+   + '<div class="lanes">';
+  D.stations.forEach(function(s){
+    var mine=D.tasks.filter(function(t){return t.station===s.code;}).sort(function(a,b){return a.order-b.order;});
+    var d=mine.filter(isDone).length;
+    h+='<div class="lane"><div class="lh"><div style="display:flex;align-items:center;gap:7px">'
+      +'<span class="tag m">'+esc(s.code)+'</span><b style="font-size:13.5px">'+esc(s.name)+'</b>'
+      +'<span class="sp"></span><span class="dim m">'+d+'/'+mine.length+'</span></div>'
+      +'<p class="dim" style="margin:6px 0 0">'+esc(s.desc)+'</p>'
+      +'<div class="bar-p" style="margin-top:7px"><i style="width:'+pct(d,mine.length)+'%"></i></div></div><div class="lb">';
+    if(!mine.length) h+='<p class="dim" style="text-align:center;padding:10px 0">없음</p>';
+    mine.forEach(function(t){
+      var dn=isDone(t), bl=!dn&&!ready(t);
+      /* 2026-08-31 혜림 : 한 번 누르면 담당자 고르기, 두 번 누르면 오늘 화면의 그 항목으로 */
+      h+='<button class="tk'+(dn?" done":"")+(bdOpen===t.id?" on":"")+'" style="'+(bl?"opacity:.6":"")+'"'
+        +' onclick="bdPick(\''+t.id+'\')" ondblclick="bdOpenTask(\''+t.id+'\')" title="한 번 누르면 담당자 고르기 · 두 번 누르면 열기">'
+        +'<div class="tt">'+esc(t.title)+'</div>'
+        +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;align-items:center">'
+        +(t.hang?'<span class="tag">'+esc(t.hang)+'</span>':'')
+        +(bl?'<span class="tag y">자료 대기</span>':'')
+        +'<span class="sp"></span>'
+        +(t.assignee?'<span class="tag p">'+esc(t.assignee)+'</span>':'<span class="tag r">미지정</span>')
+        +'</div></button>';
+      if(bdOpen===t.id){
+        h+='<div style="padding:10px;background:hsl(var(--mut)/.6);border-radius:var(--rs)">'
+          +'<span class="cap">담당자를 고르세요</span><div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">'
+          +names.map(function(n){return '<button class="b '+(t.assignee===n?"p":"o")+' s" onclick="event.stopPropagation();assign(\''+t.id+'\',\''+n+'\')">'+n+'</button>';}).join("")
+          +'<button class="b g s" onclick="event.stopPropagation();assign(\''+t.id+'\',\'\')">해제</button></div>'
+          +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;align-items:center">'
+          +'<span class="dim">두 번 누르면 오늘 화면에서 바로 처리할 수 있습니다</span>'
+          +'<span class="sp" style="flex:1"></span>'
+          +'<button class="b o s" onclick="event.stopPropagation();bdOpenTask(\''+t.id+'\')">오늘에서 열기</button></div></div>';
+      }
+    });
+    h+='</div></div>';
+  });
+  return h+'</div>';
+}
+function assign(id,n){T(id).assignee=n;markSave();draw();toast(n?(n+" 님에게 맡겼습니다"):"담당자를 뗐습니다");}
+/* 배분판 : 한 번 누르기 = 담당자 고르기 (다시 누르면 접힘) */
+var bdOpen=null;
+function bdPick(id){ bdOpen=(bdOpen===id)?null:id; draw(); }
+/* 두 번 누르기 = 오늘 화면의 그 항목으로 */
+function bdOpenTask(id){ bdOpen=null; openTask=id; go("today"); }
+
+
+/* ==========================================================
+   저장 (2026-08-31)
+   이 브라우저 안에 남깁니다. 메모·체크·파일 원본까지 그대로 되살아납니다.
+   파일은 IndexedDB 에 통째로 넣습니다. 새로고침해도 [보기]가 그대로 됩니다.
+   ========================================================== */
+var DBP=null, saveT=null, savedAt="", saveErr="";
+function db(){
+  if(DBP)return DBP;
+  DBP=new Promise(function(res,rej){
+    var r=indexedDB.open("bojeong-cheoridae",1);
+    r.onupgradeneeded=function(){
+      var d=r.result;
+      if(!d.objectStoreNames.contains("kv"))d.createObjectStore("kv");
+      if(!d.objectStoreNames.contains("files"))d.createObjectStore("files");
+    };
+    r.onsuccess=function(){res(r.result);};
+    r.onerror=function(){rej(r.error);};
+  });
+  return DBP;
+}
+function idbPut(st,k,v){return db().then(function(d){return new Promise(function(res,rej){
+  var t=d.transaction(st,"readwrite"); t.objectStore(st).put(v,k);
+  t.oncomplete=function(){res();}; t.onerror=function(){rej(t.error);};});});}
+function idbGet(st,k){return db().then(function(d){return new Promise(function(res,rej){
+  var t=d.transaction(st,"readonly"), q=t.objectStore(st).get(k);
+  q.onsuccess=function(){res(q.result);}; q.onerror=function(){rej(q.error);};});});}
+function idbDel(st,k){return db().then(function(d){return new Promise(function(res){
+  var t=d.transaction(st,"readwrite"); t.objectStore(st).delete(k);
+  t.oncomplete=function(){res();}; t.onerror=function(){res();};});});}
+function idbWipe(){return db().then(function(d){return new Promise(function(res){
+  var t=d.transaction(["kv","files"],"readwrite");
+  t.objectStore("kv").clear(); t.objectStore("files").clear();
+  t.oncomplete=function(){res();}; t.onerror=function(){res();};});});}
+
+/* 저장 표시를 바꿔 준다 */
+function saveDot(txt,cls){
+  var e=document.getElementById("savedot");
+  if(!e)return;
+  e.textContent=txt; e.className="tag "+(cls||"");
+}
+function markSave(){ clearTimeout(saveT); saveT=setTimeout(doSave,500); }
+function doSave(){
+  var copy;
+  try{ copy=JSON.parse(JSON.stringify(D,function(k,v){ return k==="url"?undefined:v; })); }
+  catch(e){ saveErr="복사 실패"; saveDot("저장 실패","r"); return; }
+  saveDot("저장 중","");
+  idbPut("kv","state",copy).then(function(){
+    savedAt=new Date().toTimeString().slice(0,5); saveErr="";
+    saveDot("저장됨 "+savedAt,"g");
+  }).catch(function(){ saveErr="저장 실패"; saveDot("저장 실패","r"); });
+}
+/* 저장해 둔 파일을 다시 볼 수 있게 되살린다 */
+function rehydrate(){
+  var jobs=[];
+  (D.tasks||[]).forEach(function(t){
+    (t.files||[]).forEach(function(f){
+      if(!f.fid)return;
+      jobs.push(idbGet("files",f.fid).then(function(b){
+        if(b){ try{ f.url=URL.createObjectURL(b); }catch(e){} }
+      }).catch(function(){}));
+    });
+  });
+  MATS().forEach(function(a){
+    (a.mat.files||[]).forEach(function(f){
+      if(!f.fid)return;
+      jobs.push(idbGet("files",f.fid).then(function(b){
+        if(b){ try{ f.url=URL.createObjectURL(b); }catch(e){} }
+      }).catch(function(){}));
+    });
+  });
+  return Promise.all(jobs);
+}
+function boot(){
+  draw();
+  idbGet("kv","state").then(function(st){
+    if(!st||!st.tasks||!st.case)return null;
+    D=st; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null;
+    return rehydrate();
+  }).then(function(ok){
+    if(ok!==null){ draw(); saveDot("저장된 것 불러옴","g"); }
+    else saveDot("저장 안 됨","");
+  }).catch(function(){ saveDot("저장 안 됨",""); });
+}
+function wipeSave(){
+  if(!confirm("이 브라우저에 저장해 둔 것을 지웁니다.\n\n메모, 체크, 올린 파일이 전부 사라지고 처음 상태로 돌아갑니다.\n되돌릴 수 없습니다. 계속할까요?"))return;
+  idbWipe().then(function(){ location.reload(); });
+}
+
+/* ==========================================================
+   작업 파일 (2026-08-31)
+   「받을 자료」가 정해지지 않은 할 일에는 파일 상자가 아예 안 붙었다.
+   발급받은 파일, 만든 파일을 붙일 데가 없으면 안 되므로 모든 할 일에 하나 준다.
+   ========================================================== */
+function taskFileBox(t){
+  var fs=t.files||[];
+  var h='<div class="sub-card" style="margin-top:14px"><div class="pad">'
+   + '<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">'
+   +   '<span class="tag '+(fs.length?"g":"")+'">파일</span>'
+   +   '<b style="font-size:15px">이 작업에 붙이는 파일</b>'
+   +   '<span class="sp"></span>'
+   +   '<span class="dim">'+(fs.length?fs.length+"개 붙어 있습니다":"발급받은 것, 만든 것을 여기에 올리세요")+'</span>'
+   + '</div>'
+   + '<div class="dz" ondragover="dzOver(event,1)" ondragenter="dzOver(event,1)" ondragleave="dzOver(event,0)"'
+   +   ' ondrop="dzDrop(event,\'task\',\''+t.id+'\')" onclick="dzClick(event,\'tf_'+t.id+'\')">'
+   + '<div class="dzin">'
+   +   '<b>파일을 여기에 끌어다 놓으세요</b>'
+   +   '<span class="dim">또는 아무 데나 눌러서 고르기 · 여러 개 한꺼번에 됩니다</span>'
+   + '</div>'
+   + (fs.length?'<div class="dzfiles">'+fs.map(function(f,i){
+        return '<span class="fchip">'
+         + (f.url?'<a href="'+f.url+'" target="_blank" rel="noopener" title="새 창으로 열어보기">'+esc(f.name)+'</a>':esc(f.name))
+         + ' <span class="dim m">'+kb(f.size)+'</span>'
+         + (f.url?'<button onclick="peekT(\''+t.id+'\','+i+')" class="v" title="여기서 보기">보기</button>':'')
+         + '<button onclick="delTF(\''+t.id+'\','+i+')" class="x" title="빼기">×</button></span>';
+      }).join("")+'</div>':'')
+   + '<label class="b o dzbtn" style="cursor:pointer;width:auto;height:38px;padding:0 16px">파일 고르기'
+   + '<input id="tf_'+t.id+'" type="file" multiple hidden onchange="addTF(\''+t.id+'\',this)"></label>'
+   + '</div></div></div>';
+  return h;
+}
+function addTF(id,inp){
+  var t=T(id); if(!t)return;
+  if(!t.files)t.files=[];
+  var jobs=[];
+  for(var i=0;i<inp.files.length;i++){
+    var f=inp.files[i], u="";
+    var fid="f"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
+    try{ u=URL.createObjectURL(f); }catch(e){}
+    t.files.push({name:f.name,size:f.size,url:u,type:f.type||"",fid:fid,at:new Date().toISOString()});
+    jobs.push(idbPut("files",fid,f));
+  }
+  Promise.all(jobs).then(function(){ markSave(); toast("파일 "+inp.files.length+"개를 붙였습니다"); })
+    .catch(function(){ toast("파일을 저장하지 못했습니다. 이름만 남습니다"); saveDot("파일 저장 실패","r"); });
+  draw();
+}
+function delTF(id,i){
+  var t=T(id); if(!t||!t.files)return;
+  var f=t.files[i];
+  if(f&&f.fid)idbDel("files",f.fid);
+  if(f&&f.url){try{URL.revokeObjectURL(f.url);}catch(e){}}
+  t.files.splice(i,1); markSave(); draw();
+}
+function peekT(id,i){ peekAt=(peekAt&&peekAt.tid===id&&peekAt.i===i)?null:{tid:id,i:i}; draw(); }
+
+/* 끌어다 놓기 (2026-08-31) : 파일은 끌어놔도, 눌러서 골라도 들어갑니다 */
+function dzOver(e,on){ e.preventDefault(); e.stopPropagation();
+  e.currentTarget.classList.toggle("over",!!on); }
+function dzDrop(e,kind,id){
+  e.preventDefault(); e.stopPropagation();
+  e.currentTarget.classList.remove("over");
+  var fl=e.dataTransfer&&e.dataTransfer.files;
+  if(!fl||!fl.length){ toast("파일을 못 읽었습니다"); return; }
+  if(kind==="task") addTF(id,{files:fl}); else addF(id,{files:fl});
+}
+/* 상자 아무 데나 눌러도 파일 고르기가 열립니다. 단추와 파일 이름은 빼고 */
+function dzClick(e,inputId){
+  var t=e.target;
+  if(t.closest("button")||t.closest("a")||t.closest("label"))return;
+  var i=document.getElementById(inputId); if(i)i.click();
+}
+
+/* ==========================================================
+   서류함 (2026-08-31)
+   들어온 파일을 한 곳에서 확인합니다.
+   문항별 · 담당별 · 상태별로 갈아 볼 수 있고, 방금 들어온 것이 맨 위에 뜹니다.
+   ========================================================== */
+var dbMode="문항별", dbQ="";
+function dbSet(k,v){ if(k==="mode")dbMode=v; else dbQ=v; draw(); }
+function allFiles(){
+  var o=[];
+  MATS().forEach(function(a){
+    (a.mat.files||[]).forEach(function(f,i){
+      o.push({f:f,i:i,where:a.key,kind:"mat",key:a.key,owner:(a.task&&a.task.owner)||"",hang:(a.task&&a.task.hang)||""});
+    });
+  });
+  (D.tasks||[]).forEach(function(t){
+    (t.files||[]).forEach(function(f,i){
+      o.push({f:f,i:i,where:t.title,kind:"task",key:t.id,owner:t.owner||"",hang:t.hang||""});
+    });
+  });
+  o.sort(function(x,y){ return String(y.f.at||"").localeCompare(String(x.f.at||"")); });
+  return o;
+}
+function isToday(f){ return String(f.at||"").slice(0,10)===today(); }
+function fileChip(r){
+  var f=r.f;
+  return '<span class="fchip">'
+   + (f.url?'<a href="'+f.url+'" target="_blank" rel="noopener" title="새 창으로 열어보기">'+esc(f.name)+'</a>':esc(f.name))
+   + ' <span class="dim m">'+kb(f.size)+'</span>'
+   + (f.url?'<button onclick="'+(r.kind==="task"?'peekT(\''+r.key+'\','+r.i+')':'peek(\''+esc(r.key)+'\','+r.i+')')+'" class="v" title="여기서 보기">보기</button>':'')
+   + '<button onclick="'+(r.kind==="task"?'delTF(\''+r.key+'\','+r.i+')':'delF(\''+esc(r.key)+'\','+r.i+')')+'" class="x" title="빼기">×</button></span>';
+}
+/* 자료 한 줄 */
+function matRow(a){
+  var ok=full(a), fs=a.mat.files||[], hs=matHangs(a.key);
+  var q=dbQ.replace(/\s/g,"");
+  if(q && (a.key+(a.task&&a.task.title||"")).replace(/\s/g,"").indexOf(q)<0) return "";
+  var h='<div class="mrow'+(ok?" full":"")+'">'
+   + '<span class="ck '+(ok?"on":"")+'">'+(ok?"✓":"")+'</span>'
+   + '<div style="flex:1;min-width:0">'
+   +   '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">'
+   +     '<b>'+esc(a.key)+'</b><span class="tag '+(ok?"g":"y")+'">'+esc(a.ty)+'</span>'
+   +     '<span class="tag">'+esc((a.task&&a.task.owner)||"")+'</span>'
+   +     (hs.length?'<span class="tag p">'+hs.map(function(x){return "보정권고"+x.court_no+"항";}).join(" · ")+'</span>':'')
+   +     '<span class="sp"></span>'
+   +     '<span class="dim m">파일 '+fs.length+'개</span>'
+   +   '</div>'
+   +   '<div class="dim">'+esc((a.task&&a.task.title)||"")+(ok?"":' · '+lack(a).join("과 ")+' 이(가) 없습니다')+'</div>'
+   +   (fs.length?'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">'
+        +fs.map(function(f,i){return fileChip({f:f,i:i,kind:"mat",key:a.key});}).join("")+'</div>':'')
+   +   '<div class="dz" style="margin-top:8px;padding:10px" ondragover="dzOver(event,1)" ondragenter="dzOver(event,1)" ondragleave="dzOver(event,0)"'
+   +     ' ondrop="dzDrop(event,\'mat\',\''+esc(a.key)+'\')" onclick="dzClick(event,\'db_'+cid(a.key)+'\')">'
+   +     '<div class="dzin"><b style="font-size:12.5px">여기에 끌어다 놓거나 눌러서 넣기</b></div>'
+   +     '<input id="db_'+cid(a.key)+'" type="file" multiple hidden onchange="addF(\''+esc(a.key)+'\',this)"></div>'
+   + '</div></div>';
+  return h;
+}
+function dbGroup(title,sub,list){
+  if(!list.length)return "";
+  var rows=list.map(matRow).join("");
+  if(!rows.trim())return "";
+  var ok=list.filter(full).length;
+  return '<div class="secttl"><h2>'+esc(title)+'</h2>'
+   + '<span class="tag '+(ok===list.length?"g":"y")+'">'+ok+' / '+list.length+' 확보</span>'
+   + (sub?'<span class="dim">'+esc(sub)+'</span>':'')+'</div>'
+   + '<div class="card"><div class="rows">'+rows+'</div></div>';
+}
+function viewDocs(){
+  var mats=MATS(), files=allFiles();
+  var todayF=files.filter(function(r){return isToday(r.f);});
+  var h='<div class="secttl"><h2>서류함</h2>'
+   + '<span class="dim">들어온 파일을 여기서 한 번에 확인합니다</span></div>'
+   + '<div class="grid3">'
+   + '<div class="card"><div class="pad"><span class="cap">모아야 할 자료</span><div class="fig">'+mats.length+'<span class="figu">개</span></div></div></div>'
+   + '<div class="card"><div class="pad"><span class="cap">확보</span><div class="fig" style="color:hsl(var(--ok))">'+mats.filter(full).length+'<span class="figu">개</span></div></div></div>'
+   + '<div class="card"><div class="pad"><span class="cap">아직 대기</span><div class="fig" style="color:hsl(var(--warn))">'+mats.filter(function(a){return !full(a);}).length+'<span class="figu">개</span></div></div></div>'
+   + '<div class="card"><div class="pad"><span class="cap">들어온 파일</span><div class="fig">'+files.length+'<span class="figu">개</span></div></div></div>'
+   + '</div>';
+
+  /* 오늘 들어온 것 */
+  if(todayF.length){
+    h+='<div class="notice" style="margin-top:16px"><b>오늘 들어온 파일 '+todayF.length+'개</b>'
+     + '<span class="dim">'+todayF.slice(0,3).map(function(r){return esc(r.f.name);}).join(" · ")+(todayF.length>3?' 외 '+(todayF.length-3)+'개':'')+'</span>'
+     + '<span class="sp"></span><span class="tag g">방금 확인하세요</span></div>';
+  }
+
+  /* 도구줄 */
+  h+='<div class="card" style="margin-top:14px"><div class="pad" style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">'
+   + '<span class="cap">묶는 기준</span><div class="seg">'
+   + ["문항별","담당별","상태별"].map(function(x){
+       return '<button class="'+(dbMode===x?"on":"")+'" onclick="dbSet(\'mode\',\''+x+'\')">'+x+'</button>';}).join("")
+   + '</div>'
+   + '<input class="in" style="flex:1;min-width:200px" placeholder="자료 이름이나 할 일로 찾기" value="'+esc(dbQ)+'" oninput="dbQ=this.value;clearTimeout(window.__dbt);window.__dbt=setTimeout(draw,250)">'
+   + '<span class="dim">'+(dbMode==="문항별"?"법원 문항에 붙은 자료끼리":dbMode==="담당별"?"누가 가져오는 자료인지로":"확보와 대기로")+' 묶었습니다</span>'
+   + '</div></div>';
+
+  /* 묶어서 보여주기 */
+  if(dbMode==="문항별"){
+    var used={};
+    (D.hangs||[]).forEach(function(x,hi){
+      var l=hMats(x); l.forEach(function(a){used[a.key]=1;});
+      h+=hangDocCard(x,hi,l);
+    });
+    var etc=mats.filter(function(a){return !used[a.key];});
+    h+=dbGroup("문항에 안 붙은 자료","어느 항에 쓸지 아직 정해지지 않았습니다",etc);
+  } else if(dbMode==="담당별"){
+    ["당사자","사무실","공동"].forEach(function(o){
+      h+=dbGroup(o==="당사자"?"당사자에게 받는 것":(o==="사무실"?"우리가 뽑거나 만드는 것":"같이 만드는 것"),"",
+                 mats.filter(function(a){return (a.task&&a.task.owner)===o;}));
+    });
+  } else {
+    h+=dbGroup("아직 대기","이것들이 들어와야 다음 일이 풀립니다",mats.filter(function(a){return !full(a);}));
+    h+=dbGroup("확보","다 받았습니다",mats.filter(full));
+  }
+
+  /* 파일 전부 */
+  h+='<div class="secttl"><h2>이 사건 파일 전부</h2><span class="tag">'+files.length+'개</span>'
+   + '<span class="dim">최근에 넣은 것이 위입니다</span></div>'
+   + '<div class="card"><div class="rows">'
+   + (files.length ? files.map(function(r){
+       return '<div class="mrow'+(isToday(r.f)?" full":"")+'">'
+        + '<span class="tag '+(isToday(r.f)?"g":"")+'">'+(isToday(r.f)?"오늘":(String(r.f.at||"").slice(5,10)||"이전"))+'</span>'
+        + '<div style="flex:1;min-width:0"><b>'+esc(r.f.name)+'</b>'
+        + '<div class="dim">'+esc(r.where)+(r.hang?' · '+esc(r.hang):'')+(r.owner?' · '+esc(r.owner):'')+' · '+kb(r.f.size)+'</div></div>'
+        + fileChip(r) + '</div>';
+     }).join("") : '<div class="empty">아직 들어온 파일이 없습니다</div>')
+   + '</div></div>';
+  return h;
+}
+
+/* ==========================================================
+   문항별 서류 카드 (2026-08-31)
+   파일을 넣으면 그 보정권고 문항이 몇 개 채워졌는지 바로 보입니다.
+   다 차면 "이 항은 이제 낼 수 있습니다" 로 바뀝니다.
+   ========================================================== */
+var hdOpen={};
+function hdTg(i){ hdOpen[i]=!hdOpen[i]; draw(); }
+function hangDocCard(x,hi,list){
+  var q=dbQ.replace(/\s/g,"");
+  if(q){
+    var hit=list.some(function(a){return (a.key+((a.task&&a.task.title)||"")).replace(/\s/g,"").indexOf(q)>=0;})
+          || String((x.title||"")+(x.court||"")).replace(/\s/g,"").indexOf(q)>=0;
+    if(!hit)return "";
+  }
+  var ok=list.filter(full).length, n=list.length, done=n>0&&ok===n;
+  var open = hdOpen[hi]!==undefined ? hdOpen[hi] : !done;   /* 다 찬 항은 접어 둡니다 */
+  var p=n?Math.round(ok/n*100):0;
+  var h='<div class="card" style="margin-top:14px'+(done?';border:1px solid hsl(var(--ok)/.4)':'')+'">'
+   + '<button class="hrow" style="width:100%" onclick="hdTg('+hi+')">'
+   +   '<span class="hno'+(done?" ok":"")+'" style="'+(done?'background:hsl(var(--ok));border-color:hsl(var(--ok));color:hsl(var(--card))':'')+'">'+(done?"✓":"")+'</span>'
+   +   '<span class="tag m">보정권고'+esc(x.court_no||"")+'항</span>'
+   +   '<b style="flex:1;min-width:0;font-size:14px">'+esc(x.title||"")+'</b>'
+   +   '<span class="dim m">'+ok+' / '+n+'</span>'
+   +   '<span class="tag '+(done?"g":"y")+'">'+(done?"낼 수 있습니다":(n-ok)+"개 남음")+'</span>'
+   + '</button>'
+   + '<div style="padding:0 16px 4px"><div class="bar-p '+(done?"":(p>0?"y":"r"))+'"><i style="width:'+p+'%"></i></div></div>';
+  if(open){
+    h+='<div class="pad" style="padding-top:12px">';
+    if(x.court)h+='<div class="needbox" style="margin:0 0 12px"><span class="cap">법원이 요구한 것</span>'
+      +'<p style="margin:7px 0 0;line-height:1.9;font-size:13px">'+esc(x.court)+'</p></div>';
+    h+= n ? '<div class="rows" style="border:1px solid hsl(var(--line));border-radius:var(--rs)">'
+            + list.map(function(a){return hangMatRow(a,x);}).join("") + '</div>'
+          : '<div class="empty">이 항에 붙은 자료가 없습니다</div>';
+    if(done)h+='<div class="needbox ok" style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+      +'<b>이 항은 이제 낼 수 있습니다.</b><span class="dim">보정서에서 골라 넣으면 됩니다</span>'
+      +'<span class="sp" style="flex:1"></span><button class="b p s" onclick="go(\'doc\')">보정서에서 고르기</button></div>';
+    else h+='<div class="needbox wait" style="margin-top:12px"><b>'+(n-ok)+'개가 더 있어야 이 항을 낼 수 있습니다.</b> '
+      +'<span class="dim">'+list.filter(function(a){return !full(a);}).map(function(a){return esc(a.key);}).join(" · ")+'</span></div>';
+    h+='</div>';
+  }
+  return h+'</div>';
+}
+/* 항 안에서 보는 자료 한 줄. 파일이 없을 때만 넣는 자리를 크게 폅니다 */
+function hangMatRow(a,x){
+  var ok=full(a), fs=a.mat.files||[], id=cid(a.key)+"_h"+(x.court_no||"");
+  var h='<div class="mrow'+(ok?" full":"")+'" style="align-items:flex-start">'
+   + '<span class="ck '+(ok?"on":"")+'">'+(ok?"✓":"")+'</span>'
+   + '<div style="flex:1;min-width:0">'
+   +   '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">'
+   +     '<b>'+esc(a.key)+'</b>'
+   +     '<span class="tag '+(ok?"g":"y")+'">'+esc(a.ty)+'</span>'
+   +     '<span class="tag">'+esc((a.task&&a.task.owner)||"")+'</span>'
+   +     '<span class="sp" style="flex:1"></span>'
+   +     '<span class="dim m">'+(fs.length?"파일 "+fs.length+"개":"파일 없음")+'</span>'
+   +   '</div>'
+   +   '<div class="dim">'+esc((a.task&&a.task.title)||"")+'</div>';
+  if(fs.length){
+    h+='<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;align-items:center">'
+     + fs.map(function(f,i){return fileChip({f:f,i:i,kind:"mat",key:a.key});}).join("")
+     + '<label class="b g s" style="cursor:pointer">＋ 더 넣기'
+     + '<input id="hd_'+id+'" type="file" multiple hidden onchange="addF(\''+esc(a.key)+'\',this)"></label>'
+     + '</div>';
+  }else{
+    h+='<div class="dz" style="margin-top:8px;padding:11px" ondragover="dzOver(event,1)" ondragenter="dzOver(event,1)" ondragleave="dzOver(event,0)"'
+     + ' ondrop="dzDrop(event,\'mat\',\''+esc(a.key)+'\')" onclick="dzClick(event,\'hd_'+id+'\')">'
+     + '<div class="dzin"><b style="font-size:12.5px">여기에 끌어다 놓거나 눌러서 넣기</b>'
+     + '<span class="dim">넣으면 이 항이 '+esc(String((x.court_no||""))) +'항 채움에 바로 반영됩니다</span></div>'
+     + '<input id="hd_'+id+'" type="file" multiple hidden onchange="addF(\''+esc(a.key)+'\',this)"></div>';
+  }
+  return h+'</div></div>';
+}
+
+/* ==========================================================
+   직원 현황 (2026-08-31)
+   누구에게 무엇을 맡겼는지 한눈에 보고, 그 사람 화면을 그대로 열어 봅니다.
+   ========================================================== */
+var STAFF_NAMES=["김알바","박알바","이알바","최알바"];
+function staffTasks(n){ return D.tasks.filter(function(t){return t.assignee===n;}); }
+function staffCard(n){
+  var l=staffTasks(n);
+  var dn=l.filter(isDone).length;
+  var rd=l.filter(ready).length;
+  var wt=l.filter(function(t){return !isDone(t)&&!ready(t);}).length;
+  var on=(role==="직원"&&who===n);
+  var h='<div class="stfc'+(on?" on":"")+'">'
+   + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+   +   '<h4>'+esc(n)+'</h4>'
+   +   (l.length?'<span class="tag '+(rd?"g":(wt?"y":""))+'">'+(rd?"지금 "+rd+"건 가능":(wt?"자료 대기 "+wt+"건":"다 끝냈습니다"))+'</span>'
+               :'<span class="tag">맡은 일 없음</span>')
+   +   '<span class="sp" style="flex:1"></span>'
+   +   '<button class="b '+(on?"p":"o")+' s" onclick="seeAs(\''+n+'\')">'+(on?"보는 중":"이 사람 화면 보기")+'</button>'
+   + '</div>'
+   + '<div class="kv"><span>맡은 일<b>'+l.length+'</b></span>'
+   +   '<span>지금 가능<b style="color:hsl(var(--ok))">'+rd+'</b></span>'
+   +   '<span>자료 대기<b style="color:hsl(var(--warn))">'+wt+'</b></span>'
+   +   '<span>끝냄<b>'+dn+'</b></span></div>'
+   + '<div class="bar-p '+(rd?"":"y")+'" style="margin-top:9px"><i style="width:'+pct(dn,l.length||1)+'%"></i></div>';
+  if(l.length){
+    h+='<div class="stflist">'+l.slice(0,8).map(function(t){
+      var cls=isDone(t)?"done":(ready(t)?"now":"wait");
+      return '<div class="l '+cls+'"><span class="dot2"></span>'
+       + '<span style="flex:1;min-width:0"><b>'+esc(t.title)+'</b>'
+       + '<span class="dim"> · '+esc(t.hang||"")+' · '+esc(t.station_name||"")+'</span>'
+       + (cls==="wait"?'<div class="dim">'+ (miss(t).length?miss(t).join(" · ")+" 이(가) 와야 시작":"앞선 일이 끝나야 시작") +'</div>':'')
+       + '</span></div>';
+    }).join("")
+    + (l.length>8?'<div class="dim" style="padding-top:6px">외 '+(l.length-8)+'건</div>':'')
+    + '</div>';
+  }
+  return h+'</div>';
+}
+function seeAs(n){
+  role="직원"; who=n; view="today";
+  draw(); window.scrollTo({top:0,behavior:"smooth"});
+  toast(n+" 님 화면으로 보고 있습니다");
+}
+function backAdmin(){ role="관리자"; who="전체"; view="board"; draw(); window.scrollTo({top:0,behavior:"smooth"}); }
+function staffPanel(){
+  var un=D.tasks.filter(function(t){return !t.assignee&&!isDone(t);}).length;
+  return '<div class="secttl"><h2>직원 현황</h2>'
+   + '<span class="tag '+(un?"y":"g")+'">'+(un?"담당자 없는 일 "+un+"건":"전부 배분됨")+'</span>'
+   + '<span class="dim">누구에게 무엇을 맡겼는지 보고, 그 사람 화면을 그대로 열어 볼 수 있습니다</span></div>'
+   + '<div class="stf">'+STAFF_NAMES.map(staffCard).join("")+'</div>'
+   + (un?'<div class="needbox wait" style="margin-top:12px"><b>담당자가 없는 일이 '+un+'건 있습니다.</b> '
+       +'<span class="dim">아래 배분판에서 카드를 눌러 담당자를 정해 주세요.</span></div>':'');
+}
+
+/* ==========================================================
+   08 보정권고 넣기에서 가져온 화면 5개
+   보정권고 넣기 · 받을 것 · 우리가 할 것 · 요청 카톡 · 서류 이름
+   디자인과 부품은 보정 처리대 것을 그대로 씁니다
+   ========================================================== */
+
+/* ---------- 보정권고 넣기 ---------- */
+var inStep=1, inRaw="", inPrompt="";
+function inGo(n){ inStep=n; draw(); window.scrollTo({top:0,behavior:"smooth"}); }
+function viewIntake(){
+  var steps=[["보정권고 넣기","원문을 붙여넣고 변환 프롬프트를 받습니다"],
+             ["JSON 붙여넣기","클로드가 만든 결과를 넣고 검사합니다"],
+             ["확인하고 서류 이름 정하기","읽은 내용과 서류 이름을 확인한 뒤 사건에 넣습니다"]];
+  var rail='<aside class="card"><div class="pad" style="padding:10px">'
+   + steps.map(function(x,i){
+       var on=inStep===i+1, done=inStep>i+1;
+       return '<button class="hrow'+(on?" sel":"")+(done?" ok":"")+'" style="border-radius:var(--rs)" onclick="inGo('+(i+1)+')">'
+        +'<span class="hno">'+(done?"✓":(i+1))+'</span>'
+        +'<span style="flex:1;min-width:0"><b style="font-size:13.5px">'+x[0]+'</b>'
+        +'<div class="dim" style="font-size:12px">'+x[1]+'</div></span></button>';
+     }).join("")
+   + '</div></aside>';
+  var panel="";
+  if(inStep===1){
+    panel='<section class="card"><div class="hd"><h3>법원 보정권고 원문</h3><span class="sp"></span>'
+     +'<span class="dim m">'+inRaw.length.toLocaleString()+'자</span></div><div class="pad">'
+     +'<textarea class="in" id="inraw" spellcheck="false" style="min-height:320px" '
+     +'oninput="inRaw=this.value" placeholder="전자소송에서 받은 보정권고 원문을 그대로 붙여넣으세요">'+esc(inRaw)+'</textarea>'
+     +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'
+     +'<button class="b p" onclick="mkPrompt()">변환 프롬프트 만들기</button>'
+     +'<button class="b o" onclick="inGo(2)">이미 JSON이 있어요</button></div>';
+    if(inPrompt){
+      panel+='<div class="needbox" style="margin-top:14px">'
+       +'<div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:hsl(var(--mutf))">'
+       +'<span class="tag">① 프롬프트 복사</span><span>→</span><span class="tag">② 클로드에 붙여넣기</span>'
+       +'<span>→</span><span class="tag">③ 나온 JSON을 2단계에</span></div>'
+       +'<textarea class="in m" id="inprompt" readonly style="min-height:240px;font-size:12px;line-height:1.75;margin-top:10px">'+esc(inPrompt)+'</textarea>'
+       +'<button class="b p" style="margin-top:10px" onclick="copy(inPrompt,\'프롬프트를 복사했습니다\')">프롬프트 복사</button></div>';
+    }
+    panel+='</div></section>';
+  }
+  if(inStep===2){
+    panel='<section class="card"><div class="hd"><h3>클로드가 만든 JSON</h3><span class="sp"></span>'
+     +'<span class="dim">앞뒤에 설명이 붙어 있어도 됩니다</span></div><div class="pad">'
+     +'<textarea class="in" id="jsonta" spellcheck="false" style="min-height:320px;font-family:var(--fm);font-size:12.5px" '
+     +'placeholder="중괄호로 시작해 중괄호로 끝나는 JSON을 붙여넣으세요"></textarea>'
+     +'<div id="jerr"></div>'
+     +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'
+     +'<button class="b p" onclick="inCheck()">검사하기</button>'
+     +'<button class="b o" onclick="dumpJson()">지금 상태를 JSON으로 꺼내기</button></div>'
+     +'<p class="dim" style="margin:14px 0 0">지금 화면의 체크·파일·메모는 저장되지 않습니다. 다른 사건을 불러오면 사라지니, 필요하면 먼저 꺼내서 보관하세요.</p>'
+     +'</div></section>';
+  }
+  if(inStep===3){
+    var mats=MATS();
+    panel='<section class="card"><div class="hd"><h3>읽은 내용</h3><span class="sp"></span>'
+     +'<span class="tag g">검사 통과</span></div><div class="pad">'
+     +'<div class="grid3">'
+     +'<div class="sub-card"><div class="pad"><span class="cap">법원 문항</span><div class="fig">'+(D.hangs||[]).length+'<span class="figu">항</span></div></div></div>'
+     +'<div class="sub-card"><div class="pad"><span class="cap">해야 할 일</span><div class="fig">'+D.tasks.length+'<span class="figu">건</span></div></div></div>'
+     +'<div class="sub-card"><div class="pad"><span class="cap">모아야 할 자료</span><div class="fig">'+mats.length+'<span class="figu">개</span></div></div></div>'
+     +'<div class="sub-card"><div class="pad"><span class="cap">당사자 몫</span><div class="fig">'+D.tasks.filter(function(t){return t.owner!=="사무실";}).length+'<span class="figu">건</span></div></div></div>'
+     +'</div>'
+     +'<div class="cap" style="margin:18px 0 8px">법원 문항</div><div class="sub-card"><div class="rows">'
+     + (D.hangs||[]).map(function(h){
+         return '<div class="mrow"><span class="tag m">'+esc(h.no||"")+'</span>'
+          +'<div style="flex:1"><b>'+esc(h.title||"")+'</b><div class="dim">'+esc(h.court||"")+'</div></div></div>';
+       }).join("")
+     +'</div></div>'
+     +'</div></section>'
+     + dictBlock()
+     +'<section class="card" style="margin-top:14px"><div class="pad">'
+     +'<div class="needbox"><b>적용한 뒤에도 손으로 고칠 수 있습니다.</b>'
+     +' <span class="dim">되돌릴 수 없는 것이 아닙니다.</span></div>'
+     +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">'
+     +'<button class="b p lg" style="width:auto;padding:0 26px" onclick="go(\'today\')">오늘 화면으로 가기</button>'
+     +'<button class="b o" onclick="go(\'docs\')">서류함 보기</button>'
+     +'<button class="b g" onclick="inGo(2)">JSON 다시 넣기</button></div>'
+     +'</div></section>';
+  }
+  return '<div class="secttl"><h2>보정권고 넣기</h2>'
+   +'<span class="dim">이 화면에서 만든 데이터가 오늘·사건·보정서·점검표·배분 화면을 채웁니다</span></div>'
+   +'<div class="split" style="display:grid;grid-template-columns:280px minmax(0,1fr);gap:14px;align-items:start">'
+   + rail + '<div>'+panel+'</div></div>';
+}
+function mkPrompt(){
+  var t=(document.getElementById("inraw").value||"").trim();
+  inRaw=t;
+  if(!t){ toast("원문을 먼저 붙여넣으세요"); return; }
+  inPrompt=
+"당신은 개인회생 사건을 다루는 법무법인 사무직원입니다.\n"+
+"아래 보정권고를 읽고 정확히 이 모양의 JSON 하나만 출력해 주세요. 설명은 붙이지 마세요.\n\n"+
+"{\n"+
+'  "case": { "court":"", "case_no":"", "debtor":"", "order_date":"", "term_days":10, "urgent_at":"" },\n'+
+'  "hangs": [ { "no":"보정 1", "title":"한 줄 요약", "court":"법원이 적은 문장 그대로",\n'+
+'               "tasks":["t1","t2"] } ],\n'+
+'  "tasks": [ { "id":"t1", "owner":"사무실", "when":"즉시", "kind":"발급", "hang":"보정 1",\n'+
+'               "title":"할 일 제목", "badge":"9/1까지", "due":"",\n'+
+'               "why":"왜 하는 일인지 한 줄",\n'+
+'               "howto":["이렇게","저렇게"],\n'+
+'               "steps":[ { "text":"한 걸음",\n'+
+'                           "provides":"자동차보험증권", "req":"무엇을 받아야 하는지",\n'+
+'                           "mat_type":"파일", "mat_why":"왜 이 자료가 있어야 하는지",\n'+
+'                           "mat":{"status":"요청전","files":[],"memo":"","say":"","round":0,"pick":true} } ],\n'+
+'               "needs":[], "station":"P1", "station_name":"연락·회수",\n'+
+'               "order":1, "blocked_by":[], "assignee":"", "status":"대기", "memo_hint":"" } ]\n'+
+"}\n\n"+
+"■ needs 와 provides 가 이 앱의 핵심입니다.\n"+
+"  앞 일이 만들어내는 것(provides)을 뒷일이 needs 로 적으면, 그 자료가 들어오는 순간 뒷일이 자동으로 풀립니다.\n"+
+'  예) 자동차보험증권을 받는 일은 provides "자동차보험증권",\n'+
+'      재산목록 환가예상액을 고치는 일은 needs ["자동차보험증권"]\n\n'+
+'■ owner 는 셋 중 하나 : "당사자" / "사무실" / "공동"\n'+
+'■ when 은 셋 중 하나 : "즉시" / "자료 받고" / "조건부 즉시"\n'+
+'■ station 은 P1 연락·회수 / P2 회사발급 / P3 도표작성 / P4 서면작성\n'+
+'■ mat_type 은 파일 / 진술 / 진술+파일 / 우리작성 / 확인 중 하나\n'+
+"■ 서류 이름은 표준 사전에 있는 이름만 쓰세요. 없으면 그대로 적고 끝에 (사전에 없음)을 붙이세요.\n"+
+"  회사작성 : 채권자목록 · 재산목록 · 수입지출목록 · 변제계획안 · 진술서 · 경위서\n"+
+"  사무실  : 자동차등록원부 · 등기사항전부증명서 · 지방세 세목별과세증명서 · 중고차 시세 조회자료\n"+
+"  의뢰인  : 은행거래내역서 · 예상해약환급금확인서 · 카드 사용내역서 · 자동차보험증권 · 급여명세서\n"+
+"■ 모르는 날짜는 지어내지 말고 그 줄을 빼세요.\n\n"+
+"보정권고 내용 :\n"+t;
+  draw();
+}
+function inCheck(){
+  var box=document.getElementById("jerr");
+  var t=(document.getElementById("jsonta").value||"").trim();
+  function bad(c,h){ box.innerHTML='<div class="needbox '+c+'" style="margin-top:12px">'+h+'</div>'; }
+  box.innerHTML="";
+  if(!t){ bad("wait","<b>붙여넣은 내용이 없습니다.</b><div class=\"dim\">클로드가 준 답을 통째로 붙여넣어 주세요.</div>"); return; }
+  var a=t.indexOf("{"), b=t.lastIndexOf("}");
+  if(a<0||b<a){ bad("wait","<b>중괄호를 찾지 못했습니다.</b><div class=\"dim\">여는 중괄호로 시작해 닫는 중괄호로 끝나는 부분만 남기고 앞뒤 설명을 지워 주세요.</div>"); return; }
+  var o;
+  try{ o=JSON.parse(t.slice(a,b+1)); }
+  catch(e){ bad("wait","<b>모양이 깨져 있습니다.</b><div class=\"dim\">따옴표나 쉼표가 빠졌을 수 있습니다. 클로드에게 JSON만 다시 달라고 부탁해 보세요.<br><span class=\"m\">"+esc(String(e.message||e).slice(0,110))+"</span></div>"); return; }
+  var lack=["case","tasks"].filter(function(k){return !o[k];});
+  if(lack.length){ bad("wait","<b>"+lack.join(" · ")+" 칸이 없습니다.</b><div class=\"dim\">클로드에게 이 칸을 빼먹지 말라고 다시 부탁해 주세요.</div>"); return; }
+  o.rounds=o.rounds||[{no:1,label:"1차",deadline:"",submitted_at:"",promise:"",mode:"date",status:"준비중"}];
+  o.hangs=o.hangs||[];
+  o.delay_reasons=o.delay_reasons||D.delay_reasons;
+  o.submit=o.submit||{date:"",reason_key:(o.delay_reasons[0]||{}).key,tone:"정중",len:"보통",kind:"보정서",
+                      closing_all:"채무자는 위와 같이 성실히 보정하였으니 부디 선처하여 주시기 바랍니다."};
+  D=o; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null; DICTST={};
+  toast("불러왔습니다. 할 일 "+D.tasks.length+"건");
+  inGo(3);
+}
+
+/* ---------- 받을 것 ---------- */
+function viewGet(){
+  var ts=D.tasks.filter(function(t){return t.owner!=="사무실";});
+  var wait=ts.filter(function(t){return !isDone(t);});
+  var done=ts.filter(isDone);
+  var h='<div class="secttl"><h2>당사자에게 받을 것</h2><span class="tag y">'+wait.length+'건 남음</span>'
+   +'<span class="dim">파일을 올리거나 체크하면 우리 쪽 다음 작업이 자동으로 풀립니다</span></div>';
+  h+= wait.length ? wait.map(function(t,i){return heroCard(t,i+1,wait.length);}).join("")
+                  : '<div class="card"><div class="empty">받을 것을 다 받았습니다</div></div>';
+  if(done.length){
+    h+='<div class="secttl"><h2>받은 것</h2><span class="tag g">'+done.length+'건</span></div>'
+     +'<div class="card"><div class="rows">'
+     + done.map(function(t){
+         return '<div class="mrow full"><span class="ck on">✓</span><div style="flex:1">'
+          +'<b style="text-decoration:line-through;opacity:.55">'+esc(t.title)+'</b>'
+          +'<div class="dim">'+esc(t.hang||"")+'</div></div>'
+          +'<button class="b g s" onclick="openTask=\''+t.id+'\';go(\'today\')">열어 보기</button></div>';
+       }).join("")
+     +'</div></div>';
+  }
+  return h;
+}
+
+/* ---------- 우리가 할 것 ---------- */
+function viewOurs(){
+  var ts=D.tasks.filter(function(t){return t.owner==="사무실";});
+  var now=ts.filter(function(t){return ready(t);});
+  var wait=ts.filter(function(t){return !isDone(t)&&!ready(t);});
+  var done=ts.filter(isDone);
+  var h='<div class="secttl"><h2>지금 할 수 있는 것</h2><span class="tag g">'+now.length+'건</span>'
+   +'<span class="dim">받을 자료 없이 바로 손댈 수 있습니다</span></div>'
+   + (now.length ? now.map(function(t,i){return heroCard(t,i+1,now.length);}).join("")
+                 : '<div class="card"><div class="empty">지금 손댈 수 있는 일이 없습니다</div></div>');
+  h+='<div class="secttl"><h2>자료가 와야 하는 것</h2><span class="tag y">'+wait.length+'건</span>'
+   +'<span class="dim">무엇이 들어오면 풀리는지 줄마다 적어 두었습니다</span></div>'
+   +'<div class="card"><div class="rows">'
+   + (wait.length ? wait.map(function(t){
+       var mi=miss(t), bl=(t.blocked_by||[]).map(T).filter(function(b){return b&&!isDone(b);});
+       return '<div class="mrow sent"><span class="ck lock"></span><div style="flex:1">'
+        +'<b>'+esc(t.title)+'</b><div class="dim">'+esc(t.hang||"")+' · '+esc(t.station_name||"")+'</div>'
+        +'<div class="lockmsg">잠김 · '
+        + (mi.length?mi.map(esc).join(" · "):bl.map(function(b){return esc(b.title);}).join(" · "))
+        +' 이(가) 끝나면 풀립니다</div></div></div>';
+     }).join("") : '<div class="empty">잠긴 일이 없습니다</div>')
+   +'</div></div>';
+  if(done.length){
+    h+='<div class="secttl"><h2>끝낸 것</h2><span class="tag g">'+done.length+'건</span></div>'
+     +'<div class="card"><div class="rows">'
+     + done.map(function(t){return '<div class="mrow full"><span class="ck on">✓</span><div style="flex:1">'
+        +'<b style="text-decoration:line-through;opacity:.55">'+esc(t.title)+'</b></div></div>';}).join("")
+     +'</div></div>';
+  }
+  return h;
+}
+
+/* ---------- 요청 카톡 ---------- */
+function viewKk(){
+  return '<div class="secttl"><h2>요청 카톡</h2>'
+   +'<span class="dim">받은 것은 빠지고 아직 안 온 것만 들어갑니다</span></div>'
+   + msgCard();
+}
+
+/* ---------- 서류 이름 ---------- */
+var DICT=[
+ {g:"의뢰인",n:["은행거래내역서","예상해약환급금확인서","자동차보험증권","카드 사용내역서","급여명세서","근로계약서","임대차계약서","건강보험 자격득실확인서","가족관계증명서","주민등록등본","이체확인증","완납영수증","퇴직금 추정액 확인서","보험증권"]},
+ {g:"사무실",n:["자동차등록원부","등기사항전부증명서","지방세 세목별과세증명서","소득금액증명원","사실증명(신고사실없음)","국민연금 가입증명서","건강보험 납부확인서","중고차 시세 조회자료","민사예납금 가상계좌 안내"]},
+ {g:"회사작성",n:["채권자목록","재산목록","수입지출목록","변제계획안","진술서","경위서","사용처 소명 도표","청산가치 산정표"]}
+];
+var DICTST={};   /* 자료 이름 -> {st, hit, mode} */
+function dNorm(s){return String(s||"").replace(/\s|\(.*?\)/g,"");}
+function dFind(name){
+  var q=dNorm(name), best=null;
+  DICT.forEach(function(d){ d.n.forEach(function(n){
+    var k=dNorm(n);
+    if(k===q){ best={n:n,g:d.g,kind:"대표"}; return; }
+    if(!best&&(k.indexOf(q)>=0||q.indexOf(k)>=0)&&k.length>2) best={n:n,g:d.g,kind:"비슷"};
+  });});
+  return best;
+}
+function dictRows(){
+  var seen={}, out=[];
+  MATS().forEach(function(a){ if(seen[a.key])return; seen[a.key]=1; out.push(a.key); });
+  return out;
+}
+function dictLeft(){
+  return dictRows().filter(function(k){
+    var st=DICTST[k]; if(st&&st.st)return false;
+    var f=dFind(k); return !f||f.kind==="비슷";
+  }).length;
+}
+/* 보정권고 넣기 3단계 안에 들어가는 서류 이름 검사 (2026-08-31) */
+function dictBlock(){
+  var rows=dictRows();
+  var n대표=0,n비슷=0,n없음=0;
+  rows.forEach(function(k){ var f=dFind(k); if(!f)n없음++; else if(f.kind==="대표")n대표++; else n비슷++; });
+  var need=rows.filter(function(k){ var f=dFind(k); return !f||f.kind==="비슷"; });
+  var h='<section class="card" style="margin-top:14px"><div class="hd"><h3>서류 이름 검사</h3>'
+   +'<span class="tag g">대표 '+n대표+'</span><span class="tag y">비슷 '+n비슷+'</span><span class="tag r">없음 '+n없음+'</span>'
+   +'<span class="sp"></span><span class="dim">표준 사전과 맞춰 봤습니다</span></div>';
+  if(need.length){
+    h+='<div class="pad" style="padding-bottom:0"><div class="needbox wait" style="margin:0"><b>비슷은 추측입니다.</b> '
+     +'<span class="dim">맞으면 [맞음], 다른 서류면 [유형표에서 찾기], 사전에 없으면 [새 이름으로 등록]을 쓰세요.</span></div></div>'
+     +'<div class="rows">'+need.map(dictRow).join("")+'</div>';
+  }else{
+    h+='<div class="empty">정할 이름이 없습니다. 전부 사전에 있는 이름입니다</div>';
+  }
+  return h+'</section>';
+}
+function viewDict(){
+  var rows=dictRows();
+  var n대표=0,n비슷=0,n없음=0;
+  rows.forEach(function(k){ var f=dFind(k); if(!f)n없음++; else if(f.kind==="대표")n대표++; else n비슷++; });
+  var h='<div class="secttl"><h2>서류 이름 검사</h2>'
+   +'<span class="tag g">대표 '+n대표+'</span><span class="tag y">비슷 '+n비슷+'</span><span class="tag r">없음 '+n없음+'</span>'
+   +'<span class="dim">표준 사전과 맞춰 봤습니다. 사전에 그대로 있는 것은 접어 두었습니다</span></div>';
+  var need=rows.filter(function(k){ var f=dFind(k); return !f||f.kind==="비슷"; });
+  if(need.length)h+='<div class="needbox wait"><b>비슷은 추측입니다.</b> <span class="dim">맞으면 [맞음], 다른 서류면 [유형표에서 찾기], 사전에 없는 이름이면 [새 이름으로 등록]을 쓰세요. 자동으로 넘기지 않습니다.</span></div>';
+  h+='<div class="card" style="margin-top:12px"><div class="rows">'
+   + (need.length ? need.map(dictRow).join("") : '<div class="empty">정할 이름이 없습니다. 전부 사전에 있는 이름입니다</div>')
+   + '</div></div>';
+  var okRows=rows.filter(function(k){ var f=dFind(k); return f&&f.kind==="대표"; });
+  if(okRows.length){
+    h+='<div class="secttl"><h2>사전에 그대로 있는 것</h2><span class="tag g">'+okRows.length+'개</span></div>'
+     +'<div class="card"><div class="pad"><div style="display:flex;gap:5px;flex-wrap:wrap">'
+     + okRows.map(function(k){return '<span class="tag g">✓ '+esc(k)+'</span>';}).join("")+'</div></div></div>';
+  }
+  h+='<div class="secttl"><h2>표준 사전</h2><span class="dim">새 이름을 넣으면 여기에도 바로 들어갑니다</span></div><div class="grid3">'
+   + DICT.map(function(d){
+       return '<div class="card"><div class="hd"><h3>'+d.g+'</h3><span class="sp"></span><span class="tag">'+d.n.length+'개</span></div>'
+        +'<div class="pad"><div style="display:flex;gap:5px;flex-wrap:wrap">'
+        + d.n.map(function(n){return '<span class="tag">'+esc(n)+'</span>';}).join("")+'</div></div></div>';
+     }).join("")
+   +'</div>';
+  return h;
+}
+function dictRow(k){
+  var st=DICTST[k]||{}, f=dFind(k), id=cid(k);
+  var body,open="";
+  if(st.st==="ok")      body='<div class="dim"><span class="tag g">확인함</span> '+esc(st.hit||(f&&f.n)||k)+' 으로 이어 붙였습니다</div>';
+  else if(st.st==="add")body='<div class="dim"><span class="tag g">사전에 넣음</span> '+esc(st.hit)+'</div>';
+  else if(f)
+    body='<div class="dim"><span class="tag y">비슷</span> 사전에서 찾은 것 · <b>'+esc(f.n)+'</b> · '+esc(f.g)+'</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'
+      +'<button class="b p s" onclick="dOk(\''+esc(k)+'\')">맞음</button>'
+      +'<button class="b o s" onclick="dMode(\''+esc(k)+'\',\'find\')">유형표에서 찾기</button>'
+      +'<button class="b g s" onclick="dMode(\''+esc(k)+'\',\'add\')">새 이름으로 등록</button></div>';
+  else
+    body='<div class="dim"><span class="tag r">없음</span> 사전에 없는 이름입니다</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'
+      +'<button class="b p s" onclick="dMode(\''+esc(k)+'\',\'add\')">이 이름으로 사전에 추가</button>'
+      +'<button class="b o s" onclick="dMode(\''+esc(k)+'\',\'find\')">유형표에서 찾기</button></div>';
+  if(st.mode==="find")
+    open='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;align-items:flex-start">'
+      +'<div style="position:relative;flex:1;min-width:220px">'
+      +'<input class="in" id="dq_'+id+'" placeholder="서류 이름을 쳐서 찾으세요" oninput="dSearch(\''+esc(k)+'\',this.value)">'
+      +'<div id="dl_'+id+'" style="position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;max-height:230px;overflow:auto;'
+      +'background:hsl(var(--card));border:1px solid hsl(var(--line2));border-radius:var(--rs);box-shadow:0 10px 26px hsl(24 12% 11%/.14)"></div></div>'
+      +'<button class="b g s" onclick="dMode(\''+esc(k)+'\',\'\')">닫기</button></div>';
+  if(st.mode==="add")
+    open='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px">'
+      +'<input class="in" style="flex:1;min-width:200px" id="da_'+id+'" value="'+esc(k)+'" placeholder="사전에 넣을 이름">'
+      +'<select class="in" style="width:auto" id="dg_'+id+'"><option>의뢰인</option><option>사무실</option><option>회사작성</option></select>'
+      +'<button class="b p s" onclick="dAdd(\''+esc(k)+'\')">사전에 넣기</button>'
+      +'<button class="b g s" onclick="dMode(\''+esc(k)+'\',\'\')">닫기</button></div>';
+  return '<div class="mrow'+(st.st?" full":"")+'"><span class="ck '+(st.st?"on":"")+'">'+(st.st?"✓":"")+'</span>'
+   +'<div style="flex:1"><b>'+esc(k)+'</b>'+body+open+'</div></div>';
+}
+function dSt(k){ DICTST[k]=DICTST[k]||{}; return DICTST[k]; }
+function dOk(k){ var s=dSt(k); var f=dFind(k); s.st="ok"; s.hit=f?f.n:k; s.mode=""; draw(); toast("확인했습니다"); }
+function dMode(k,m){ var s=dSt(k); s.mode=m; draw();
+  if(m)setTimeout(function(){var e=document.getElementById((m==="find"?"dq_":"da_")+cid(k));if(e)e.focus();},30); }
+function dAdd(k){
+  var v=(document.getElementById("da_"+cid(k)).value||"").trim();
+  if(!v){ toast("이름을 적어 주세요"); return; }
+  var g=document.getElementById("dg_"+cid(k)).value;
+  DICT.forEach(function(d){ if(d.g===g&&d.n.indexOf(v)<0)d.n.push(v); });
+  var s=dSt(k); s.st="add"; s.hit=v; s.mode=""; draw(); toast("사전 "+g+" 칸에 넣었습니다");
+}
+function dSearch(k,q){
+  q=dNorm(q);
+  var box=document.getElementById("dl_"+cid(k)), h="";
+  DICT.forEach(function(d){
+    var hit=d.n.filter(function(n){ return !q||dNorm(n).indexOf(q)>=0; });
+    if(!hit.length)return;
+    h+='<div style="padding:7px 12px 3px;font-size:11px;font-weight:800;letter-spacing:.08em;color:hsl(var(--mutf))">'+d.g+'</div>'
+     + hit.map(function(n){
+        return '<button style="display:block;width:100%;text-align:left;border:0;background:transparent;padding:9px 12px;font-size:13px" '
+         +'onclick="dPick(\''+esc(k)+'\',\''+esc(n)+'\')">'+esc(n)+'</button>';}).join("");
+  });
+  box.innerHTML=h||'<div style="padding:10px 12px;font-size:12.5px;color:hsl(var(--mutf))">찾는 이름이 없습니다. 새 이름으로 등록해 주세요</div>';
+}
+function dPick(k,n){ var s=dSt(k); s.st="ok"; s.hit=n; s.mode=""; draw(); toast(n+" 으로 이어 붙였습니다"); }
+
+
+boot();
+
+</script>
+
+</body>
+</html>

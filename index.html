@@ -4235,8 +4235,9 @@ function bxStage(r){
   return "판독 전";
 }
 function bxLeft(r){
-  if(!r.court_deadline)return null;
-  var d=parseD(r.court_deadline);
+  var due=(typeof bjDueOf==="function")?bjDueOf(r).date:String(r.court_deadline||"").slice(0,10);
+  if(!due)return null;
+  var d=parseD(due);
   if(!d)return null;
   return Math.round((d-today0())/86400000);
 }
@@ -4386,11 +4387,11 @@ function bxLeftBlock(r){
       : '<div class="bx-dday a"><b>안내 필요</b><span>기한 없음</span></div>';
   }
   if(hd==="납부"&&!r.paid_at){
-    var pn=bxLeft(r);
-    return '<div class="bx-dday '+bxLeftCls(pn)+'"><b>납부 확인</b><span>'+esc(r.court_deadline||"기한 미정")+'</span></div>';
+    var pn=bxLeft(r),pd=bjDueOf(r);
+    return '<div class="bx-dday '+bxLeftCls(pn)+'"><b>납부 확인</b><span>'+esc(pd.date||"기한 미정")+(pd.from==="송달문서"?" (송달)":"")+'</span></div>';
   }
-  var n2=bxLeft(r);
-  return '<div class="bx-dday '+bxLeftCls(n2)+'"><b>'+bxLeftTxt(n2)+'</b><span>'+esc(r.court_deadline||"기한 미정")+'</span></div>';
+  var n2=bxLeft(r),d2=bjDueOf(r);
+  return '<div class="bx-dday '+bxLeftCls(n2)+'"><b>'+bxLeftTxt(n2)+'</b><span>'+esc(d2.date||"기한 미정")+(d2.from==="송달문서"?" (송달)":"")+'</span></div>';
 }
 function bxCard(r){
   var n=bxLeft(r),st=bxStage(r),open=!!bxOpen[r.id];
@@ -4423,9 +4424,10 @@ function bxBody(r,subs){
     +'</div>';
   h+='<div class="bx-sec"><div class="bx-sect">받은 파일 '+(r.pdf_path?1:0)+'개</div>'
     + (r.pdf_path
-      ? '<div class="bx-file"><span class="nm">'+esc(String(r.pdf_path).split("/").pop())+'</span>'
-        +'<button class="btn ghost mini" onclick="bxView(\''+r.id+'\')">파일 보기</button>'
-        +'<button class="btn ghost mini" onclick="bxDl(\''+r.id+'\')">받기</button></div>'
+      ? '<div class="bx-file"><span class="nm">'+esc(bjFileName(r))+'</span>'
+        +'<button class="btn ghost mini" onclick="bxView(\''+r.id+'\')">미리보기</button>'
+        +'<button class="btn ghost mini" onclick="bxDl(\''+r.id+'\')">내려받기</button>'
+        +'<button class="btn ghost mini" onclick="bxRename(\''+r.id+'\')">이름 바꾸기</button></div>'
       : '<div class="bj-note">등록된 원본 파일이 없습니다.</div>')
     +'</div>';
   h+='<div class="bx-sec"><div class="bx-sect">보정서 제출 '+subs.length+'건</div>'
@@ -4453,13 +4455,18 @@ async function bxView(id,newTab){
   if(!r)return;
   var url=await bxSigned(r);
   if(!url){alert("원본 파일을 찾지 못했습니다.");return;}
-  window.open(url,newTab?"_blank":"_self");
+  /* ★2026-09-02 : _self 로 열면 앱을 통째로 벗어나 버렸다. 앱 안 창으로 띄운다 */
+  if(newTab)window.open(url,"_blank","noopener");
+  else if(typeof fpShow==="function")fpShow(url,bjFileName(r));
+  else window.open(url,"_blank","noopener");
 }
 async function bxDl(id){
   var r=bxRows.find(function(x){return x.id===id;});
+  if(!r||!r.pdf_path){alert("원본 파일을 찾지 못했습니다.");return;}
+  if(typeof downloadBojeong==="function"){ downloadBojeong(r.pdf_path,bjFileName(r)); return; }
   var url=await bxSigned(r);
   if(!url){alert("원본 파일을 찾지 못했습니다.");return;}
-  var a=document.createElement("a");a.href=url;a.download=String(r.pdf_path).split("/").pop();a.click();
+  var a=document.createElement("a");a.href=url;a.download=bjFileName(r);a.click();
 }
 async function bxDel(id){
   if(!confirm("이 보정 문서를 지웁니다. 되돌릴 수 없습니다. 계속할까요?"))return;
@@ -5149,7 +5156,7 @@ async function bjInsertSubmission(c,path,fileObj,nm){
       doc_type:title,doc_kind:"보정서",
       submitted_at:sub.date||null,hold_until:hold.date||null,
       work_state:hold.date?"추후제출":"보정완료",
-      pdf_path:path,raw_text:txt?bjMaskRrn(txt):null,
+      pdf_path:path,file_name:nm||(f&&f.name)||null,raw_text:txt?bjMaskRrn(txt):null,
       status:"완료",assignee:(me&&me.name)||null};
     var ins=await sbc.from("bj_documents").insert(doc).select("id");
     if(ins.error)throw ins.error;
@@ -5746,7 +5753,7 @@ function bjSubKind(a){
   return parts.filter(function(x){return x!==main&&x!=="일반";}).join(" · ");
 }
 /* DB에 새 칸(memo 등)이 아직 없어도 화면이 죽지 않게 한다 */
-var BJ_COL_NEW="id,delivery_id,case_no,court,doc_type,doc_kind,order_date,submitted_at,served_at,status,work_state,hold_until,memo,created_at,pdf_path,court_deadline";
+var BJ_COL_NEW="id,delivery_id,case_no,court,doc_type,doc_kind,order_date,submitted_at,served_at,status,work_state,hold_until,memo,file_name,created_at,pdf_path,court_deadline";
 var BJ_COL_OLD="id,delivery_id,case_no,court,doc_type,order_date,served_at,status,created_at,pdf_path,court_deadline";
 var bjNewCols=null;
 async function bjFetchDocs(deliveryId,lim){
@@ -5791,6 +5798,43 @@ function bjCardHold(id,val){
     if(ok&&bjPrevCase)bjLoadPreview(bjPrevCase);
     if(typeof bxLoaded!=="undefined")bxLoaded=false;
   });
+}
+/* ★2026-09-02 : 저장소 키는 1788311338058.pdf 처럼 숫자다.
+   화면에는 올릴 때의 원래 이름(또는 직원이 고친 이름)이 떠야 한다.
+   그것도 없으면 사건번호·날짜·서류이름으로 읽을 수 있는 이름을 만들어 준다. */
+function bjFileName(r){
+  if(r&&r.file_name)return String(r.file_name);
+  var kind=bjCardKind(r);
+  var d=bjOdKey(r);
+  var nm=[(r&&r.case_no)||"", d?String(d).replace(/-/g,"."):"", kind].filter(Boolean).join("_");
+  return (nm||"문서")+".pdf";
+}
+/* ★2026-09-02 : 보정 문서에 기한이 비어 있으면 송달문서에 넣어 둔 기한을 그대로 쓴다.
+   같은 건인데 한쪽만 「기한 미정」으로 뜨던 문제 */
+function bjDueOf(r){
+  var cd=String((r&&r.court_deadline)||"").slice(0,10);
+  if(cd)return {date:cd,from:"문서"};
+  try{
+    if(r&&r.delivery_id&&typeof cases!=="undefined"&&cases){
+      var c=cases.find(function(x){return x.id===r.delivery_id;});
+      if(c&&typeof procDueDate==="function"){
+        var d=procDueDate(c);
+        if(d)return {date:fmt(d),from:"송달문서"};
+      }
+    }
+  }catch(e){}
+  return {date:"",from:""};
+}
+async function bxRename(id){
+  var r=(typeof bxRows!=="undefined"&&bxRows)?bxRows.find(function(x){return x.id===id;}):null;
+  if(!r)return;
+  var cur=bjFileName(r);
+  var nn=prompt("이 문서의 파일 이름을 적어 주세요 (확장자 .pdf 까지)",cur);
+  if(nn===null)return;
+  nn=String(nn).trim();
+  if(!nn||nn===cur)return;
+  var ok=await bjDocPatch(id,{file_name:nn},"파일 이름을 바꿨습니다");
+  if(ok){ r.file_name=nn; if(typeof bxRender==="function")bxRender(); }
 }
 function bjPreviewDoc(path,name){
   if(!path){ alert("이 문서에는 보관된 원본 파일이 없습니다."); return; }
@@ -9435,7 +9479,7 @@ async function bjPick2(ev){
       +"\n\n판독은 계속되지만 [원본 미리보기]가 안 떠요. SQL L1(orders 저장 정책) 실행 여부를 확인하세요.");
     var doc={delivery_id:c.id,case_no:c.caseno,court:c.court||af.court||null,doc_type:kinds.join(","),
       served_at:c.confirmed?c.confirmedDate:null,order_date:bjOrderDate(cl.text,f.name).date||af.dates[0]||null,
-      pdf_path:(up&&!up.error)?path:null,raw_text:bjMaskRrn(cl.text),status:"판독중",assignee:me.name||null};
+      pdf_path:(up&&!up.error)?path:null,file_name:f.name||null,raw_text:bjMaskRrn(cl.text),status:"판독중",assignee:me.name||null};
     var di=await sbc.from("bj_documents").insert(doc).select("id");
     if(di.error)throw di.error;
     if(!di.data||!di.data.length)throw new Error("보정문서 저장 0건. SQL L1과 권한을 확인하세요.");
@@ -9471,7 +9515,7 @@ async function bjSaveFileOnly(c,f){
       +"\n\n등록은 계속되지만 [원본 미리보기]가 안 떠요.");
     var doc={delivery_id:c.id,case_no:c.caseno,court:c.court||af.court||null,doc_type:kinds.join(","),
       served_at:c.confirmed?c.confirmedDate:null,order_date:bjOrderDate(cl.text,f.name).date||af.dates[0]||null,
-      pdf_path:(up&&!up.error)?path:null,raw_text:bjMaskRrn(cl.text),status:"판독중",assignee:(me&&me.name)||null};
+      pdf_path:(up&&!up.error)?path:null,file_name:f.name||null,raw_text:bjMaskRrn(cl.text),status:"판독중",assignee:(me&&me.name)||null};
     var di=await sbc.from("bj_documents").insert(doc).select("id");
     if(di.error)throw di.error;
     if(!di.data||!di.data.length)throw new Error("보정문서 저장 0건. SQL L1과 권한을 확인하세요.");
@@ -12002,8 +12046,9 @@ function bjDocCardHtml(a){ /* 사건 상세·팝업 공용 문서 카드 (2026-0
   var kindTxt=bjCardKind(a);
   var mainD=ours?String(a.submitted_at||"").slice(0,10):String(a.order_date||"").slice(0,10);
   var mainL=ours?"제출일":"명령일";
+  var due=bjDueOf(a);
   var left=null;
-  if(a.court_deadline&&ws!=="보정완료"){ var dd=parseD(a.court_deadline); if(dd)left=Math.round((dd-today0())/86400000); }
+  if(due.date&&ws!=="보정완료"){ var dd=parseD(due.date); if(dd)left=Math.round((dd-today0())/86400000); }
   var hold=String(a.hold_until||"").slice(0,10);
   var hleft=null;
   if(hold){ var hd=parseD(hold); if(hd)hleft=Math.round((hd-today0())/86400000); }
@@ -12011,7 +12056,7 @@ function bjDocCardHtml(a){ /* 사건 상세·팝업 공용 문서 카드 (2026-0
   if(ws==="보정완료"){wsBg="var(--green-bg)";wsFg="var(--green)";}
   else if(ws==="추후제출"){wsBg="#EFE9F7";wsFg="#5B4B8A";}
   var pj=JSON.stringify(String(a.pdf_path||"")).replace(/"/g,"&quot;");
-  var fname=[kindTxt,(a.case_no||""),(mainD||"").replace(/-/g,".")].filter(Boolean).join("_")+".pdf";
+  var fname=bjFileName(a);
   var nj=JSON.stringify(fname).replace(/"/g,"&quot;");
   var sid="'"+a.id+"'";
 
@@ -12043,7 +12088,8 @@ function bjDocCardHtml(a){ /* 사건 상세·팝업 공용 문서 카드 (2026-0
     +'</div>'
     +'<div class="bjpick-desc">'+esc("등록 "+String(a.created_at||"").slice(0,10))
       +(a.served_at?' · 송달확인 '+esc(a.served_at):'')
-      +(a.court_deadline?' · 법원기한 '+esc(a.court_deadline):'')+'</div>'
+      +(due.date?' · 법원기한 '+esc(due.date)+(due.from==="송달문서"?" (송달문서에서)":""):'')
+      +' · '+esc(bjFileName(a))+'</div>'
     +'<div class="bjpick-acts">'
     +(ours?'':'<button class="pri" onclick="event.stopPropagation();wdCloseModal();bjOpen(\''+a.id+'\')">판독</button>')
     +'<button onclick="event.stopPropagation();bjPreviewDoc('+pj+','+nj+')">미리보기</button>'

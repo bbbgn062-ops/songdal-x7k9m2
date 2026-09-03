@@ -1583,6 +1583,8 @@
 .ba-tag.own-b{background:#EAF3EE;color:#20604A}
 .ba-tag.code{background:#F4EFF6;color:#5B4B8A}
 .ba-tag.no{background:#F1EEEA;color:#A9A199}
+.ba-tag.auto{background:#FFF3D6;color:#8A6100}
+.ba-tag.old{background:#F6ECEC;color:#9B5B5B;text-decoration:line-through}
 .ba-chk{font-size:11.5px;color:#8A6100;background:#FFF4E0;border-radius:7px;padding:2px 8px}
 .ba-nd{margin-top:4px;font-size:11.5px;color:#6B6259}
 .ba-again{display:flex;gap:6px;flex-wrap:wrap}
@@ -7443,7 +7445,7 @@ async function bjConfirmRead(){
     }
     bjIt=items;
     var again=await sbc.from("bj_items").select("*").eq("doc_id",bjD.id).order("seq");
-    bjIt=(again.data||[]).map(function(r){return {id:r.id,seq:r.seq,item_text:r.item_text,type_codes:r.type_codes||"",unresolved:!!r.unresolved,memo:r.memo||"",item_status:r.item_status||"대기",round_no:r.round_no||null,submitted_at:r.submitted_at||null,unresolved_reason:r.unresolved_reason||"",reply_kind:r.reply_kind||""};});
+    bjIt=(again.data||[]).map(function(r){return {id:r.id,seq:r.seq,item_text:r.item_text,type_codes:r.type_codes||"",unresolved:!!r.unresolved,memo:r.memo||"",item_status:r.item_status||"대기",round_no:r.round_no||null,submitted_at:r.submitted_at||null,unresolved_reason:r.unresolved_reason||"",reply_kind:r.reply_kind||"",options:(r.options&&typeof r.options==="object")?r.options:{}};});
     bjD.status="유형선택중";bjMode="type";bjIdx=0;bjMarkSeen("type");
     bjRender();
   }catch(e){alert("판독 확정 실패: "+(e.message||e));}
@@ -8071,7 +8073,7 @@ function bjOptHas(it,code,key){
 function bjOptClean(it){
   if(!it||!it.options)return;
   Object.keys(it.options).forEach(function(code){
-    if(code==="__meta")return;
+    if(code==="__meta"||code==="__auto")return;
     var t=it.options[code]||{};
     Object.keys(t).forEach(function(k){
       if(k==="_docs"||k==="_extra")return;        /* 고른 서류 목록은 청소 대상이 아니다 */
@@ -8648,6 +8650,7 @@ function bjTypeHtml(){
   /* ── 법원이 쓴 문장 (가로 전체) ── */
   h+='<div class="bj-src"><div class="cap">법원이 쓴 문장</div>'
     +'<div class="body">'+(it.unresolved?'<span class="bj-kind warn">모르겠음</span> ':'')+esc(it.item_text)+'</div>'
+    +((it.options&&it.options.__auto)?'<div class="bj-alert amber" style="margin-top:10px">이 유형은 <b>앱이 항목 글을 읽고 골라 준 것</b>입니다'+((it.options.__auto.받은코드)?' (붙여넣은 코드 “'+esc(it.options.__auto.받은코드)+'”는 지금 쓰지 않는 옛 코드였습니다)':'')+'. 맞는지 한 번만 확인해 주세요. 틀리면 왼쪽에서 다시 고르면 됩니다.</div>':'')
     +'<div class="picked"><span class="bj-note">고른 유형</span> '
     +(sel.length
        ? sel.map(function(c){var t=bjTypeByCode(c);return '<span class="pill">'+esc(c)+(t?' '+esc(t.name):'')+'</span>';}).join(" ")
@@ -14523,7 +14526,7 @@ function bjAutoPromptText(){
 "    {",
 '      "번호": 1,',
 '      "내용": "채권자목록에 누락된 채권을 추가하고 부채증명서를 제출하십시오",',
-'      "유형코드": "B01",',
+'      "유형코드": "'+(function(){var L=bjAutoActiveTypes();return L.length?L[0].code:"B-11-01";})()+'",',
 '      "착수시점": "자료 받고",',
 '      "확인할것": "",',
 '      "담당": "당사자+사무실",',
@@ -14541,7 +14544,10 @@ function bjAutoPromptText(){
 "■ 항목 규칙",
 "1. 보정명령에 적힌 요구사항을 하나씩 끊어서 넣습니다. 한 항목에 두 가지를 담지 마세요.",
 "2. 내용은 원문 문장을 그대로 옮깁니다. 요약하지 마세요.",
-"3. 유형코드를 모르면 빈 문자열로 두세요.",
+"3. 유형코드는 맨 아래 [유형코드표]에 있는 코드만 그대로 씁니다.",
+"   표에 없는 코드(B01, D02 같은 두 글자 옛 코드)는 절대 쓰지 마세요. 지금 앱에서 안 쓰는 코드입니다.",
+"   한 항목에 두 개가 맞으면 쉼표로 잇습니다. 예) \"B-11-01,B-03-03\"",
+"   확실하지 않으면 빈 문자열로 두세요. 그러면 앱이 대신 골라 줍니다.",
 "",
 "■ 착수시점 (셋 중 하나를 그대로 적습니다)",
 '  "지금 바로"   = 받을 자료 없이 오늘 우리가 바로 고칠 수 있는 것',
@@ -14575,6 +14581,8 @@ function bjAutoPromptText(){
 "■ 그 밖에",
 "  송달확인일이나 법원제출기한을 모르면 그 줄을 통째로 빼세요. 지어내지 마세요.",
 (cs?("  이 사건 번호는 "+cs+" 입니다."):null),
+"",
+(bjAutoCodeTable()?("■ 유형코드표 (여기 있는 코드만 쓰세요)\n"+bjAutoCodeTable()):"■ 유형코드표를 아직 못 불러왔습니다. 유형코드는 빈 문자열로 두세요."),
 "",
 "보정명령 내용 :",
 "(여기에 보정명령 글을 붙여넣으세요)"
@@ -14655,6 +14663,8 @@ function bjAutoGrpHtml(title,sub,rows){
          +'<div class="ba-m">'
          +  '<span class="ba-tag own-'+(x.owner==="당사자"?"c":(x.owner==="사무실"?"o":"b"))+'">'+esc(x.owner||"")+'</span>'
          +  (x.c?'<span class="ba-tag code">'+esc(x.c)+'</span>':'<span class="ba-tag no">유형 미지정</span>')
+         +  (x.src==="auto"?'<span class="ba-tag auto">앱이 고름 · 확인 필요</span>':'')
+         +  ((x.src==="auto"&&x.old)?'<span class="ba-tag old">'+esc(x.old)+'</span>':'')
          +  (x.chk?'<span class="ba-chk">확인 : '+esc(x.chk)+'</span>':'')
          + '</div>'
          +((x.needs&&x.needs.length)?'<div class="ba-nd">받을 것 : '+x.needs.map(esc).join(" · ")+'</div>':'')
@@ -14683,6 +14693,13 @@ function bjDoneHtml(){
    +  '<div class="bp-si"><b>'+wait.length+'</b><span>자료 받고</span></div>'
    +  '<div class="bp-si"><b>'+cond.length+'</b><span>조건부 즉시</span></div>'
    +'</div>'
+   +'<div class="ba-who">'
+   +  '<span>유형 붙은 항목 <b>'+(s.typed||0)+'</b></span>'
+   +  '<span>앱이 골라준 것 <b>'+(s.auto||0)+'</b></span>'
+   +  '<span>아직 유형 없는 것 <b>'+(s.miss||0)+'</b></span>'
+   +'</div>'
+   +((s.auto||0)?'<div class="bj-alert amber">유형코드 '+(s.auto)+'개는 붙여넣은 JSON의 코드가 지금 쓰는 코드표에 없어서, 앱이 항목 글을 읽고 직접 골랐습니다. ② 유형 선택 화면에서 노란 딱지가 붙은 항목만 맞는지 봐 주세요.</div>':'')
+   +((s.miss||0)?'<div class="bj-alert red">유형을 못 고른 항목이 '+(s.miss)+'개 있습니다. ② 유형 선택 화면에서 직접 골라야 이번 회차 서류에 들어갑니다.</div>':'')
    +'<div class="ba-who">'
    +  '<span>당사자가 할 일 <b>'+cCli+'</b></span>'
    +  '<span>우리가 할 일 <b>'+cOff+'</b></span>'
@@ -14714,14 +14731,102 @@ function bjDoneHtml(){
    +'<button class="btn primary mini" style="margin-top:6px" onclick="bjAutoCopy(bjAutoNoticeText(),\'안내 문구를 복사했습니다\')">안내 문구 복사</button></div>';
 
   h+='<div class="bp-row" style="margin-top:16px">'
-   +  '<button class="btn primary bj-big" onclick="bjWay=\'pick\';bjKindOk=true;bjStep=3;bjRender()">이대로 항목 확인하러 가기</button>'
+   +  '<button class="btn primary bj-big" onclick="bjAutoSaveGo(\'docs\')">저장하고 ③ 서류 확정으로 바로 가기</button>'
+   +  '<button class="btn ghost bj-big" onclick="bjAutoSaveGo(\'cd\')">저장하고 보정 처리대로 가기</button>'
+   +'</div>'
+   +'<div class="bj-note" style="margin-top:8px">'
+   +  '두 버튼 모두 <b>누르는 순간 항목·유형코드·착수시점·담당·필요자료가 한 번에 저장</b>됩니다. '
+   +  '①②단계를 따로 누를 필요가 없습니다. 유형이 틀린 항목은 위쪽 [2. 유형 선택] 탭으로 언제든 돌아가 고칠 수 있습니다.<br>'
+   +  '※ 「보정 처리대」는 <b>다른 모양의 JSON(case·tasks)</b>을 쓰는 별도 화면이라, 여기서 붙여넣은 판독 JSON이 그쪽으로 자동으로 넘어가지는 않습니다.'
+   +'</div>'
+   +'<div class="bp-row" style="margin-top:10px">'
+   +  '<span class="bj-link" onclick="bjWay=\'pick\';bjKindOk=true;bjStep=3;bjRender()">저장 전에 항목부터 눈으로 확인하기</span>'
    +  '<span class="bj-link" onclick="bjWay=\'paste\';bjRender()">다시 붙여넣기</span>'
    +  '<span class="bj-link" onclick="bjWay=\'pick\';bjStep=1;bjRender()">처음부터 손으로 하기</span>'
    +'</div>';
   return h+'</div>';
 }
 
+
+/* ===== 2026-09-03 혜림 지시 : 자동 세팅이 끝나면 한 번에 저장하고 바로 일하는 화면으로 =====
+   전에는 [항목 확인하러 가기] → [판독 확정] → [유형 선택 완료] 로 세 번을 더 눌러야 했다.
+   dest = "docs" : ③ 서류 확정 화면까지 한 번에
+   dest = "cd"   : 저장만 하고 왼쪽 메뉴의 「보정 처리대」로 */
+var bjAutoBusy=false;
+async function bjAutoSaveGo(dest){
+  if(bjAutoBusy)return;
+  if(!bjIt.length){alert("채워진 항목이 없습니다. 먼저 붙여넣기로 자동 세팅을 해 주세요.");return;}
+  bjAutoBusy=true;
+  try{
+    /* 판독 확정에 필요한 조건을 미리 맞춰 둔다 */
+    bjWay="pick"; bjKindOk=true; bjStep=3;
+    await bjConfirmRead();                       /* 항목 · 유형코드 · 착수시점/담당/필요자료 를 DB에 저장 */
+    if(!bjD||bjD.status!=="유형선택중"){         /* bjConfirmRead 안에서 실패하면 이미 알림이 떴다 */
+      bjRender(); return;
+    }
+    if(dest==="cd"){
+      if(typeof toast==="function")toast("저장했습니다. 보정 처리대로 갑니다");
+      showView("cd");
+      return;
+    }
+    var none=bjIt.filter(function(x){return !x.unresolved&&!(x.type_codes||"").length;}).length;
+    bjMode="docs"; bjMarkSeen("type"); bjMarkSeen("docs");
+    await bjLoadCtx();
+    if(!bjReqs.length&&bjIt.some(function(x){return x.item_status==="대기";}))bjStartRound();
+    else{bjRound=null;bjRender();}
+    if(none)alert("저장했습니다.\n\n다만 유형을 못 고른 항목이 "+none+"개 있습니다.\n[② 유형 선택]에서 지정하면 다음 회차 서류에 들어갑니다.");
+  }catch(e){
+    alert("저장 중 문제가 생겼습니다: "+(e.message||e));
+  }finally{ bjAutoBusy=false; }
+}
+
 /* ---------- 붙여넣은 JSON 을 실제로 채우기 ---------- */
+/* ===== 2026-09-03 : 유형코드 자동 고르기 =====
+   문제 : 부탁글 예시가 옛 코드(B01)라 Claude가 옛 40종 코드로 답을 준다.
+          그 40종은 2026-07-30 에 active=false 로 숨겨져서 유형 선택 화면에 없다.
+          그래서 코드가 채워진 것처럼 보여도 서류가 안 나오고 17개를 손으로 다시 골라야 했다.
+   해결 : ① 부탁글에 지금 쓰는 유형코드표를 통째로 넣는다
+          ② 그래도 코드가 없거나 옛 코드면, 앱이 가진 판별 엔진으로 직접 고른다 */
+function bjAutoActiveTypes(){
+  return ((bjKb&&bjKb.types)||[]).filter(function(t){return t.active!==false&&t.code;});
+}
+/* 항목 글을 읽고 가장 비슷한 유형 하나를 고른다. 점수가 0이면 안 고른다 */
+function bjAutoTopType(text){
+  var t=String(text||"").trim();
+  if(!t)return null;
+  var L=bjAutoActiveTypes();
+  if(!L.length)return null;
+  var score={},neu={};
+  try{ score=bjScoreTypes(t)||{}; }catch(e){}
+  try{ neu=bjScoreNew(t)||{}; }catch(e){}
+  var best=null,bs=0;
+  L.forEach(function(x){
+    var v=(score[x.code]||0)*3+(neu[x.code]||0);
+    if(v>bs){bs=v;best=x;}
+  });
+  return bs>0?best:null;
+}
+/* Claude가 준 코드를 검사한다. 지금 살아 있는 코드만 통과시키고, 없으면 앱이 고른다.
+   돌려주는 것 : {code:"B-11-01", src:"json"|"auto"|"", old:"B01"} */
+function bjAutoResolveCode(codeStr,text){
+  var raw=String(codeStr||"").split(/[,\u00b7\/\s]+/).map(function(x){return x.trim();}).filter(Boolean);
+  var live={},L=bjAutoActiveTypes();
+  L.forEach(function(t){live[t.code]=1;});
+  var ok=raw.filter(function(c){return live[c];});
+  if(ok.length)return {code:ok.join(","),src:"json",old:raw.join(",")};
+  var g=bjAutoTopType(text);
+  if(g)return {code:g.code,src:"auto",old:raw.join(",")};
+  return {code:"",src:"",old:raw.join(",")};
+}
+/* 부탁글에 붙일 유형코드표. 지금 살아 있는 것만, 코드와 이름만 */
+function bjAutoCodeTable(){
+  var L=bjAutoActiveTypes();
+  if(!L.length)return null;
+  return L.map(function(t){
+    return "  "+t.code+" = "+String(t.name||"").replace(/\s+/g," ").trim();
+  }).join("\n");
+}
+
 function bjAutoPickArr(o){
   if(Array.isArray(o))return o;
   var keys=["항목","items","list","보정항목","rows"];
@@ -14780,12 +14885,14 @@ function bjAutoApply(){
   var arr=bjAutoPickArr(o);
   if(!arr||!arr.length){ bjAutoErr="항목 목록을 찾지 못했습니다. \"항목\" 안에 배열이 있어야 합니다."; bjRender(); return; }
 
-  var items=[],list=[],typed=0;
+  var items=[],list=[],typed=0,autoN=0,missN=0;
   arr.forEach(function(x,i){
     if(typeof x==="string")x={내용:x};
     var txt=bjAutoField(x,["내용","item_text","text","요구","본문","content"]);
     if(!txt)return;
-    var code=bjAutoField(x,["유형코드","type_codes","code","유형","types"]);
+    var rawcode=bjAutoField(x,["유형코드","type_codes","code","유형","types"]);
+    var res=bjAutoResolveCode(rawcode,txt);
+    var code=res.code;
     var memo=bjAutoField(x,["메모","memo","note","비고"]);
     /* 2026-08-31 : 실제 일 세팅에 쓰는 값들 */
     var start=bjAutoNorm(bjAutoField(x,["착수시점","시작","start"]),BJ_STARTS,"자료 받고");
@@ -14793,10 +14900,13 @@ function bjAutoApply(){
     var chk=bjAutoField(x,["확인할것","확인","check"]);
     var needs=bjAutoArr(x["필요자료"]||x["필요서류"]||x.needs);
     if(code)typed++;
+    if(res.src==="auto")autoN++;
+    if(!code)missN++;
+    var opt={착수시점:start,담당:owner,확인할것:chk,필요자료:needs};
+    if(res.src==="auto")opt.__auto={고른코드:code,받은코드:res.old||"",적은날:(typeof fmt==="function"?fmt(new Date()):"")};
     items.push({seq:items.length+1,item_text:txt,type_codes:code,unresolved:false,memo:memo,
-      item_status:"대기",round_no:null,
-      options:{착수시점:start,담당:owner,확인할것:chk,필요자료:needs}});
-    list.push({t:txt.length>70?txt.slice(0,70)+"…":txt,c:code,start:start,owner:owner,chk:chk,needs:needs});
+      item_status:"대기",round_no:null,options:opt});
+    list.push({t:txt.length>70?txt.slice(0,70)+"…":txt,c:code,src:res.src,old:res.old,start:start,owner:owner,chk:chk,needs:needs});
   });
   if(!items.length){ bjAutoErr="항목에서 글을 못 읽었습니다. 각 항목에 \"내용\"이 있어야 합니다."; bjRender(); return; }
 
@@ -14815,7 +14925,7 @@ function bjAutoApply(){
   bjIt=items;
   bjSel=0; bjIdx=0;
   bjAutoErr="";
-  bjAutoSum={n:items.length,typed:typed,served:served,due:due,list:list,reqs:reqs,again:again,notice:notice};
+  bjAutoSum={n:items.length,typed:typed,auto:autoN,miss:missN,served:served,due:due,list:list,reqs:reqs,again:again,notice:notice};
   /* 새로고침해도 남도록 문서에 같이 적어 둔다 (다른 값은 건드리지 않는다) */
   try{
     if(bjD){

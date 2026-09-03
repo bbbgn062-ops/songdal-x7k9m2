@@ -2846,7 +2846,7 @@ var rcOffices=[];     /* offices 표 [{id,name}] */
 var rcDropped=0;      /* 우리 명단에 없어서 화면에서 뺀 줄 수 (저장도 하지 않는다) */
 /* ★2026-09-03 혜림 : 왜 빠졌는지 알 수 없으면 우리 사건을 놓쳐도 모른다.
    못 찾은 줄과 그 이유를 남겨 화면에서 펼쳐 볼 수 있게 한다 */
-var rcDropList=[], rcDropOpen=false;
+var rcDropList=[], rcDropOpen=true;   /* ★못 찾은 줄은 기본으로 펼쳐 둔다. 접어 두면 우리 사건을 놓친다 */
 var rcDup=0;          /* 엑셀에 똑같은 줄이 겹쳐 있어 한 줄로 합친 개수 */
 var RC_URGENT_WORDS=["기일변경"];  /* 즉시 안내 낱말. 나중에 설정 화면에서 늘릴 수 있게 배열 */
 var rcIntake="";      /* 접수 유형 거르기 : ""=모두 / "전체" / "보정만" */
@@ -3478,19 +3478,20 @@ function rcRender(){
   /* 표 */
   /* 못 찾은 줄 : 왜 빠졌는지 그대로 보여 준다 (2026-09-03) */
   if(rcDropOpen&&rcDropList.length){
-    h+='<div class="bj-alert amber" style="margin:10px 0"><b>못 찾은 '+rcDropList.length+'건입니다.</b><br>'
+    h+='<div class="bj-alert red" style="margin:10px 0"><b>못 찾은 '+rcDropList.length+'건입니다. 우리 사건이 섞여 있는지 반드시 훑어 주세요.</b><br>'
       +'우리 사건인데 여기 있다면 케이스허브의 <b>사건번호나 법원</b>이 엑셀과 다른 것입니다. '
-      +'케이스허브를 고치거나, 사건이 이송된 것이면 송달문서 상세의 [이송 처리]를 쓰세요. '
-      +'사건번호 칸에 <b>쉼표로 옛 번호를 함께</b> 적어 두면 둘 다 잡힙니다.</div>';
+      +'오른쪽 <b>[우리 사건이에요]</b>를 눌러 이름으로 바로 이어 붙일 수 있습니다. '
+      +'이송된 건이면 송달문서 상세의 [이송 처리]를, 번호가 여러 개면 케이스허브 사건번호 칸에 <b>쉼표로 함께</b> 적어 주세요.</div>';
     h+='<div class="rc-tblwrap"><table class="rc-tbl"><thead><tr>'
-      +'<th>사건번호</th><th>법원 · 재판부</th><th>송달문서</th><th style="width:92px">발송일자</th><th>못 찾은 이유</th>'
+      +'<th>사건번호</th><th>법원 · 재판부</th><th>송달문서</th><th style="width:92px">발송일자</th><th>못 찾은 이유</th><th style="width:120px">할 일</th>'
       +'</tr></thead><tbody>'
-      +rcDropList.map(function(d){
+      +rcDropList.map(function(d,di){
         return '<tr><td class="mono">'+esc(d.x.caseno)+'</td>'
           +'<td>'+esc(d.x.court)+(d.x.part?'<div class="bj-note">'+esc(d.x.part)+'</div>':'')+'</td>'
           +'<td>'+esc(d.x.doc)+'</td>'
           +'<td class="mono">'+esc(d.x.sent||"-")+'</td>'
-          +'<td style="color:#B45309;font-weight:700">'+esc(d.why)+'</td></tr>';
+          +'<td style="color:#B45309;font-weight:700">'+esc(d.why)+'</td>'
+          +'<td><button class="btn ghost mini" onclick="rcClaim('+di+')">우리 사건이에요</button></td></tr>';
       }).join("")
       +'</tbody></table></div>';
   }
@@ -3702,6 +3703,43 @@ async function rcAttachFiles(L){
     if(left.length)rcFiles[k]=left; else delete rcFiles[k];
   }
   return {done:done,fail:fail};
+}
+/* ★2026-09-03 혜림 : 남부·블루는 자기 사무실 사건이 하나도 빠지면 안 된다.
+   자동으로 못 찾은 줄도 사람이 이름으로 직접 이어 붙일 수 있게 한다.
+   이렇게 이어 붙이면 그 줄이 목록에 나타나 [등록]할 수 있다. */
+async function rcClaim(i){
+  var d=rcDropList[i];
+  if(!d){alert("그 줄을 찾지 못했습니다. 화면을 다시 그린 뒤 해보세요.");return;}
+  var nm=prompt("이 줄이 우리 사건이라면 의뢰인 이름을 적어 주세요.\n\n"
+    +"사건번호 : "+(d.x.caseno||"")+"\n법원 : "+(d.x.court||"")+"\n문서 : "+(d.x.doc||""),"");
+  if(nm===null)return;
+  nm=String(nm).trim();
+  if(!nm)return;
+  busy(true);
+  var r=await sbc.from("clients").select("id,name,case_no,court,office_id,intake_type").ilike("name","%"+nm+"%").limit(20);
+  busy(false);
+  if(r.error){ alert("의뢰인을 찾지 못했습니다\n\n"+(r.error.message||r.error)); return; }
+  var rows=r.data||[];
+  if(!rows.length){
+    alert("케이스허브에서 「"+nm+"」 을 찾지 못했습니다.\n\n케이스허브에 먼저 등록한 뒤 다시 해주세요.\n(내 계정에서 볼 수 있는 의뢰인만 찾아집니다)");
+    return;
+  }
+  var pick=rows[0];
+  if(rows.length>1){
+    var t=rows.map(function(x,k){return (k+1)+". "+(x.name||"")+"  "+(x.case_no||"(사건번호 없음)");}).join("\n");
+    var sel=prompt("같은 이름이 여러 명입니다. 번호를 골라 주세요.\n\n"+t,"1");
+    if(sel===null)return;
+    var k2=parseInt(sel,10)-1;
+    if(!(k2>=0&&k2<rows.length)){alert("번호를 잘못 적으셨습니다.");return;}
+    pick=rows[k2];
+  }
+  var key=rcCourtKey(d.x.court)+"|"+rcNormCase(d.x.caseno);
+  if(!rcCli)rcCli={};
+  rcCli[key]={id:pick.id,name:pick.name||"",office_id:pick.office_id||null,court:d.x.court||"",intake:pick.intake_type||""};
+  rcRender();
+  alert((pick.name||"")+" 님으로 이어 붙였습니다.\n\n위 목록에 나타났으니 확인하고 [등록]하세요.\n\n"
+    +"다음부터 자동으로 잡히게 하려면 케이스허브의 사건번호를\n"
+    +(d.x.caseno||"")+" 로 고치거나, 쉼표로 함께 적어 두세요.");
 }
 function rcRegisterOne(k){
   rcSel={}; rcSel[k]=true;

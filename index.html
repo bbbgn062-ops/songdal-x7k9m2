@@ -3405,6 +3405,11 @@ function rcRender(){
   var nCourtDiff=L.filter(function(r){return r.courtDiff;}).length;
   var nNumDiff=L.filter(function(r){return r.numDiff;}).length;
   var nCourtWas=L.filter(function(r){return r.courtWas;}).length;
+  if(me&&!me.isMaster){
+    h+='<div class="bj-alert amber" style="margin:10px 0"><b>지금은 담당자 계정으로 보고 있습니다.</b><br>'
+      +'담당자 계정은 자기 사무소 의뢰인만 볼 수 있어, 다른 사무소 사건이 「못 찾음」으로 빠질 수 있습니다. '
+      +'<b>빠지는 것 없이 전부 확인하려면 관리자 계정에서 대조하세요.</b></div>';
+  }
   h+='<div class="bj-alert" style="margin:10px 0">엑셀 <b>'+rcRows.length+'건</b>을 읽었습니다. '
     +'우리 명단과 맞는 것은 <b>'+L.length+'건</b>입니다. '
     +'나머지 <b>'+rcDropped+'건</b>은 우리 명단에서 못 찾아 화면에서 뺐습니다(서버에 저장하지 않습니다).'
@@ -3483,7 +3488,9 @@ function rcRender(){
     h+='<div class="bj-alert red" style="margin:10px 0"><b>못 찾은 '+rcDropList.length+'건입니다. 우리 사건이 섞여 있는지 반드시 훑어 주세요.</b><br>'
       +'우리 사건인데 여기 있다면 케이스허브의 <b>사건번호나 법원</b>이 엑셀과 다른 것입니다. '
       +'오른쪽 <b>[우리 사건이에요]</b>를 눌러 이름으로 바로 이어 붙일 수 있습니다. '
-      +'이송된 건이면 송달문서 상세의 [이송 처리]를, 번호가 여러 개면 케이스허브 사건번호 칸에 <b>쉼표로 함께</b> 적어 주세요.</div>';
+      +'이송된 건이면 송달문서 상세의 [이송 처리]를, 번호가 여러 개면 케이스허브 사건번호 칸에 <b>쉼표로 함께</b> 적어 주세요.'
+      +'<div style="margin-top:8px"><button class="btn ghost mini" onclick="rcDropCsv()">못 찾은 줄 엑셀로 내려받기</button>'
+      +' <span class="bj-note">화면을 새로고침하면 이 목록은 사라집니다. 남부·블루에 확인을 넘길 때는 내려받아 두세요</span></div></div>';
     h+='<div class="rc-tblwrap"><table class="rc-tbl"><thead><tr>'
       +'<th>사건번호</th><th>법원 · 재판부</th><th>송달문서</th><th style="width:92px">발송일자</th><th>못 찾은 이유</th><th style="width:120px">할 일</th>'
       +'</tr></thead><tbody>'
@@ -3709,6 +3716,24 @@ async function rcAttachFiles(L){
 /* ★2026-09-03 혜림 : 남부·블루는 자기 사무실 사건이 하나도 빠지면 안 된다.
    자동으로 못 찾은 줄도 사람이 이름으로 직접 이어 붙일 수 있게 한다.
    이렇게 이어 붙이면 그 줄이 목록에 나타나 [등록]할 수 있다. */
+/* ★2026-09-03 혜림 : 못 찾은 줄은 화면을 새로고침하면 사라진다.
+   남부·블루 사건이 섞여 있을 수 있으므로 파일로 내려받아 두고 확인할 수 있게 한다. */
+function rcDropCsv(){
+  if(!rcDropList.length){ alert("못 찾은 줄이 없습니다."); return; }
+  var head=["사건번호","법원","재판부","송달문서","발송일자","못 찾은 이유"];
+  function q(v){ return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'; }
+  var lines=[head.map(q).join(",")];
+  rcDropList.forEach(function(d){
+    lines.push([d.x.caseno,d.x.court,d.x.part,d.x.doc,d.x.sent,d.why].map(q).join(","));
+  });
+  var csv="﻿"+lines.join("\r\n");
+  var blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="미확인송달_못찾은줄_"+fmt(new Date())+".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  if(typeof wdToast==="function")wdToast("못 찾은 "+rcDropList.length+"건을 파일로 내려받았습니다");
+}
 async function rcClaim(i){
   var d=rcDropList[i];
   if(!d){alert("그 줄을 찾지 못했습니다. 화면을 다시 그린 뒤 해보세요.");return;}

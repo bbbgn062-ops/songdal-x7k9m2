@@ -4954,6 +4954,64 @@ async function patchCase(id,patch,logMsg){
   }
   finally{busy(false);}
 }
+/* ★2026-09-03 혜림 : 법원 이송으로 관할법원과 사건번호가 통째로 바뀌는 일이 있다.
+   (김병태 : 춘천지방법원 강릉지원 2026개회20742 → 수원회생법원 2026개회117599)
+   케이스허브만 고치면 송달문서와 보정문서는 옛 번호에 남아 서로를 못 찾는다.
+   그래서 옛 번호로 된 것을 한꺼번에 새 번호로 옮긴다. */
+async function bjMoveCase(id){
+  var c=(cases||[]).find(function(x){return x.id===id;});
+  if(!c){alert("사건을 찾지 못했습니다.");return;}
+  var oldNo=String(c.caseno||"").trim(), oldCourt=String(c.court||"").trim();
+  var nc=prompt("이송된 새 관할법원을 적어 주세요.\n\n지금 : "+(oldCourt||"(비어 있음)"),oldCourt);
+  if(nc===null)return;
+  nc=String(nc).trim();
+  if(!nc){alert("법원을 적어 주세요.");return;}
+  var nn=prompt("이송된 새 사건번호를 적어 주세요.\n\n지금 : "+(oldNo||"(비어 있음)"),oldNo);
+  if(nn===null)return;
+  nn=String(nn).trim();
+  if(!nn){alert("사건번호를 적어 주세요.");return;}
+  if(rcNormCase(nn)===rcNormCase(oldNo)&&nc===oldCourt){alert("바뀐 것이 없습니다.");return;}
+
+  var same=(cases||[]).filter(function(x){return rcNormCase(x.caseno)===rcNormCase(oldNo);});
+  var msg="이 의뢰인의 사건을 이송된 곳으로 옮깁니다.\n\n"
+    +"옛것 : "+(oldCourt||"")+" "+oldNo+"\n"
+    +"새것 : "+nc+" "+nn+"\n\n"
+    +"· 옛 번호로 된 송달문서 "+same.length+"줄\n"
+    +"· 그 줄에 붙은 보정문서 전부\n"
+    +"이 한꺼번에 새 번호로 바뀝니다. 처리 이력에 옛 번호가 남습니다.\n\n계속할까요?";
+  if(!confirm(msg))return;
+
+  busy(true);
+  var okN=0, ngN=0, lastErr="";
+  try{
+    /* 보정문서 먼저 (송달문서가 바뀌면 짝을 못 찾을 수 있다) */
+    try{
+      var d=await sbc.from("bj_documents").update({case_no:nn,court:nc}).eq("case_no",oldNo).select("id");
+      if(d.error)throw d.error;
+    }catch(e){ lastErr=(e&&e.message)||String(e); }
+    for(var i=0;i<same.length;i++){
+      var row=same[i];
+      var nlog=(row.log||[]).concat([{t:fmt(new Date()),m:"법원 이송 : "+(oldCourt||"")+" "+oldNo+" → "+nc+" "+nn+" ("+((me&&me.name)||"직원")+")"}]);
+      var u=await sd().from("deliveries").update({case_no:nn,court:nc,log:nlog}).eq("id",row.id);
+      if(u.error){ ngN++; if(!lastErr)lastErr=u.error.message||String(u.error); }
+      else okN++;
+    }
+    await refreshAll();
+    if(typeof bxLoaded!=="undefined")bxLoaded=false;
+    busy(false);
+    alert("이송 처리를 마쳤습니다.\n\n· 송달문서 "+okN+"줄을 새 번호로 옮겼습니다."
+      +(ngN?("\n· "+ngN+"줄은 실패했습니다 : "+lastErr):"")
+      +"\n\n케이스허브에는 새 번호만 넣어 두면 앞으로 오는 문서는 잘 잡힙니다.\n"
+      +"다만 전자소송 엑셀에 옛 번호로 남아 있는 문서가 있다면,\n"
+      +"케이스허브 사건번호 칸에 쉼표로 옛 번호도 함께 적어 두시면 그것도 계속 잡힙니다.\n"
+      +"예) "+nc+" "+nn+", "+(oldCourt||"")+" "+oldNo);
+    if(typeof render==="function")render();
+    if(typeof renderDetail==="function")renderDetail();
+  }catch(e){
+    busy(false);
+    alert("이송 처리 실패\n\n"+((e&&e.message)||e)+"\n\n(이 문구를 그대로 알려 주시면 원인을 바로 찾겠습니다)");
+  }
+}
 function setStatus(id,val){patchCase(id,{status:val},"상태 → "+val);}
 function confirmToggle(id){
   const c=cases.find(x=>x.id===id);if(!c)return;
@@ -5203,6 +5261,7 @@ function renderDetail(){
       <button class="btn ghost mini" style="margin-top:4px" onclick="goLinkClient('${c.id}')">직접 골라서 연결</button>
     </div>`}
     <div style="margin:10px 0 2px"><div style="font-weight:600;font-size:13px;margin:0 0 6px">이 사건의 문서</div><div id="bjprev-${c.id}">불러오는 중…</div></div>
+    <div class="kv"><span class="k">사건번호</span><span>${esc(c.caseno||"")}${c.court?' · '+esc(c.court):''} <button class="btn ghost mini" onclick="bjMoveCase('${c.id}')" title="법원 이송으로 관할법원과 사건번호가 바뀌었을 때 씁니다. 이 의뢰인의 옛 번호로 된 송달문서와 보정문서를 한꺼번에 새 번호로 옮깁니다">이송 처리</button></span></div>
     <div class="kv"><span class="k">담당자</span><span>${esc(ownerName(c.owner_id)||"미지정")}</span></div>
     ${c.client_id?'<div id="clientinfo-'+c.id+'" style="margin:8px 0;padding:10px 12px;background:#faf8f6;border-radius:10px;font-size:13px">의뢰인 정보 불러오는 중…</div>':''}
     <div class="kv"><span class="k">송달 도착일</span><span>${esc(c.date)}</span></div>

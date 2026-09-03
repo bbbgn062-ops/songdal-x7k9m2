@@ -1915,6 +1915,8 @@ function followupLeft(c){if(c.submitStatus!=="일부제출"||!c.followupDate)ret
 function todoKey(c){const vals=[];if(!c.confirmed)vals.push(confLeft(c));const pd=procLeft(c);if(pd!==null)vals.push(pd);const fl=followupLeft(c);if(fl!==null)vals.push(fl);return vals.length?Math.min(...vals):9999;}
 function submitChip(c){
   if(c.submitStatus==="제출완료")return '<span class="chip ok">제출완료</span>';
+  if(c.submitStatus==="미제출"&&String(c.followupNote||"").indexOf("임시저장")>=0)
+    return '<span class="chip" style="background:#E8EEF7;color:#2B4570">전자소송 임시저장</span>';
   if(c.submitStatus==="일부제출"){const fl=followupLeft(c);const t=c.followupDate?("추후제출 "+esc(c.followupDate)+(fl!==null?(fl<0?" (D+"+(-fl)+")":fl===0?" (오늘)":" (D-"+fl+")"):"")):"추후제출 예정";return '<span class="chip '+(fl!==null&&fl<=0?'bad':'wait')+'">일부제출 · '+t+'</span>';}
   return '';
 }
@@ -5340,7 +5342,7 @@ function renderDetail(){
     : isNotice(c) ? '<b style="color:#8a5a00">당사자 안내</b> · 법원에 낼 것은 없고 당사자에게 알리기만 하면 됩니다 (안내를 마치면 상태를 처리완료로 내리세요)'
     : procDueDate(c) ? (fmt(procDueDate(c))+' ('+esc(c.termType)+')'+(procRolled(c)?' · 주말·공휴일로 연장(원래 '+fmt(procDueRaw(c))+')':'')+' · '+procBadge(c)) : ('송달 확인 후 확정 (확인일 +'+c.termDays+'일)');
   w.innerHTML=`<div class="detail">
-    <div class="h2row"><h2 style="margin:0">${esc(c.name)} · ${esc(c.caseno)} <span class="pill">서류 ${docProg(c)}%</span></h2>
+    <div class="h2row"><h2 style="margin:0">${esc(c.name)} · ${esc(c.caseno)} <span class="pill">서류 ${docProg(c)}%</span>${firmChipOf(c)}${c.court?' <span class="pill" style="font-size:10.5px;background:#EEF1F8;color:#2b3a67">'+esc(c.court)+'</span>':''}</h2>
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">닫기</button></div>
     <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")} <button class="btn primary mini" onclick="bjFromDelivery('${c.id}')">문서 등록·판독</button> <label class="btn ghost mini" style="margin:0;cursor:pointer" title="판독 화면으로 넘어가지 않고 '이 사건의 문서'에만 넣습니다. 판독은 나중에 [판독] 버튼으로 이어서 하면 됩니다">파일만 등록<input type="file" accept="application/pdf,image/*" onchange="caseFilePick('${c.id}',event)" style="display:none"></label> <button class="btn ghost mini" onclick="wdOpenFromCase('${c.id}')">대행 작업대</button></span></div>
     ${c.client_id?'':`<div class="bj-alert amber" style="margin:10px 0">
@@ -6357,6 +6359,14 @@ async function bjSyncCase(delId,state,holdDate,quiet){
     patch.followup_note=null;
     if(c.status!=="처리완료")patch.status="처리완료";
     msg="보정 완료 · 제출 상태 제출완료 · 상태 처리완료";
+  }else if(state==="임시저장"){
+    /* ★2026-09-03 혜림 : 전자소송에 임시저장만 해 둔 상태. 아직 제출한 것이 아니므로
+       제출 상태는 미제출로 두고 기한도 그대로 센다. 어디까지 했는지만 남긴다. */
+    patch.submit_status="미제출";
+    patch.followup_date=null;
+    patch.followup_note="전자소송 임시저장 (아직 제출 전)";
+    if(c.status==="처리완료")patch.status="진행중";
+    msg="전자소송 임시저장 · 아직 제출 전";
   }else{
     patch.submit_status="미제출";
     patch.followup_date=null;
@@ -6391,7 +6401,8 @@ async function bjHealHold(c,rows){
     /* 이미 맞으면 건드리지 않는다 */
     if(up.state==="보정완료"&&dc.submitStatus==="제출완료"&&dc.status==="처리완료")continue;
     if(up.state==="추후제출"&&String(dc.followupDate||"").slice(0,10)===up.hold&&dc.submitStatus==="일부제출")continue;
-    if(up.state==="보정중"&&dc.submitStatus==="미제출"&&dc.status!=="처리완료")continue;
+    if(up.state==="보정중"&&dc.submitStatus==="미제출"&&dc.status!=="처리완료"&&!dc.followupNote)continue;
+    if(up.state==="임시저장"&&dc.submitStatus==="미제출"&&dc.status!=="처리완료"&&String(dc.followupNote||"").indexOf("임시저장")>=0)continue;
     await bjSyncCase(delId,up.state,up.hold,true); n++;
   }
   if(n){
@@ -6415,10 +6426,11 @@ async function bjPushHold(id,delId,state,hold){
 function bjRollup(docs){
   docs=(docs||[]);
   if(!docs.length)return null;
-  var allDone=true, hold=null;
+  var allDone=true, hold=null, tmp=false;
   docs.forEach(function(r){
     var w=bjWorkStateOf(r);
     if(w!=="보정완료")allDone=false;
+    if(w==="임시저장")tmp=true;
     if(w==="추후제출"&&r.hold_until){
       var h=String(r.hold_until).slice(0,10);
       if(!hold||h>hold)hold=h;
@@ -6426,6 +6438,8 @@ function bjRollup(docs){
   });
   if(allDone)return {state:"보정완료",hold:null};
   if(hold)return {state:"추후제출",hold:hold};
+  /* 전자소송 임시저장은 아직 낸 것이 아니다. 기한은 그대로 세고 「임시저장」으로만 표시한다 */
+  if(tmp)return {state:"임시저장",hold:null};
   return {state:"보정중",hold:null};
 }
 async function bjRollupSync(delId,quiet){
@@ -12790,6 +12804,7 @@ function bjDocCardHtml(a){ /* 사건 상세·팝업 공용 문서 카드 (2026-0
   var wsBg="var(--amber-bg)",wsFg="var(--amber)";
   if(ws==="보정완료"){wsBg="var(--green-bg)";wsFg="var(--green)";}
   else if(ws==="추후제출"){wsBg="#EFE9F7";wsFg="#5B4B8A";}
+  else if(ws==="임시저장"){wsBg="#E8EEF7";wsFg="#2B4570";}
   var pj=JSON.stringify(String(a.pdf_path||"")).replace(/"/g,"&quot;");
   var fname=bjFileName(a);
   var nj=JSON.stringify(fname).replace(/"/g,"&quot;");
@@ -12808,6 +12823,7 @@ function bjDocCardHtml(a){ /* 사건 상세·팝업 공용 문서 카드 (2026-0
     +'<div><div class="sl">보정 상태</div>'
     +'<select onchange="bjCardState('+sid+','+did+',this.value)">'
     +  '<option value="보정중"'+(ws==="보정중"?" selected":"")+'>보정중</option>'
+    +  '<option value="임시저장"'+(ws==="임시저장"?" selected":"")+'>전자소송 임시저장 (아직 제출 전)</option>'
     +  '<option value="추후제출"'+(ws==="추후제출"?" selected":"")+'>추후제출 (기간 연장)</option>'
     +  '<option value="보정완료"'+(ws==="보정완료"?" selected":"")+'>보정완료</option>'
     +'</select></div>'

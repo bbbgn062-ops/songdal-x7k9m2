@@ -3883,7 +3883,7 @@ async function rcRegister(){
         (srv[k0]=srv[k0]||[]).push(d);
       });
     }
-    var suffixed=0, skipped=0, skipList=[], takenBy={}, keep=[];
+    var suffixed=0, skipped=0, courtClash=0, skipList=[], takenBy={}, keep=[];
     rcSavedDoc={};
     rows.forEach(function(w,i){
       var r=L[i];
@@ -3893,7 +3893,17 @@ async function rcRegister(){
       var excelN=(r&&r.dupN>1)?r.dupN:1;             /* 엑셀에 같은 이름이 몇 줄인가 */
       var total=Math.max(excelN,haveN);              /* 이 문서는 모두 몇 통인가 */
       if(srv&&haveN>=total){                         /* 서버가 이미 다 갖고 있다 → 넣을 것이 없다 */
-        skipped++; skipList.push(String(w.case_no||"")+" "+rcDocBase(w.doctype));
+        /* ★2026-09-04 혜림 지적 : "법원이 다르면 아예 다른 사건 아니냐"
+           맞는 말이지만 서버 유니크 uq_delivery 에 법원이 없어서, 법원만 다르고
+           사건번호·문서·발송일이 같으면 서버가 두 번째 줄을 받아 주지 않는다.
+           그래서 여기서 미리 걸러 주되, '법원만 다르다'는 사실을 반드시 알려 준다. */
+        var odCourt=null;
+        if(have)for(var hi=0;hi<have.length;hi++){
+          if(rcCourtKey(have[hi].court)!==rcCourtKey(w.court)){ odCourt=have[hi].court||"(법원이 비어 있음)"; break; }
+        }
+        if(odCourt)courtClash++;
+        skipped++;
+        skipList.push(String(w.case_no||"")+" "+rcDocBase(w.doctype)+(odCourt?(" ← 이미 등록된 법원 : "+odCourt):""));
         return;
       }
       if(total<=1){ keep.push(w); rcSavedDoc[rcKey(r)]=w.doctype; return; }   /* 한 통뿐 → 번호 안 붙임 */
@@ -3952,6 +3962,11 @@ async function rcRegister(){
       msg.push("· "+skipped+"건은 사건번호·문서 이름·발송일이 같은 문서가 이미 등록돼 있어 건너뛰었습니다."
         +(skipList.length?("\n  ("+skipList.slice(0,5).join(" / ")+(skipList.length>5?(" 외 "+(skipList.length-5)+"건"):"")+")"):"")
         +"\n  송달문서 목록에서 그 사건번호로 찾아보시면 있습니다.");
+    }
+    if(courtClash){
+      msg.push("★그중 "+courtClash+"건은 법원 이름만 다르고 사건번호·문서·발송일이 같습니다."
+        +"\n  서버 규칙(uq_delivery)에 법원이 빠져 있어 두 건을 함께 담지 못합니다."
+        +"\n  정말 서로 다른 사건이면 관리자에게 알려 규칙에 법원을 넣어야 합니다.");
     }
     if(dupServer)msg.push("· "+dupServer+"건은 이미 등록돼 있는 문서라 건너뛰었습니다.\n  담당자가 다른 직원이면 내 화면에 안 보여서 '아직 안 등록'으로 나옵니다.\n  관리자에게 그 사건의 담당자를 확인해 달라고 하세요.");
     if(_att&&_att.done)msg.push("· 미리 담아 둔 PDF "+_att.done+"건을 '이 사건의 문서'에 함께 넣었습니다.");

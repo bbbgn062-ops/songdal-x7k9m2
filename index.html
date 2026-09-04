@@ -3223,6 +3223,14 @@ function rcIsDupErr(e){
   var m=String((e&&e.message)||"")+" "+String((e&&e.details)||"");
   return String((e&&e.code)||"")==="23505" || m.indexOf("duplicate key")>=0 || m.indexOf("uq_delivery")>=0;
 }
+/* ★2026-09-04 추가 : 문서명 뒤에 붙은 (1/2) 같은 번호를 떼거나 읽는다.
+   같은 사건에 같은 이름의 송달문서가 여러 통 올 때, 서버 유니크 규칙 uq_delivery 를
+   피하려고 저장할 때 붙이는 번호다. */
+function rcDocBase(s){ return String(s||"").replace(/\s*\(\s*\d+\s*\/\s*\d+\s*\)\s*$/,"").replace(/\s/g,""); }
+function rcSuffixNo(s){
+  var m=/\(\s*(\d+)\s*\/\s*(\d+)\s*\)\s*$/.exec(String(s||""));
+  return m?{idx:parseInt(m[1],10),n:parseInt(m[2],10)}:null;
+}
 function rcSameDoc(c,x){
   var a=String((c&&c.doctype)||"").replace(/\s/g,"");
   var b=String((x&&x.doc)||"").replace(/\s/g,"");
@@ -3321,9 +3329,20 @@ function rcMatch(){
       /* ★2026-09-01 고침 : 이름이 똑같은 줄이 2개인데 그중 1건만 등록했더니
          짝인 나머지 줄까지 '이미 등록'으로 넘어가 화면에서 사라졌다.
          등록된 것과 엑셀 줄을 하나씩 짝지어, 등록분보다 많은 줄은 '아직 안 등록'으로 남긴다. */
+      /* ★2026-09-04 고침 : 예전에는 서버 목록을 앞에서부터 그대로 끼워 넣었다(pool[i]).
+         그래서 서버에 (2/2) 한 건만 있어도 화면은 '1번째가 이미 등록'으로 보여 주고,
+         남은 2번째 줄이 저장할 때 다시 (2/2) 를 만들어 영영 등록이 안 됐다(2026-09-04 신고).
+         이제는 문서명 뒤 번호를 읽어 그 자리에 놓고, 번호가 없는 옛 행만 앞에서부터 채운다. */
       var pool=(g[0].sameList||[]).slice();
+      var slot=new Array(g.length), restq=[];
+      pool.forEach(function(c0){
+        var sfx=rcSuffixNo(c0&&c0.doctype);
+        if(sfx&&sfx.idx>=1&&sfx.idx<=g.length&&!slot[sfx.idx-1])slot[sfx.idx-1]=c0;
+        else restq.push(c0);
+      });
+      for(var si=0;si<g.length;si++){ if(!slot[si]&&restq.length)slot[si]=restq.shift(); }
       for(var i=0;i<g.length;i++){
-        var c2=pool[i]||null;
+        var c2=slot[i]||null;
         g[i].c=c2;
         g[i].state=!c2?"new":(c2.confirmed?"done":"unconf");
         g[i].other=(!c2&&g[i].hitFirst)?g[i].hitFirst:null;
@@ -3691,13 +3710,16 @@ function rcFileClear(k,idx){
   }
   rcRender();
 }
+/* ★2026-09-04 추가 : 저장할 때 실제로 쓴 문서명(번호 포함)을 여기에 적어 둔다.
+   번호를 서버 빈자리에 맞춰 주게 되면서, 엑셀 줄 번호로 만든 이름과 달라질 수 있기 때문이다. */
+var rcSavedDoc={};
 /* 등록이 끝난 뒤, 담아 둔 파일을 방금 만들어진 송달문서에 붙인다 */
 async function rcAttachFiles(L){
   var done=0,fail=0;
   for(var i=0;i<L.length;i++){
     var r=L[i],k=rcKey(r),fs=rcFiles[k];
     if(!fs||!fs.length)continue;
-    var dt=String(r.x.doc||"")+((r.dupN>1)?(" ("+r.dupIdx+"/"+r.dupN+")"):"");
+    var dt=(rcSavedDoc&&rcSavedDoc[k])||(String(r.x.doc||"")+((r.dupN>1)?(" ("+r.dupIdx+"/"+r.dupN+")"):""));
     var want=dt.replace(/\s/g,"");
     var sent=String(r.x.sent||"").slice(0,10);
     var c=(cases||[]).find(function(x){
@@ -3824,42 +3846,72 @@ async function rcRegister(){
     });
     /* ★2026-09-01 추가 : 직원 두 사람이 거의 같은 순간에 같은 건을 등록하면 두 줄이 들어갈 수 있다.
        화면에 그려진 목록은 파일을 올린 시점의 것이므로, 저장 직전에 서버를 한 번 더 보고
-       그 사이에 누가 이미 넣어 둔 건은 빼고 넣는다. 조회가 안 되면 예전처럼 그냥 넣는다. */
-    function rcRowKey(court,caseno,doc,date){
-      return rcCourtKey(court)+"|"+rcNormCase(caseno)+"|"+String(doc||"").replace(/\s/g,"")+"|"+String(date||"").slice(0,10);
-    }
+       그 사이에 누가 이미 넣어 둔 건은 빼고 넣는다. 조회가 안 되면 예전처럼 그냥 넣는다.
+       ★2026-09-04 : 여기 있던 rcRowKey·_uqKey 는 더 쓰지 않아 지웠다.
+         법원을 열쇠에 넣으면 서버 유니크(법원 없음)와 기준이 어긋나 오히려 놓친다. */
     /* ★2026-09-01 혜림 확정 : 사건번호·문서명·발송일이 같아도 각각 다른 문서다.
        그런데 서버에 유니크 규칙 uq_delivery(사건번호 + 문서종류 + 발송일자)가 걸려 있어
        그대로 넣으면 둘째부터 "duplicate key ... uq_delivery" 로 등록이 통째로 실패한다.
        그래서 문서명 뒤에 (1/2) (2/2) 를 붙여 서로 다른 문서로 만든다.
        ★번호는 '이번에 몇 건을 고랐나'가 아니라 '엑셀에서 몇 번째 줄인가'로 고정한다.
          그래야 오늘 1번만 등록하고 내일 2번을 등록해도 이름이 겹치지 않는다. */
-    function _uqKey(w){ return rcNormCase(w.case_no)+"|"+String(w.doctype||"").replace(/\s/g,"")+"|"+String(w.arrived_at||"").slice(0,10); }
-    var suffixed=0;
-    rows.forEach(function(w,i){
-      var r=L[i];
-      if(r&&r.dupN>1){
-        w.doctype=String(w.doctype||"")+" ("+r.dupIdx+"/"+r.dupN+")";
-        suffixed++;
-      }
-    });
+    /* ★2026-09-04 전면 수정 — 왜 고쳤나
+       예전 순서 : ① 엑셀 줄 번호대로 (1/2) 를 먼저 붙인다 ② 서버에 같은 이름이 있으면 건너뛴다.
+       이 순서면 서버에 (2/2) 만 있고 (1/2) 자리가 비어 있어도 남은 엑셀 줄이 또 (2/2) 를 만들어
+       "이미 있다"며 건너뛴다. 결국 한 건도 등록되지 않고 영영 풀리지 않았다.
+       새 순서 : ① 서버를 먼저 본다 ② 비어 있는 번호를 새 줄에 나눠 준다
+                ③ 서버가 이미 다 갖고 있을 때만 건너뛴다. */
     var nos=[];
     rows.forEach(function(w){ if(w.case_no&&nos.indexOf(w.case_no)<0)nos.push(w.case_no); });
-    var already={};
+    var srvAll=[];
     try{
       for(var qi=0;qi<nos.length;qi+=100){
         var q=await sd().from("deliveries").select("case_no,court,doctype,arrived_at").in("case_no",nos.slice(qi,qi+100));
         if(q.error)throw q.error;
-        (q.data||[]).forEach(function(d){ already[rcRowKey(d.court,d.case_no,d.doctype,d.arrived_at)]=true; });
+        (q.data||[]).forEach(function(d){ srvAll.push(d); });
       }
-    }catch(e){ already=null; }
-    var skipped=0;
-    if(already){
-      rows=rows.filter(function(w){
-        if(already[rcRowKey(w.court,w.case_no,w.doctype,w.arrived_at)]){ skipped++; return false; }
-        return true;
+    }catch(e){ srvAll=null; }
+    /* 서버 행을 '사건번호 + 문서 기본이름 + 발송일' 로 묶는다(뒤 번호는 떼고 본다).
+       ★서버 유니크 uq_delivery 에는 법원이 없으므로 여기서도 법원은 열쇠에 넣지 않는다.
+         예전에는 넣어서, 법원 이름이 다르게 저장된 옛 행을 못 알아보고 통째로 실패했다. */
+    function _gk(caseno,doc,date){ return rcNormCase(caseno)+"|"+rcDocBase(doc)+"|"+String(date||"").slice(0,10); }
+    var srv=null;
+    if(srvAll){
+      srv={};
+      srvAll.forEach(function(d){
+        var k0=_gk(d.case_no,d.doctype,d.arrived_at);
+        (srv[k0]=srv[k0]||[]).push(d);
       });
     }
+    var suffixed=0, skipped=0, skipList=[], takenBy={}, keep=[];
+    rcSavedDoc={};
+    rows.forEach(function(w,i){
+      var r=L[i];
+      var k0=_gk(w.case_no,w.doctype,w.arrived_at);
+      var have=(srv&&srv[k0])?srv[k0]:null;          /* 서버가 이미 갖고 있는 같은 문서들 */
+      var haveN=have?have.length:0;
+      var excelN=(r&&r.dupN>1)?r.dupN:1;             /* 엑셀에 같은 이름이 몇 줄인가 */
+      var total=Math.max(excelN,haveN);              /* 이 문서는 모두 몇 통인가 */
+      if(srv&&haveN>=total){                         /* 서버가 이미 다 갖고 있다 → 넣을 것이 없다 */
+        skipped++; skipList.push(String(w.case_no||"")+" "+rcDocBase(w.doctype));
+        return;
+      }
+      if(total<=1){ keep.push(w); rcSavedDoc[rcKey(r)]=w.doctype; return; }   /* 한 통뿐 → 번호 안 붙임 */
+      var used=takenBy[k0]||(takenBy[k0]={});
+      if(have)have.forEach(function(d){ var s2=rcSuffixNo(d.doctype); if(s2)used[s2.idx]=true; });
+      /* 번호 없이 저장된 옛 행은 앞에서부터 한 칸씩 차지한 것으로 본다 */
+      var noSfx=have?have.filter(function(d){return !rcSuffixNo(d.doctype);}).length:0;
+      for(var p=1;noSfx>0&&p<=total;p++){ if(!used[p]){ used[p]=true; noSfx--; } }
+      var pick=0;
+      for(var p2=1;p2<=total;p2++){ if(!used[p2]){ pick=p2; break; } }
+      if(!pick){ skipped++; skipList.push(String(w.case_no||"")+" "+rcDocBase(w.doctype)); return; }
+      used[pick]=true;
+      w.doctype=String(w.doctype||"").replace(/\s*\(\s*\d+\s*\/\s*\d+\s*\)\s*$/,"")+" ("+pick+"/"+total+")";
+      suffixed++;
+      rcSavedDoc[rcKey(r)]=w.doctype;
+      keep.push(w);
+    });
+    rows=keep;
     /* ★서버가 그래도 "이미 있다"고 거절하면(담당자 계정은 남의 담당 사건이 안 보여서
        화면에는 '아직 안 등록'으로 나올 수 있다) 한 건씩 넣어 그 건만 건너뛴다.
        한 줄 때문에 나머지 전부가 날아가지 않게 하는 것이 핵심이다. */
@@ -3882,14 +3934,25 @@ async function rcRegister(){
     var _att=await rcAttachFiles(L);
     showView("recon");
     rcRender();
+    /* ★2026-09-04 고침 : 예전에는 한 건도 안 들어갔는데도
+       "이름이 똑같은 1건은 번호를 붙여 각각 등록했습니다" 같은 문장이 함께 떠서
+       등록이 된 줄 알았다. 이제 등록 0건이면 등록했다는 말을 하지 않는다. */
     var msg=[];
     var holdN=L.filter(function(r){return rcIsHoldSel(rcKey(r));}).length;
     var noticeN=L.filter(function(r){return rcIsNoticeSel(rcKey(r));}).length;
-    msg.push(savedN?(savedN+"건을 송달 목록에 등록했습니다."):"새로 등록한 것은 없습니다.");
-    if(holdN)msg.push("· 그중 "+holdN+"건은 추후 처리입니다. 나중에 보정명령이 오면 함께 처리하세요.");
-    if(noticeN)msg.push("· 그중 "+noticeN+"건은 당사자 안내입니다. 알린 뒤 상태를 처리완료로 내리세요.");
-    if(suffixed)msg.push("· 이름이 똑같은 "+suffixed+"건은 문서명 뒤에 (1/2) 같은 번호를 붙여 각각 등록했습니다.");
-    if(skipped)msg.push("· "+skipped+"건은 그 사이 다른 사람이 이미 등록해서 건너뛰었습니다.");
+    if(savedN){
+      msg.push(savedN+"건을 송달 목록에 등록했습니다.");
+      if(holdN)msg.push("· 그중 "+holdN+"건은 추후 처리입니다. 나중에 보정명령이 오면 함께 처리하세요.");
+      if(noticeN)msg.push("· 그중 "+noticeN+"건은 당사자 안내입니다. 알린 뒤 상태를 처리완료로 내리세요.");
+      if(suffixed)msg.push("· 이름이 똑같은 "+suffixed+"건은 문서명 뒤에 (1/2) 같은 번호를 붙여 각각 등록했습니다.");
+    }else{
+      msg.push("새로 등록한 것은 없습니다. 고른 "+L.length+"건이 모두 이미 등록돼 있습니다.");
+    }
+    if(skipped){
+      msg.push("· "+skipped+"건은 사건번호·문서 이름·발송일이 같은 문서가 이미 등록돼 있어 건너뛰었습니다."
+        +(skipList.length?("\n  ("+skipList.slice(0,5).join(" / ")+(skipList.length>5?(" 외 "+(skipList.length-5)+"건"):"")+")"):"")
+        +"\n  송달문서 목록에서 그 사건번호로 찾아보시면 있습니다.");
+    }
     if(dupServer)msg.push("· "+dupServer+"건은 이미 등록돼 있는 문서라 건너뛰었습니다.\n  담당자가 다른 직원이면 내 화면에 안 보여서 '아직 안 등록'으로 나옵니다.\n  관리자에게 그 사건의 담당자를 확인해 달라고 하세요.");
     if(_att&&_att.done)msg.push("· 미리 담아 둔 PDF "+_att.done+"건을 '이 사건의 문서'에 함께 넣었습니다.");
     if(_att&&_att.fail)msg.push("· PDF "+_att.fail+"건은 붙일 사건을 못 찾아 담긴 채로 두었습니다. 송달문서 상세에서 [파일만 등록]으로 넣어 주세요.");

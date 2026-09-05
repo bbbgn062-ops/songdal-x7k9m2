@@ -14,6 +14,11 @@
   --ok:158 72% 28%; --oks:152 46% 94%;
   --warn:30 88% 40%; --warns:36 78% 94%;
   --bad:2 68% 46%; --bads:2 70% 96%;
+  --c1:214 62% 34%; --c1s:212 58% 94%;
+  --c2:268 44% 42%; --c2s:268 44% 95%;
+  --c3:192 62% 27%; --c3s:190 50% 92%;
+  --c4:20 66% 38%; --c4s:24 62% 93%;
+  --c5:30 8% 40%;  --c5s:30 12% 92%;
   --r:10px; --rs:7px;
   --fh:"Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;
   --fm:"IBM Plex Mono","Noto Sans KR",monospace;
@@ -26,6 +31,11 @@
   --ok:158 52% 48%; --oks:158 30% 17%;
   --warn:34 76% 58%; --warns:34 36% 18%;
   --bad:2 66% 62%; --bads:2 38% 19%;
+  --c1:212 62% 70%; --c1s:214 30% 20%;
+  --c2:268 50% 74%; --c2s:268 24% 21%;
+  --c3:190 52% 62%; --c3s:192 28% 18%;
+  --c4:24 66% 66%; --c4s:22 30% 19%;
+  --c5:30 10% 68%; --c5s:30 8% 21%;
   color-scheme:dark;
 }}
 :root[data-theme="dark"]{
@@ -35,6 +45,11 @@
   --ok:158 52% 48%; --oks:158 30% 17%;
   --warn:34 76% 58%; --warns:34 36% 18%;
   --bad:2 66% 62%; --bads:2 38% 19%;
+  --c1:212 62% 70%; --c1s:214 30% 20%;
+  --c2:268 50% 74%; --c2s:268 24% 21%;
+  --c3:190 52% 62%; --c3s:192 28% 18%;
+  --c4:24 66% 66%; --c4s:22 30% 19%;
+  --c5:30 10% 68%; --c5s:30 8% 21%;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -83,6 +98,18 @@ main{max-width:1280px;margin:0 auto;padding:20px 20px 80px}
 .tag.g{background:hsl(var(--oks));color:hsl(var(--ok))}
 .tag.y{background:hsl(var(--warns));color:hsl(var(--warn))}
 .tag.r{background:hsl(var(--bads));color:hsl(var(--bad))}
+/* 2026-09-05 : 사건 종류 · 사무소 칩 */
+.tag.c1{background:hsl(var(--c1s));color:hsl(var(--c1))}
+.tag.c2{background:hsl(var(--c2s));color:hsl(var(--c2))}
+.tag.c3{background:hsl(var(--c3s));color:hsl(var(--c3))}
+.tag.c4{background:hsl(var(--c4s));color:hsl(var(--c4))}
+.tag.c5{background:hsl(var(--c5s));color:hsl(var(--c5))}
+.idbox{background:hsl(var(--card));border:1px solid hsl(var(--line));border-radius:var(--r);padding:14px 16px;margin-bottom:16px}
+.idbox .rw{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;margin-top:10px}
+.idbox .fl{display:flex;flex-direction:column;gap:5px;min-width:150px}
+.idbox .fl > span{font-size:12px;font-weight:800;color:hsl(var(--mutf))}
+.idbox select,.idbox input{height:32px;padding:0 9px;border:1px solid hsl(var(--line2));border-radius:var(--rs);
+  background:hsl(var(--card));color:hsl(var(--fg))}
 .b{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 14px;
   border-radius:var(--rs);border:1px solid transparent;font-size:13px;font-weight:700;white-space:nowrap;transition:.12s}
 .b.p{background:hsl(var(--pri));color:hsl(var(--prif))}
@@ -2159,7 +2186,7 @@ function extDoc(){
   if(D.submit.reason_key==="직접입력") base=D.submit.free||"";
   if(D.submit.len==="길게") base=base+" 채무자와 소송대리인은 남은 자료를 신속히 갖추어 아래 기일까지 반드시 제출하겠습니다.";
   return "보정기간 연장신청서\u0000"
-   +"사    건   "+c.case_no+" "+c.case_kind+"\n"
+   +"사    건   "+c.case_no+" "+kindDoc()+"\n"
    +"신 청 인   "+c.debtor+"\n\n"
    +"위 사건에 관하여 신청인의 소송대리인은 다음과 같이 보정기간의 연장을 신청합니다.\n\n"
    +"신 청 취 지\n\n"
@@ -2171,13 +2198,13 @@ function extDoc(){
    +"신청인의 소송대리인\n"
    +firmName()+"\n"
    +"담당변호사 "+String(c.attorney||"").replace("변호사 ","")+"\n\n"
-   +c.court+" 개인회생재판부 귀중\n";
+   +c.court+" "+benchName()+" 귀중\n";
 }
 function fullDoc(){
   if(docKind()==="기간연장신청서") return extDoc();
   var c=D.case, dt=D.submit.date||(cur()?cur().deadline:today());
   return "보 정 서\u0000"
-   +"사    건   "+c.case_no+" "+c.case_kind+"\n"
+   +"사    건   "+c.case_no+" "+kindDoc()+"\n"
    +"신 청 인   "+c.debtor+"\n\n"
    +"귀원의 보정명령에 따라 다음과 같이 보정합니다.\n\n"
    +"다  음\n\n"
@@ -2185,9 +2212,9 @@ function fullDoc(){
    +tail()+"\n"
    +kor(dt)+"\n\n"
    +"채무자 소송대리인\n"
-   +(c.firm_label==="블루"?"블루법률사무소":"법무법인 이준")+"\n"
+   +firmName()+"\n"
    +"담당변호사 "+String(c.attorney||"").replace("변호사 ","")+"\n\n"
-   +c.court+" 개인회생재판부 귀중\n";
+   +c.court+" "+benchName()+" 귀중\n";
 }
 function bodyLen(){return fullDoc().replace("\u0000","\n\n").length;}
 function attList(){
@@ -2285,6 +2312,8 @@ function draw(){
    +   '<h1 style="margin:0">'+esc((D["case"]&&D["case"].debtor)||"이름 없음")+' 보정 처리대</h1></div>'
    + '<span class="tag m">'+esc(D.case.case_no)+'</span>'
    + '<span class="tag">'+esc(D.case.court)+'</span>'
+   + kindChip(D.case.case_kind)
+   + firmChip(D.case.firm_label)
    + '<span class="tag p">'+esc(D.case.debtor)+'</span>'
    + '<span class="sp"></span>'
    + (r?'<span class="tag">'+esc(r.label)+' 준비 중 · 마감 '+esc(kor(r.deadline))+'</span>':'')
@@ -2491,7 +2520,71 @@ function msgCard(){
    +   '<span class="dim">고쳐 쓰셔도 됩니다. 복사는 지금 화면 내용 그대로 됩니다.</span>'
    + '</div></div></section>';
 }
-function firmName(){ return D.case.firm_label==="블루"?"블루법률사무소":"법무법인 이준"; }
+/* 2026-09-05 : 사건 종류와 사무소.
+   케이스허브에 다른 이름으로 적혀 있으면(예: 개인회생·파산) 그 글자를 그대로 둔다. */
+var KINDS=[
+  {k:"회생",      full:"개인회생",          c:"c1"},
+  {k:"회복",      full:"신용회복",          c:"c2"},
+  {k:"회생+회복", full:"개인회생·신용회복", c:"c3"},
+  {k:"파산",      full:"개인파산",          c:"c4"}
+];
+var FIRMS=[
+  {k:"서초", full:"법무법인 이준",     c:"c1"},
+  {k:"남부", full:"노경신 법률사무소", c:"c2"},
+  {k:"블루", full:"블루법률사무소",    c:"c4"}
+];
+function kindRow(v){ v=String(v||""); for(var i=0;i<KINDS.length;i++){ if(KINDS[i].k===v)return KINDS[i]; } return null; }
+function firmRow(v){
+  v=String(v||"");
+  if(v==="이준"||v==="이준서초"||v==="법무법인 이준"||v==="우리(이준 서초)")v="서초";
+  if(v==="노경신"||v==="노경신 법률사무소")v="남부";
+  if(v==="블루법률사무소")v="블루";
+  for(var i=0;i<FIRMS.length;i++){ if(FIRMS[i].k===v)return FIRMS[i]; }
+  return null;
+}
+function kindChip(v){ if(!v)return ""; var r=kindRow(v); return '<span class="tag '+(r?r.c:"c5")+'">'+esc(v)+'</span>'; }
+function firmChip(v){ if(!v)return ""; var r=firmRow(v); return '<span class="tag '+(r?r.c:"c5")+'">'+esc(r?r.k:v)+'</span>'; }
+/* 보정서에 그대로 박히는 정식 명칭 */
+function kindDoc(){ var v=(D["case"]&&D["case"].case_kind)||""; var r=kindRow(v); return r?r.full:v; }
+/* 보정서 맨 끝 「○○법원 ○○재판부 귀중」. 파산만 있는 사건이면 개인파산재판부로 나간다 */
+function benchName(){
+  var v=String((D["case"]&&D["case"].case_kind)||"");
+  if(v.indexOf("파산")>=0 && v.indexOf("회생")<0) return "개인파산재판부";
+  return "개인회생재판부";
+}
+function firmName(){
+  var c=D["case"]||{}, r=firmRow(c.firm_label);
+  return r?r.full:(c.firm_label||"법무법인 이준");
+}
+/* 사건 탭에서 직접 고치기 */
+function setKind(v){ if(!D["case"])return; D["case"].case_kind=v; draw(); }
+function setFirm(v){ if(!D["case"])return; D["case"].firm_label=v; draw(); }
+function idBox(){
+  var c=D["case"]||{};
+  var kv=String(c.case_kind||""), fv=String(c.firm_label||"");
+  var fr=firmRow(fv);
+  var kOther=!!(kv&&!kindRow(kv));
+  var kOpts=['<option value="">(고르지 않음)</option>']
+    .concat(KINDS.map(function(x){ return '<option'+(x.k===kv?' selected':'')+'>'+esc(x.k)+'</option>'; }))
+    .concat(['<option value="__etc"'+(kOther?' selected':'')+'>직접 입력</option>']).join("");
+  var fOpts=['<option value="">(고르지 않음)</option>']
+    .concat(FIRMS.map(function(x){ return '<option value="'+esc(x.k)+'"'+(fr&&fr.k===x.k?' selected':'')+'>'+esc(x.k)+' · '+esc(x.full)+'</option>'; })).join("");
+  return '<div class="idbox">'
+   + '<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">'
+   +   '<h2 style="font-size:17px;font-weight:900">이 사건은</h2>'
+   +   kindChip(kv) + firmChip(fv)
+   +   '<span class="dim">여기서 고치면 의뢰인 목록과 보정서에 바로 반영됩니다</span>'
+   + '</div>'
+   + '<div class="rw">'
+   +   '<label class="fl"><span>사건 종류</span>'
+   +     '<select onchange="if(this.value===\'__etc\'){var t=prompt(\'사건 종류를 적어 주세요\',\''+esc(kOther?kv:"")+'\');if(t!==null)setKind(t);else draw();}else setKind(this.value)">'+kOpts+'</select></label>'
+   +   (kOther?'<label class="fl"><span>직접 적은 종류</span><input value="'+esc(kv)+'" onchange="setKind(this.value)"></label>':'')
+   +   '<label class="fl" style="min-width:230px"><span>사무소</span>'
+   +     '<select onchange="setFirm(this.value)">'+fOpts+'</select></label>'
+   +   '<div class="fl" style="min-width:230px"><span>보정서에 들어갈 이름</span>'
+   +     '<div style="font-weight:800">'+esc(firmName())+(kindDoc()?' · '+esc(kindDoc()):'')+'</div></div>'
+   + '</div></div>';
+}
 /* 2026-09-05 : 카톡 머리에 기한을 박는다. 언제까지인지 없으면 아무도 안 움직인다 */
 function dueLine(){
   var c=D.case, r=cur();
@@ -2721,7 +2814,8 @@ function matBox(a){
 /* ── B. 사건 ───────────────────────────── */
 function viewCase(){
   var r=cur();
-  var h='<div class="split" style="margin-bottom:16px">';
+  var h=idBox();
+  h+='<div class="split" style="margin-bottom:16px">';
 
   /* 차수 */
   h+='<section><div style="display:flex;align-items:center;gap:9px;margin-bottom:11px">'
@@ -3255,6 +3349,10 @@ async function wbWho(){
     return (u&&u.data&&u.data.user&&u.data.user.email)||"";
   }catch(e){ return ""; }
 }
+/* 2026-09-05 : 서버 표에 case_kind 칸이 아직 없어도 저장이 깨지지 않게 한다.
+   한 번 없다고 확인되면 그 뒤로는 빼고 주고받는다. SQL을 돌리고 새로고침하면 다시 켜진다. */
+var kindCol=true;
+function noKindCol(e){ return !!(e && /case_kind/.test(String(e.message||e))); }
 /* 서버에 통째로 저장 */
 async function cloudSave(copy){
   if(!cloudOn)return false;
@@ -3269,7 +3367,12 @@ async function cloudSave(copy){
     updated_by:(await wbWho())||null,
     updated_at:new Date().toISOString()
   };
+  if(kindCol) row.case_kind=(D["case"]&&D["case"].case_kind)||null;
   var r=await SBW.from("bj_workbench").upsert(row,{onConflict:"case_no"});
+  if(r.error&&kindCol&&noKindCol(r.error)){
+    kindCol=false; delete row.case_kind;
+    r=await SBW.from("bj_workbench").upsert(row,{onConflict:"case_no"});
+  }
   if(r.error)throw r.error;
   return true;
 }
@@ -3283,7 +3386,13 @@ async function cloudLoad(no){
 /* 저장돼 있는 사건 목록 */
 async function cloudList(){
   if(!cloudOn)return [];
-  var r=await SBW.from("bj_workbench").select("case_no,debtor,court,firm_label,updated_at,updated_by").order("updated_at",{ascending:false}).limit(200);
+  var few="case_no,debtor,court,firm_label,updated_at,updated_by";
+  var all="case_no,debtor,court,case_kind,firm_label,updated_at,updated_by";
+  var r=await SBW.from("bj_workbench").select(kindCol?all:few).order("updated_at",{ascending:false}).limit(200);
+  if(r.error&&kindCol&&noKindCol(r.error)){
+    kindCol=false;
+    r=await SBW.from("bj_workbench").select(few).order("updated_at",{ascending:false}).limit(200);
+  }
   if(r.error)throw r.error;
   return r.data||[];
 }
@@ -3359,7 +3468,8 @@ function homeCards(){
      + '<div style="flex:1;min-width:0">'
      +   '<div class="nm">'+esc(nm)
      +     (r.case_no===here?' <span class="tag p" style="margin-left:6px">열려 있음</span>':'')
-     +     (r.firm_label?' <span class="tag" style="margin-left:5px">'+esc(r.firm_label)+'</span>':'')
+     +     (r.case_kind?' '+kindChip(r.case_kind):'')
+     +     (r.firm_label?' '+firmChip(r.firm_label):'')
      +   '</div>'
      +   '<div class="mt">'+esc(r.case_no||"사건번호 없음")+(r.court?' · '+esc(r.court):'')
      +     '<br>마지막 저장 '+esc(wbFmtWhen(r.updated_at))+(r.updated_by?' · '+esc(r.updated_by):'')+'</div>'
@@ -3388,7 +3498,7 @@ function wbListHtml(){
   var q=wbQ.replace(/\s/g,"").toLowerCase();
   var rows=wbRows.filter(function(r){
     if(!q)return true;
-    return [r.debtor,r.case_no,r.court,r.firm_label,r.updated_by].join(" ").replace(/\s/g,"").toLowerCase().indexOf(q)>=0;
+    return [r.debtor,r.case_no,r.court,r.case_kind,r.firm_label,r.updated_by].join(" ").replace(/\s/g,"").toLowerCase().indexOf(q)>=0;
   });
   if(!wbRows.length){
     return '<div class="empty">회사 서버에 저장된 처리대가 아직 없습니다.<br>'
@@ -3401,7 +3511,8 @@ function wbListHtml(){
      + '<div style="flex:1;min-width:0">'
      +   '<div class="who">'+esc(r.debtor||"이름 없음")
      +     (mine?' <span class="tag p" style="margin-left:5px">지금 이 사건</span>':'')
-     +     (r.firm_label?' <span class="tag" style="margin-left:4px">'+esc(r.firm_label)+'</span>':'')
+     +     (r.case_kind?' '+kindChip(r.case_kind):'')
+     +     (r.firm_label?' '+firmChip(r.firm_label):'')
      +   '</div>'
      +   '<div class="meta">'+esc(r.case_no||"사건번호 없음")+(r.court?' · '+esc(r.court):'')
      +     '<br>마지막 저장 '+esc(wbFmtWhen(r.updated_at))+(r.updated_by?' · '+esc(r.updated_by):'')+'</div>'

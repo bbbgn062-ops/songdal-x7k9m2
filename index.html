@@ -1276,7 +1276,11 @@
   /* 왼쪽 : 사무소 색 (표시 2) */
   /* 왼쪽 칸 : 굵기는 600·700 두 가지만, 크기는 네 가지만, 투명도는 세 단계만 쓴다.
      그래야 '막 만든' 느낌이 안 난다. */
-  .pn-left{padding:16px 18px;color:#FFF;font-feature-settings:"tnum"}
+  .pn-left{padding:16px 18px;color:#FFF;font-feature-settings:"tnum";position:relative}
+  .pn-left.link{cursor:pointer;transition:filter .12s}
+  .pn-left.link:hover{filter:brightness(1.13)}
+  .pn-goto{margin-left:auto;font-size:11px;font-weight:600;opacity:.72;white-space:nowrap}
+  .pn-left.link:hover .pn-goto{opacity:1}
   .pn-left.s{background:#2B4570}
   .pn-left.n{background:#1F6B4F}
   .pn-left.b{background:#1E6A8C}
@@ -1310,7 +1314,12 @@
   .pn-plan2.late{background:#FFE2E2;color:#8E1B1B;font-weight:700}
   /* 오른쪽 : 시안 D */
   .pn-right{padding:16px 18px}
-  .pn-cks{display:flex;gap:8px;flex-wrap:wrap}
+  .pn-cks{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pn-now{font-size:12px;font-weight:700;border-radius:20px;padding:5px 13px;white-space:nowrap;border:1px solid transparent}
+  .pn-now.run{background:#F3F0EB;color:#5B554F;border-color:#E4DFD8}
+  .pn-now.tmp{background:#E8EEF7;color:#2B4570;border-color:#CBD8EC}
+  .pn-now.hold{background:#EFE9F7;color:#5B4B8A;border-color:#DCD2EE}
+  .pn-now.ok{background:#EAF4EB;color:#2E7D32;border-color:#CBE3CC}
   .pn-bck{display:inline-flex;align-items:center;gap:8px;border:1px solid #E1DCD6;border-radius:9px;
     padding:9px 15px;font-size:13.5px;font-weight:600;background:#FFF;white-space:nowrap;color:#3D3833}
   .pn-bck:hover{border-color:#C9C3BC}
@@ -14698,13 +14707,17 @@ function pnCard(x){
      그래서 이름과 사건번호를 맨 위에 크게 두고, 기한은 그 아래로 내렸다. */
   var kt=pnKindTag(x.cid);
   var stg=(pnCli[x.cid]&&pnCli[x.cid].stage)||"";
-  h+='<div class="pn-left '+oc+'">'
+  /* ★2026-09-05 혜림 : 왼쪽 카드를 누르면 그 의뢰인 상세 화면으로 넘어간다.
+     전화번호를 누를 때는 전화만 걸리고 화면이 넘어가지 않게 막아 둔다. */
+  var goAttr=r.delivery_id?(' onclick="goDetail(\''+r.delivery_id+'\')" title="누르면 의뢰인 상세로 갑니다"'):'';
+  h+='<div class="pn-left '+oc+(r.delivery_id?' link':'')+'"'+goAttr+'>'
     +'<div class="pn-ofcrow"><span class="pn-ofcname">'+esc(ofcName)+'</span>'
-      +(kt?'<span class="pn-ktag '+kt.c+'">'+esc(kt.t)+'</span>':'')+'</div>'
+      +(kt?'<span class="pn-ktag '+kt.c+'">'+esc(kt.t)+'</span>':'')
+      +(r.delivery_id?'<span class="pn-goto">상세 ›</span>':'')+'</div>'
     +'<div class="pn-nm2">'+esc(nm)+'</div>'
     +'<div class="pn-cno mono">'+esc(cno)+'</div>'
     +'<div class="pn-court">'+esc(court)+(stg?' · '+esc(stg):'')+'</div>'
-    +'<div>'+(tel?'<a class="pn-tel2" href="tel:'+esc(String(tel).replace(/[^0-9]/g,""))+'">'+esc(tel)+'</a>'
+    +'<div>'+(tel?'<a class="pn-tel2" href="tel:'+esc(String(tel).replace(/[^0-9]/g,""))+'" onclick="event.stopPropagation()">'+esc(tel)+'</a>'
          :'<span class="pn-nophone">연락처 없음</span>')+'</div>'
     +'<div class="pn-hr"></div>'
     +'<div class="pn-dd2 '+ddCol+'">'+esc(pnLeftTxt(x.left))+'</div>'
@@ -14722,6 +14735,10 @@ function pnCard(x){
     +pnBigCk(id,"draft","전자소송 임시저장",(x.ws==="임시저장"))
     +pnBigCk(id,"filed","법원 제출함",(x.ws==="보정완료"))
     +pnBigCk(id,"done","완료",m.done)
+    /* ★2026-09-05 혜림 : 체크를 눌렀을 때 상태가 바뀐 것이 보여야 한다.
+       [더 보기] 안에만 있던 상태를 밖으로 꺼내 항상 띄운다. */
+    +'<span class="pn-sp"></span>'
+    +'<span class="pn-now '+pnWsCls(x.ws)+'">지금 상태 · '+esc(x.ws)+(x.hold?' ('+esc(x.hold)+'까지)':'')+'</span>'
     +'</div>';
   h+='<div class="pn-acts">'
     +'<button class="pn-big pri" onclick="pnPlan('+sid+',0)">오늘 처리함</button>'
@@ -14769,6 +14786,12 @@ function pnCard(x){
     +'</div></div>';
   h+='</div></div></div>';
   return h;
+}
+function pnWsCls(ws){
+  if(ws==="보정완료")return "ok";
+  if(ws==="임시저장")return "tmp";
+  if(ws==="추후제출")return "hold";
+  return "run";
 }
 function pnBigCk(id,key,label,on){
   return '<label class="pn-bck'+(on?" on":"")+'">'

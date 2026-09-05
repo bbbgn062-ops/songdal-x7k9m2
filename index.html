@@ -1229,6 +1229,12 @@
   .bjpick-thumb .noimg{font-size:10px;font-weight:700;color:var(--muted);text-align:center;line-height:1.4}
   .bjpick-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
   .bjpick-r1{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+  .dm-top{margin:10px 0 12px;padding:10px 12px;background:#FFFDF3;border:1px solid #F0E6C8;border-radius:10px}
+  .dm-hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .dm-t{font-weight:800;font-size:13.5px;color:#7A5C00}
+  .dm-top textarea{min-height:76px;background:#FFF}
+  .rc-guess{padding:5px 0;border-bottom:1px dashed #E3E0DC}
+  .rc-guess:last-child{border-bottom:0}
   .bjpick-edit{border:1px solid var(--line,#DDD);background:#FFF;color:#666;border-radius:6px;
     font-size:11px;line-height:1;padding:3px 6px;cursor:pointer;margin-left:2px}
   .bjpick-edit:hover{background:#F2F2F2;color:#111}
@@ -3012,8 +3018,11 @@ function rcTailNo(no){
   return m?m[1]:"";
 }
 var rcCliTail=null, rcCliNo=null;
+/* ★2026-09-04 : 사건번호가 비슷한 의뢰인을 찾으려면 전부 한 번씩 훑어야 한다.
+   열쇠로 찾는 표(rcCli)와 별개로, 줄줄이 늘어놓은 목록을 하나 더 만들어 둔다. */
+var rcCliAll=[];
 async function rcLoadClients(){
-  rcCli={}; rcCliTail={}; rcCliNo={};
+  rcCli={}; rcCliTail={}; rcCliNo={}; rcCliAll=[];
   try{
     /* court·intake_type 칸이 없는 옛 DB에서도 앱이 죽지 않게, 실패하면 기본 칸만 다시 조회한다 */
     var COLS="id,name,case_no,court,office_id,intake_type";
@@ -3055,6 +3064,7 @@ async function rcLoadClients(){
         /* 법원 이름을 빼고 사건번호만으로도 찾을 수 있게 해 둔다 (2026-09-03) */
         if(!rcCliNo[no])rcCliNo[no]=[];
         rcCliNo[no].push({val:val,court:courtRaw});
+        rcCliAll.push({no:no,courtRaw:courtRaw,courtKey:court,val:val});
         if(court){
           rcCli[court+"|"+no]=val;                      /* ★정식 열쇠 = 법원 + 사건번호 */
         }else{
@@ -3068,6 +3078,89 @@ async function rcLoadClients(){
   }catch(e){ rcCli={}; }
 }
 
+/* ★★2026-09-04 혜림 : 사람이 케이스허브에 사건번호를 안 적거나 잘못 적을 수 있고,
+   법원이 번호를 잘못 넣어 줄 때도 있다. 그러니 못 찾았다고 그냥 버리면 우리 사건을 놓친다.
+   그런데 전자소송 미확인송달 엑셀에는 칸이 6개(번호·법원·재판부·사건번호·송달문서·발송일자)뿐이라
+   ★당사자 이름이 아예 없다. 그래서 이름 대신 두 가지 단서로 후보를 찾아 보여 준다.
+     ① 사건번호가 한두 자만 다른 의뢰인   ② 예전에 같은 번호로 송달을 받은 적이 있는 사건 */
+function rcEditDist(a,b){
+  a=String(a||""); b=String(b||"");
+  if(Math.abs(a.length-b.length)>2)return 99;
+  var n=b.length,prev=[],cur=[],i,j;
+  for(j=0;j<=n;j++)prev[j]=j;
+  for(i=1;i<=a.length;i++){
+    cur[0]=i;
+    for(j=1;j<=n;j++)cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a.charAt(i-1)===b.charAt(j-1)?0:1));
+    for(j=0;j<=n;j++)prev[j]=cur[j];
+  }
+  return prev[n];
+}
+/* 2026개회104111 → {year:"2026", code:"개회", num:"104111"} */
+function rcSplitNo(no){
+  var m=/^(\d{4})([가-힣]+)(\d+)$/.exec(String(no||""));
+  return m?{year:m[1],code:m[2],num:m[3]}:null;
+}
+function rcGuess(x){
+  var out=[],seen={};
+  var no=rcNormCase(x&&x.caseno), ck=rcCourtKey(x&&x.court);
+  var p=rcSplitNo(no);
+  /* ② 예전에 같은 번호로 온 송달 — 가장 확실한 단서다 */
+  try{
+    (typeof cases!=="undefined"?(cases||[]):[]).forEach(function(d){
+      if(rcNormCase(d.caseno)!==no)return;
+      var k="d|"+(d.client_id||d.name||"");
+      if(seen[k])return; seen[k]=true;
+      out.push({
+        why:"예전에 이 번호로 송달을 받았습니다",
+        name:d.name||"(이름 없음)", no:d.caseno||"", court:d.court||"",
+        extra:(d.date?String(d.date).slice(0,10):"")+(d.doctype?" "+d.doctype:""),
+        cli:d.client_id?{id:d.client_id,name:d.name||"",
+             office_id:(typeof calCli!=="undefined"&&calCli&&calCli[d.client_id]&&calCli[d.client_id].office_id)||null,
+             court:(x&&x.court)||"",intake:""}:null,
+        score:-1
+      });
+    });
+  }catch(e){}
+  /* ① 사건번호가 한두 자 다른 의뢰인 */
+  try{
+    (rcCliAll||[]).forEach(function(r){
+      if(r.no===no)return;
+      var q=rcSplitNo(r.no), dist;
+      if(p&&q){
+        if(q.year!==p.year||q.code!==p.code)return;   /* 연도·사건부호가 다르면 아예 다른 종류 */
+        dist=rcEditDist(p.num,q.num);
+      }else{
+        dist=rcEditDist(no,r.no);
+      }
+      if(dist>2)return;
+      var k="c|"+r.val.id+"|"+r.no;
+      if(seen[k])return; seen[k]=true;
+      out.push({
+        why:"사건번호가 "+dist+"자 다릅니다",
+        name:r.val.name||"(이름 없음)", no:r.no, court:r.courtRaw||"",
+        extra:(ck&&r.courtKey&&ck!==r.courtKey)?"법원도 다릅니다":"",
+        cli:{id:r.val.id,name:r.val.name||"",office_id:r.val.office_id||null,court:(x&&x.court)||"",intake:r.val.intake||""},
+        score:dist
+      });
+    });
+  }catch(e){}
+  out.sort(function(a,b){return a.score-b.score;});
+  return out.slice(0,3);
+}
+/* 후보를 눌러 바로 이어 붙인다 */
+function rcClaimPick(di,ci){
+  var d=rcDropList[di]; if(!d)return;
+  var g=(d.guess||[])[ci];
+  if(!g||!g.cli||!g.cli.id){ alert("이 후보는 케이스허브 의뢰인과 연결돼 있지 않습니다.\n[우리 사건이에요]로 이름을 적어 찾아 주세요."); return; }
+  if(!confirm(g.name+" 님으로 이어 붙일까요?\n\n엑셀 : "+(d.x.court||"")+" "+(d.x.caseno||"")
+    +"\n우리 기록 : "+(g.court||"")+" "+(g.no||"")+"\n\n"+g.why))return;
+  var key=rcCourtKey(d.x.court)+"|"+rcNormCase(d.x.caseno);
+  if(!rcCli)rcCli={};
+  rcCli[key]=g.cli;
+  rcRender();
+  alert(g.name+" 님으로 이어 붙였습니다.\n\n위 목록에 나타났으니 확인하고 [등록]하세요.\n\n"
+    +"다음부터 자동으로 잡히게 하려면 케이스허브의 사건번호를\n"+(d.x.caseno||"")+" 로 고치거나, 쉼표로 함께 적어 두세요.");
+}
 /* 우리 명단과 맞춘다. ★명단에 없는 줄은 화면에서 아예 뺀다(저장도 하지 않는다) */
 /* ★한 사건에 송달문서는 여러 번 온다(보정명령 → 개시결정문 → …).
    "이미 등록해 둔 바로 그 문서"인지 가리는 기준.
@@ -3291,7 +3384,7 @@ function rcMatch(){
         _why="케이스허브에 뒷번호가 같은 사건이 "+_t2.n+"건이라 하나로 못 골랐습니다 (예: "+_t2.no+")";
       else
         _why="케이스허브에서 이 사건번호를 찾지 못했습니다";
-      rcDropList.push({x:x,why:_why});
+      rcDropList.push({x:x,why:_why,guess:rcGuess(x)});
       return;                                          /* ★남의 사건 : 화면에도 안 나오고 저장도 안 함 */
     }
 
@@ -3515,12 +3608,13 @@ function rcRender(){
   if(rcDropOpen&&rcDropList.length){
     h+='<div class="bj-alert red" style="margin:10px 0"><b>못 찾은 '+rcDropList.length+'건입니다. 우리 사건이 섞여 있는지 반드시 훑어 주세요.</b><br>'
       +'우리 사건인데 여기 있다면 케이스허브의 <b>사건번호나 법원</b>이 엑셀과 다른 것입니다. '
-      +'오른쪽 <b>[우리 사건이에요]</b>를 눌러 이름으로 바로 이어 붙일 수 있습니다. '
+      +'★<b>「혹시 이 사람인가요?」</b> 칸에 사건번호가 한두 자만 다른 의뢰인과, 예전에 같은 번호로 송달을 받은 사건을 찾아 두었습니다. '
+      +'맞으면 <b>[이 사람이에요]</b>, 없으면 <b>[이름으로 찾기]</b>를 쓰세요. '
       +'이송된 건이면 송달문서 상세의 [이송 처리]를, 번호가 여러 개면 케이스허브 사건번호 칸에 <b>쉼표로 함께</b> 적어 주세요.'
       +'<div style="margin-top:8px"><button class="btn ghost mini" onclick="rcDropCsv()">못 찾은 줄 엑셀로 내려받기</button>'
       +' <span class="bj-note">화면을 새로고침하면 이 목록은 사라집니다. 남부·블루에 확인을 넘길 때는 내려받아 두세요</span></div></div>';
     h+='<div class="rc-tblwrap"><table class="rc-tbl"><thead><tr>'
-      +'<th>사건번호</th><th>법원 · 재판부</th><th>송달문서</th><th style="width:92px">발송일자</th><th>못 찾은 이유</th><th style="width:120px">할 일</th>'
+      +'<th>사건번호</th><th>법원 · 재판부</th><th>송달문서</th><th style="width:92px">발송일자</th><th>못 찾은 이유</th><th style="width:280px">혹시 이 사람인가요?</th><th style="width:120px">할 일</th>'
       +'</tr></thead><tbody>'
       +rcDropList.map(function(d,di){
         return '<tr><td class="mono">'+esc(d.x.caseno)+'</td>'
@@ -3528,7 +3622,17 @@ function rcRender(){
           +'<td>'+esc(d.x.doc)+'</td>'
           +'<td class="mono">'+esc(d.x.sent||"-")+'</td>'
           +'<td style="color:#B45309;font-weight:700">'+esc(d.why)+'</td>'
-          +'<td><button class="btn ghost mini" onclick="rcClaim('+di+')">우리 사건이에요</button></td></tr>';
+          +'<td>'+((d.guess&&d.guess.length)
+              ? d.guess.map(function(g,gi){
+                  return '<div class="rc-guess">'
+                    +'<b>'+esc(g.name)+'</b> <span class="mono">'+esc(g.no)+'</span>'
+                    +(g.court?' <span class="bj-note">'+esc(g.court)+'</span>':'')
+                    +'<div class="bj-note">'+esc(g.why)+(g.extra?' · '+esc(g.extra):'')+'</div>'
+                    +'<button class="btn ghost mini" onclick="rcClaimPick('+di+','+gi+')">이 사람이에요</button>'
+                    +'</div>';
+                }).join("")
+              : '<span class="bj-note">비슷한 사건이 없습니다</span>')+'</td>'
+          +'<td><button class="btn ghost mini" onclick="rcClaim('+di+')">이름으로 찾기</button></td></tr>';
       }).join("")
       +'</tbody></table></div>';
   }
@@ -5297,9 +5401,17 @@ function toggleDoc(id,idx){
   const cl=c.checklist.map((d,i)=>i===idx?{...d,done:!d.done}:d);
   patchCase(id,{checklist:cl},null);
 }
-function saveDetailMemo(id){
-  const val=document.getElementById("dm-"+id).value;
+/* ★2026-09-04 혜림 : 메모가 화면 한참 아래에 있어서 보려면 매번 내려야 했다.
+   제목 바로 아래로 올리고, 칸을 벗어나면 자동으로 저장한다(내용이 바뀌었을 때만). */
+function saveDetailMemo(id,auto){
+  var el=document.getElementById("dm-"+id); if(!el)return;
+  var val=el.value;
+  if(auto){
+    var c=(typeof cases!=="undefined"&&cases)?cases.find(function(x){return x.id===id;}):null;
+    if(c&&String(c.memo||"")===String(val))return;      /* 안 바뀌었으면 서버를 건드리지 않는다 */
+  }
   patchCase(id,{memo:val},null);
+  if(auto&&typeof wdToast==="function")wdToast("메모를 저장했습니다");
 }
 function openDetail(id){detailId=(detailId===id?null:id);render();window.scrollTo({top:120,behavior:"smooth"});}
 
@@ -5481,6 +5593,12 @@ function renderDetail(){
   w.innerHTML=`<div class="detail">
     <div class="h2row"><h2 style="margin:0">${esc(c.name)} · ${esc(c.caseno)} <span class="pill">서류 ${docProg(c)}%</span>${firmChipOf(c)}${c.court?' <span class="pill" style="font-size:10.5px;background:#EEF1F8;color:#2b3a67">'+esc(c.court)+'</span>':''}</h2>
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">닫기</button></div>
+    <div class="dm-top">
+      <div class="dm-hd"><span class="dm-t">사건 메모</span>
+        <span class="bj-note">칸을 벗어나면 자동으로 저장됩니다</span>
+        <button class="btn ghost mini" onclick="saveDetailMemo('${c.id}')">지금 저장</button></div>
+      <textarea id="dm-${c.id}" onblur="saveDetailMemo('${c.id}',true)" placeholder="이 사건에서 기억해야 할 것을 적어 두세요. 통화 결과·당사자 사정·다음에 할 일 등">${esc(c.memo||"")}</textarea>
+    </div>
     <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")} <button class="btn ghost mini" title="송달문서의 문서명을 고칩니다" onclick="editDeliveryDoctype('${c.id}')">✏ 이름</button> <button class="btn primary mini" onclick="bjFromDelivery('${c.id}')">문서 등록·판독</button> <label class="btn ghost mini" style="margin:0;cursor:pointer" title="판독 화면으로 넘어가지 않고 '이 사건의 문서'에만 넣습니다. 판독은 나중에 [판독] 버튼으로 이어서 하면 됩니다">파일만 등록<input type="file" accept="application/pdf,image/*" onchange="caseFilePick('${c.id}',event)" style="display:none"></label> <button class="btn ghost mini" onclick="wdOpenFromCase('${c.id}')">대행 작업대</button></span></div>
     ${c.client_id?'':`<div class="bj-alert amber" style="margin:10px 0">
       <b>케이스허브 의뢰인과 연결돼 있지 않습니다.</b><br>
@@ -5513,9 +5631,6 @@ function renderDetail(){
     ${c.checklist.length
       ? c.checklist.map((d,i)=>`<label class="chk"><input type="checkbox" ${d.done?"checked":""} onchange="toggleDoc('${c.id}',${i})"><span class="${d.done?'done':''}">${esc(d.label)}</span><i class="chk-x" title="지우기" onclick="event.preventDefault();event.stopPropagation();delDoc('${c.id}',${i})">×</i></label>`).join("")
       : `<div class="bj-note">직접 적어 둔 서류가 없습니다. [＋ 항목 추가]로 넣으세요.</div>`}
-    <div style="font-weight:600;font-size:13.5px;margin:16px 0 6px">메모</div>
-    <textarea id="dm-${c.id}" style="min-height:60px">${esc(c.memo||"")}</textarea>
-    <div style="margin-top:10px"><button class="btn primary mini" onclick="saveDetailMemo('${c.id}')">메모 저장</button></div>
     <div style="font-weight:600;font-size:13.5px;margin:16px 0 6px">처리 이력</div>
     <div style="font-size:12.5px;color:var(--muted);line-height:1.7">${(c.log||[]).slice().reverse().map(l=>esc(l.t)+" · "+esc(l.m)).join("<br>")||"기록 없음"}</div>
     <div style="font-weight:600;font-size:13.5px;margin:16px 0 6px">보정서 파일 (사무소별 보안 저장)</div>

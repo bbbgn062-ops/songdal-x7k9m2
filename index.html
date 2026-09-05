@@ -1229,45 +1229,105 @@
   .bjpick-thumb .noimg{font-size:10px;font-weight:700;color:var(--muted);text-align:center;line-height:1.4}
   .bjpick-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
   .bjpick-r1{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
-  .pn-bar{padding:14px 18px 10px;border-bottom:1px solid var(--line,#E7E3DE)}
-  .pn-t{font-weight:800;font-size:17px;display:flex;align-items:center;gap:10px}
-  .pn-day{font-weight:600;font-size:12.5px;color:#8A8078;background:#F4F1EC;border-radius:20px;padding:2px 10px}
-  .pn-d{font-size:12.5px;color:#8A8078;line-height:1.7;margin-top:4px;max-width:900px}
-  .pn-b{margin-top:8px}
-  .pn-alert{margin:12px 18px 0;padding:10px 14px;border-radius:10px;background:#FDECEC;color:#A21B1B;font-size:13px;border:1px solid #F5C7C7}
-  .pn-filt{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:12px 18px}
-  .pn-fl{font-size:11.5px;color:#8A8078;font-weight:700}
-  .pn-cnt{margin-left:auto;font-size:12px;color:#8A8078}
-  .pn-chip{border:1px solid #DDD8D2;background:#FFF;border-radius:20px;padding:4px 12px;font-size:12px;cursor:pointer}
+  /* ===== 보정 점검판 (2026-09-05 혜림 확정 : 시안 D + 사무소 표시 2) ===== */
+  .pn-bar{padding:16px 20px 12px;border-bottom:1px solid var(--line,#E7E3DE)}
+  .pn-t{font-weight:700;font-size:18px;display:flex;align-items:center;gap:10px;letter-spacing:-.3px}
+  .pn-day{font-weight:600;font-size:12.5px;color:#8A8078;background:#F4F1EC;border-radius:20px;padding:2px 10px;white-space:nowrap}
+  .pn-d{font-size:12.5px;color:#8A8078;line-height:1.7;margin-top:5px;max-width:940px}
+  .pn-b{margin-top:10px;display:flex;gap:7px;flex-wrap:wrap}
+  .pn-tbtn{border:1px solid #DDD8D2;background:#FFF;border-radius:8px;padding:6px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap}
+  .pn-tbtn:hover{background:#F4F1EC}
+  .pn-tbtn.pri{background:#9B1B33;border-color:#9B1B33;color:#FFF;font-weight:700}
+  .pn-alert{margin:12px 20px 0;padding:11px 15px;border-radius:10px;background:#FDECEC;color:#8E1B1B;
+    font-size:13.5px;border:1px solid #F2C9C9;font-weight:700}
+  .pn-filt{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:12px 20px}
+  .pn-fl{font-size:11.5px;color:#8A8078;font-weight:800;white-space:nowrap}
+  .pn-cnt{margin-left:auto;font-size:12.5px;color:#8A8078;white-space:nowrap}
+  .pn-chip{border:1px solid #DDD8D2;background:#FFF;border-radius:20px;padding:5px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap}
   .pn-chip.on{background:#231F1D;color:#FFF;border-color:#231F1D}
-  .pn-ck{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#5B554F;cursor:pointer}
-  .pn-empty{margin:18px;padding:32px;text-align:center;color:#8A8078;font-size:13px;background:#FAF8F6;border-radius:12px}
-  .pn-card{margin:10px 18px;padding:12px 14px;border:1px solid #E7E3DE;border-radius:12px;background:#FFF}
-  .pn-card.urgent{border-color:#E9A3A3;background:#FFF9F9;box-shadow:0 0 0 2px #FBE4E4 inset}
-  .pn-r1{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-  .pn-urg{background:#C62828;color:#FFF;font-weight:800;font-size:11px;border-radius:6px;padding:2px 8px}
-  .pn-nm{font-weight:800;font-size:15px}
-  .pn-cs{font-size:12px;color:#8A8078}
-  .pn-kind{background:#EEF1F8;color:#2B4570;border-radius:6px;padding:2px 8px;font-size:11.5px;font-weight:700}
-  .pn-dd{margin-left:auto;font-size:12px;font-weight:700;color:#5B554F}
-  .pn-dd.r{color:#C62828}.pn-dd.a{color:#B45309}.pn-dd.g{color:#2E7D32}
-  .pn-plan{font-size:11.5px;background:#EFE9F7;color:#5B4B8A;border-radius:6px;padding:2px 8px}
-  .pn-plan.late{background:#FDECEC;color:#A21B1B;font-weight:700}
-  .pn-r2{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 0}
-  .pn-lb{font-size:11.5px;color:#8A8078;font-weight:700;min-width:64px}
-  .pn-lb2{font-size:11.5px;color:#8A8078;font-weight:700;margin-bottom:3px}
-  .pn-tel{font-size:13px;font-weight:700;color:#2B4570;text-decoration:none}
-  .pn-warn{font-size:12px;color:#B45309;font-weight:700}
-  .pn-st{border:1px solid #DDD8D2;background:#FFF;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer}
-  .pn-st.on{background:#2B4570;color:#FFF;border-color:#2B4570}
-  .pn-mini{border:1px solid #DDD8D2;background:#FFF;border-radius:8px;padding:4px 9px;font-size:11.5px;cursor:pointer}
-  .pn-mini.warn{border-color:#E0B36A;color:#8a5a00;background:#FFF8EC}
-  .pn-mini:hover{background:#F4F1EC}
-  .pn-note{font-size:11.5px;color:#8A8078}
-  .pn-r2 input[type=date]{padding:4px 8px;font-size:12px;width:auto}
-  .pn-memos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
-  .pn-memos textarea{width:100%;min-height:52px;font-size:12.5px;padding:7px 9px;border:1px solid #E7E3DE;border-radius:8px}
-  @media(max-width:820px){ .pn-memos{grid-template-columns:1fr} .pn-dd{margin-left:0} }
+  .pn-ck{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#5B554F;cursor:pointer;white-space:nowrap}
+  .pn-empty{margin:18px 20px;padding:34px;text-align:center;color:#8A8078;font-size:13.5px;background:#FAF8F6;border-radius:12px}
+  /* 날짜·급건 구역 제목 */
+  .pn-ghead{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:22px 20px 9px}
+  .pn-ghead h3{margin:0;font-size:15.5px;font-weight:700;white-space:nowrap;letter-spacing:-.2px}
+  .pn-gbar{width:6px;height:24px;border-radius:3px;background:#231F1D;flex:none}
+  .pn-ghead.urg .pn-gbar{background:#C62828}
+  .pn-ghead.urg h3{color:#C62828}
+  .pn-gn{font-size:12px;color:#8A8078;background:#FFF;border:1px solid #E7E3DE;border-radius:20px;padding:2px 10px;white-space:nowrap}
+  .pn-gcnt{font-size:11px;font-weight:800;border-radius:5px;padding:2px 8px;white-space:nowrap}
+  .pn-gcnt.s{background:#EEF1F8;color:#2B4570}
+  .pn-gcnt.n{background:#E8F3EE;color:#1F6B4F}
+  .pn-gcnt.b{background:#E4F1F7;color:#1E6A8C}
+  .pn-gcnt.x{background:#F1EFEC;color:#7A736C}
+  .pn-gnote{font-size:12px;color:#8A8078}
+  /* 카드 */
+  .pn-card{margin:9px 20px;border:1px solid #E7E3DE;border-radius:12px;background:#FFF;overflow:hidden;
+    box-shadow:0 1px 2px rgba(35,31,29,.04)}
+  .pn-card.urg{border-color:#E9A3A3}
+  .pn-redbar{background:#C62828;color:#FFF;padding:7px 16px;display:flex;align-items:center;gap:10px;
+    font-size:12.5px;flex-wrap:wrap}
+  .pn-redbar b{font-size:13px;font-weight:700;letter-spacing:.5px}
+  .pn-rb-ofc{background:rgba(255,255,255,.22);border-radius:5px;padding:1px 9px;font-weight:600;white-space:nowrap}
+  .pn-body{display:grid;grid-template-columns:262px 1fr}
+  /* 왼쪽 : 사무소 색 (표시 2) */
+  /* 왼쪽 칸 : 굵기는 600·700 두 가지만, 크기는 네 가지만, 투명도는 세 단계만 쓴다.
+     그래야 '막 만든' 느낌이 안 난다. */
+  .pn-left{padding:16px 18px;color:#FFF;font-feature-settings:"tnum"}
+  .pn-left.s{background:#2B4570}
+  .pn-left.n{background:#1F6B4F}
+  .pn-left.b{background:#1E6A8C}
+  .pn-left.x{background:#6B645E}
+  .pn-hr{height:1px;background:rgba(255,255,255,.22);margin:13px 0}
+  .pn-ofcname{font-size:13.5px;font-weight:700;line-height:1.3}
+  .pn-ofcfull{font-size:10.5px;font-weight:400;opacity:.62;margin-top:1px}
+  .pn-dd2{font-size:27px;font-weight:700;letter-spacing:-.6px;line-height:1.1}
+  .pn-dd2.r{color:#FFD3D3}.pn-dd2.a{color:#FFE6BC}.pn-dd2.g{color:#CFEBD2}
+  .pn-nm2{font-size:17px;font-weight:700;line-height:1.35;word-break:keep-all}
+  .pn-sub{font-size:11.5px;font-weight:400;opacity:.72;line-height:1.55;margin-top:1px}
+  .pn-tel2{display:inline-block;margin-top:9px;font-size:14px;font-weight:600;color:#FFF;
+    text-decoration:none;background:rgba(255,255,255,.14);border-radius:7px;padding:4px 10px;white-space:nowrap}
+  .pn-tel2:hover{background:rgba(255,255,255,.24)}
+  .pn-nophone{display:inline-block;margin-top:9px;font-size:11.5px;font-weight:600;opacity:.72;white-space:nowrap}
+  .pn-kind2{margin-top:8px;font-size:11px;font-weight:600;background:rgba(255,255,255,.16);
+    border-radius:6px;padding:3px 9px;display:inline-block;white-space:nowrap}
+  .pn-plan2{margin-top:8px;font-size:11px;font-weight:600;background:rgba(255,255,255,.16);
+    border-radius:6px;padding:3px 9px;display:inline-block;white-space:nowrap}
+  .pn-plan2.late{background:#FFE2E2;color:#8E1B1B;font-weight:700}
+  /* 오른쪽 : 시안 D */
+  .pn-right{padding:16px 18px}
+  .pn-cks{display:flex;gap:8px;flex-wrap:wrap}
+  .pn-bck{display:inline-flex;align-items:center;gap:8px;border:1px solid #E1DCD6;border-radius:9px;
+    padding:9px 15px;font-size:13.5px;font-weight:600;background:#FFF;white-space:nowrap;color:#3D3833}
+  .pn-bck:hover{border-color:#C9C3BC}
+  .pn-bck.on{border-color:#2E7D32;background:#EDF5EE;color:#2E7D32;font-weight:700}
+  .pn-bck input{width:16px;height:16px;flex:none}
+  .pn-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:13px}
+  .pn-sp{flex:1}
+  .pn-big{border:1px solid #E1DCD6;background:#FFF;border-radius:9px;padding:9px 17px;
+    font-size:13.5px;cursor:pointer;white-space:nowrap;font-weight:600;color:#3D3833;margin:0}
+  .pn-big:hover{background:#F4F1EC}
+  .pn-big.pri{background:#9B1B33;border-color:#9B1B33;color:#FFF}
+  .pn-big.warn{background:#FFF8EC;border-color:#E0B36A;color:#8a5a00}
+  .pn-more{margin-top:12px;padding:12px 14px;background:#FBFAF8;border:1px solid #EDE9E4;border-radius:11px}
+  .pn-mrow{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:4px 0}
+  .pn-mlb{font-size:11.5px;color:#6B645E;font-weight:800;white-space:nowrap;min-width:56px}
+  .pn-chip2{border:1px solid #DDD8D2;background:#FFF;border-radius:20px;padding:5px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap}
+  .pn-chip2.on{background:#2B4570;color:#FFF;border-color:#2B4570}
+  .pn-mini2{border:1px solid #DDD8D2;background:#FFF;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap}
+  .pn-mini2:hover{background:#F4F1EC}
+  .pn-note2{font-size:11.5px;color:#8A8078;font-weight:600}
+  .pn-mrow input[type=date],.pn-more input[type=date]{padding:4px 8px;font-size:12.5px;width:auto}
+  .pn-memos{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:13px}
+  .pn-mlb2{font-size:11.5px;color:#6B645E;font-weight:700;margin-bottom:5px}
+  .pn-memos textarea{width:100%;min-height:56px;font-size:13px;padding:9px 11px;
+    border:1px solid #E7E3DE;border-radius:9px;font-family:inherit;line-height:1.6}
+  .pn-memos textarea:focus{border-color:#9B1B33;outline:none}
+  @media(max-width:980px){
+    .pn-body{grid-template-columns:1fr}
+    .pn-left{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+    .pn-ofcfull,.pn-sub{width:100%}
+    .pn-memos{grid-template-columns:1fr}
+  }
   .dm-top{margin:10px 0 12px;padding:10px 12px;background:#FFFDF3;border:1px solid #F0E6C8;border-radius:10px}
   .dm-hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
   .dm-t{font-weight:800;font-size:13.5px;color:#7A5C00}
@@ -14419,7 +14479,10 @@ function pnRows(){
   (bxRows||[]).forEach(function(r){
     if(typeof bjIsOurDoc==="function"&&bjIsOurDoc(r))return;       /* 우리가 낸 보정서는 '낼 것'이 아니다 */
     var ws=bjWorkStateOf(r);
-    if(pnHideDone&&ws==="보정완료")return;
+    var m0=pnMeta[r.id]||{};
+    /* ★2026-09-05 혜림 : 「법원 제출함」과 「완료」는 다른 것이다.
+       숨기는 기준은 우리 쪽 마무리 표시인 '완료'다. 제출만 하고 마무리를 안 한 건은 남는다. */
+    if(pnHideDone&&m0.done)return;
     var c=(typeof cases!=="undefined"&&cases)?cases.find(function(x){return x.id===r.delivery_id;}):null;
     var cid=(c&&c.client_id)||r.client_id||null;
     var firm=pnFirmOf(cid);
@@ -14430,7 +14493,7 @@ function pnRows(){
     var plan=String(m.plan||"").slice(0,10);
     var left=pnDays(due), planLeft=pnDays(plan), holdLeft=pnDays(hold);
     /* ★급건 = 미뤄 둔 날이 지났거나, 법원기한이 오늘이거나 지났을 때 */
-    var urgent=(ws!=="보정완료")&&((planLeft!==null&&planLeft<0)||(left!==null&&left<=0)||(holdLeft!==null&&holdLeft<0));
+    var urgent=(ws!=="보정완료")&&!m.done&&((planLeft!==null&&planLeft<0)||(left!==null&&left<=0)||(holdLeft!==null&&holdLeft<0));
     out.push({r:r,c:c,cid:cid,firm:firm,ws:ws,due:due,hold:hold,plan:plan,
               left:left,planLeft:planLeft,holdLeft:holdLeft,urgent:urgent,m:m});
   });
@@ -14452,19 +14515,81 @@ function pnRows(){
 function pnChip(label,cur,val,fn){
   return '<button class="pn-chip'+(cur===val?" on":"")+'" onclick="'+fn+'">'+esc(label)+'</button>';
 }
+/* 사무소 → 색 이름표. 서초=남색 · 남부=초록 · 블루=청록 */
+function pnOfcCls(firm){
+  var f=rcFirmShort(firm||"");
+  if(f==="서초")return "s"; if(f==="남부")return "n"; if(f==="블루")return "b";
+  return "x";
+}
+function pnOfcOrder(firm){
+  var f=rcFirmShort(firm||"");
+  return f==="서초"?0:(f==="남부"?1:(f==="블루"?2:3));
+}
+var PN_WD=["일","월","화","수","목","금","토"];
+function pnDateTitle(ymd){
+  if(!ymd)return "기한 미정";
+  var d=parseD(ymd); if(!d)return ymd;
+  var n=pnDays(ymd);
+  var t=(d.getMonth()+1)+"월 "+d.getDate()+"일 ("+PN_WD[d.getDay()]+")";
+  if(n===0)return t+" · 오늘";
+  if(n===1)return t+" · 내일";
+  if(n>1)return t+" · "+n+"일 남음";
+  return t;
+}
+/* ★2026-09-05 혜림 확정 정렬
+   ① 급한 것은 사무소와 상관없이 맨 위에 한 무리로 모은다
+   ② 나머지는 '날짜'로 묶고, 같은 날짜 안에서 '사무소'끼리 붙여 놓는다
+   기준 날짜 = 오늘 처리 예정일(미뤄 둔 날)이 있으면 그 날, 없으면 법원기한 */
+function pnKeyDate(x){ return x.plan||x.due||""; }
+function pnGroups(rows){
+  var urg=[], rest=[];
+  rows.forEach(function(x){ (x.urgent?urg:rest).push(x); });
+  urg.sort(function(a,b){
+    var av=(a.planLeft!==null?a.planLeft:(a.left!==null?a.left:9999));
+    var bv=(b.planLeft!==null?b.planLeft:(b.left!==null?b.left:9999));
+    if(av!==bv)return av-bv;
+    var ao=pnOfcOrder(a.firm),bo=pnOfcOrder(b.firm);
+    if(ao!==bo)return ao-bo;
+    return String(a.r.client_name||"").localeCompare(String(b.r.client_name||""));
+  });
+  var map={}, keys=[];
+  rest.forEach(function(x){
+    var k=pnKeyDate(x)||"~";
+    if(!map[k]){ map[k]=[]; keys.push(k); }
+    map[k].push(x);
+  });
+  keys.sort();                                   /* 날짜 오름차순, "~"(미정)은 맨 뒤 */
+  keys.forEach(function(k){
+    map[k].sort(function(a,b){
+      var ao=pnOfcOrder(a.firm),bo=pnOfcOrder(b.firm);
+      if(ao!==bo)return ao-bo;                   /* ★같은 날짜 안에서는 사무소끼리 */
+      return String(a.r.client_name||"").localeCompare(String(b.r.client_name||""));
+    });
+  });
+  return {urg:urg, keys:keys, map:map};
+}
+function pnOfcCount(list){
+  var c={};
+  list.forEach(function(x){ var f=rcFirmShort(x.firm||"")||"미지정"; c[f]=(c[f]||0)+1; });
+  return Object.keys(c).map(function(k){
+    return '<span class="pn-gcnt '+pnOfcCls(k)+'">'+esc(k)+' '+c[k]+'</span>';
+  }).join("");
+}
 function pnRender(){
   var w=document.getElementById("pn-wrap"); if(!w)return;
   var rows=pnRows();
-  var all=(bxRows||[]).filter(function(r){return !(typeof bjIsOurDoc==="function"&&bjIsOurDoc(r));});
+  var g=pnGroups(rows);
   var urgentN=0;
-  (function(){ var keep=pnFilt,hd=pnHideDone; pnFilt="전체"; pnHideDone=true;
-    urgentN=pnRows().filter(function(x){return x.urgent;}).length; pnFilt=keep; pnHideDone=hd; })();
+  (function(){ var kf=pnFilt,kh=pnHideDone; pnFilt="전체"; pnHideDone=true;
+    urgentN=pnRows().filter(function(x){return x.urgent;}).length; pnFilt=kf; pnHideDone=kh; })();
   var h='<div class="pn-bar">'
     +'<div class="pn-t">보정 점검판 <span class="pn-day">'+esc(fmt(today0()))+'</span></div>'
-    +'<div class="pn-d">오늘 낼 보정서를 여기서 끝냅니다. 전화 · 상태 · 기한 · 파일 · 메모를 줄에서 바로 처리하고, 못 하면 <b>내일로 미루기</b>를 누르세요. 미룬 날이 지나면 다음 날 맨 위에 빨간 <b>급건</b>으로 올라옵니다.</div>'
-    +'<div class="pn-b"><button class="btn ghost mini" onclick="pnReload()">새로 고침</button></div>'
+    +'<div class="pn-d">오늘 낼 보정서를 여기서 끝냅니다. 급한 것을 맨 위에 모으고, 그 아래는 <b>날짜로 묶은 뒤 같은 날짜 안에서 사무소끼리</b> 세웁니다.</div>'
+    +'<div class="pn-b"><button class="pn-tbtn" onclick="pnPrint()">인쇄</button>'
+    +'<button class="pn-tbtn" onclick="pnExcel()">엑셀 내보내기</button>'
+    +'<button class="pn-tbtn pri" onclick="pnReload()">새로 고침</button></div>'
     +'</div>';
-  if(urgentN)h+='<div class="pn-alert">⚠ 지금 <b>'+urgentH(urgentN)+'</b> 있습니다. 기한이 지났거나 오늘까지인 건, 그리고 미뤄 둔 날이 지난 건입니다.</div>';
+  if(urgentN)h+='<div class="pn-alert">지금 '+urgentN+'건이 급합니다. 기한이 지났거나 오늘까지인 건, 미뤄 둔 날이 지난 건입니다.</div>';
   h+='<div class="pn-filt">'
     +'<span class="pn-fl">사무소</span>'
     +pnChip("전체",pnOffice,"전체","pnOffice='전체';pnRender()")
@@ -14477,85 +14602,206 @@ function pnRender(){
     +pnChip("이번주",pnFilt,"주간","pnFilt='주간';pnRender()")
     +pnChip("할 일 전부",pnFilt,"할일","pnFilt='할일';pnRender()")
     +pnChip("전부",pnFilt,"전체","pnFilt='전체';pnRender()")
-    +'<label class="pn-ck" style="margin-left:14px"><input type="checkbox" '+(pnHideDone?"checked":"")+' onchange="pnHideDone=this.checked;pnRender()">제출 끝난 건 숨기기</label>'
+    +'<label class="pn-ck" style="margin-left:14px"><input type="checkbox" '+(pnHideDone?"checked":"")+' onchange="pnHideDone=this.checked;pnRender()">완료한 건 숨기기</label>'
     +'<span class="pn-cnt">'+rows.length+'건</span>'
     +'</div>';
   if(!rows.length){
     h+='<div class="pn-empty">여기에 해당하는 보정 문서가 없습니다.'
-      +(pnHideDone?'<br>「제출 끝난 건 숨기기」를 꺼 보세요.':'')+'</div>';
+      +(pnHideDone?'<br>「완료한 건 숨기기」를 꺼 보세요.':'')+'</div>';
   }else{
-    h+=rows.map(pnCard).join("");
+    if(g.urg.length){
+      h+='<div class="pn-ghead urg"><span class="pn-gbar"></span><h3>급한 것</h3>'
+        +'<span class="pn-gn">'+g.urg.length+'건</span>'
+        +pnOfcCount(g.urg)
+        +'<span class="pn-gnote">사무소와 상관없이 맨 위에 모읍니다</span></div>';
+      h+=g.urg.map(pnCard).join("");
+    }
+    g.keys.forEach(function(k){
+      var list=g.map[k];
+      var isPlan=list.length&&list[0].plan===k&&k!=="~";
+      h+='<div class="pn-ghead"><span class="pn-gbar"></span><h3>'+esc(pnDateTitle(k==="~"?"":k))+'</h3>'
+        +'<span class="pn-gn">'+list.length+'건</span>'
+        +pnOfcCount(list)
+        +(isPlan?'<span class="pn-gnote">처리 예정으로 잡아 둔 날</span>':'')
+        +'</div>';
+      h+=list.map(pnCard).join("");
+    });
   }
   w.innerHTML=h;
 }
-function urgentH(n){ return n+"건이 급합니다"; }
+/* ★시안 D + 표시 2 (혜림 확정)
+   왼쪽 칸은 사무소 색으로 통째로 칠하고, 급한 건은 카드 맨 위에 빨간 띠를 두른다.
+   오른쪽 칸은 큰 체크 넷 + 큰 버튼 둘만 내놓고 나머지는 [더 보기] 안에 넣는다. */
 function pnCard(x){
   var r=x.r, id=r.id, sid="'"+id+"'";
-  var did=(r.delivery_id?("'"+r.delivery_id+"'"):"");
+  var did=(r.delivery_id?("'"+r.delivery_id+"'"):"null");
   var nm=(r.client_name||(x.c&&x.c.name)||"이름 없음");
-  var cs=[(r.court||(x.c&&x.c.court)||""),(r.case_no||(x.c&&x.c.caseno)||"")].filter(Boolean).join(" ");
+  var court=(r.court||(x.c&&x.c.court)||"");
+  var cno=(r.case_no||(x.c&&x.c.caseno)||"");
   var kind=(typeof bjCardKind==="function")?bjCardKind(r):(r.doc_type||"문서");
   var tel=x.cid?(pnPhone[x.cid]||""):"";
-  var cls=x.urgent?"pn-card urgent":"pn-card";
-  var dueCls=(x.left===null)?"":(x.left<0?"r":(x.left<=1?"a":"g"));
-  var h='<div class="'+cls+'">';
-  h+='<div class="pn-r1">'
-    +(x.urgent?'<span class="pn-urg">⚠ 급건</span>':'')
-    +(x.firm?'<span class="chip '+rcFirmCls(x.firm)+'" style="font-size:10px;padding:1px 7px">'+esc(rcFirmShort(x.firm))+'</span>':'')
-    +'<span class="pn-nm">'+esc(nm)+'</span>'
-    +'<span class="pn-cs">'+esc(cs)+'</span>'
-    +'<span class="pn-kind">'+esc(kind)+'</span>'
-    +'<span class="pn-dd '+dueCls+'">'+esc(pnLeftTxt(x.left))+(x.due?' · '+esc(x.due):'')+'</span>'
-    +(x.plan?'<span class="pn-plan'+((x.planLeft!==null&&x.planLeft<0)?" late":"")+'">처리 예정 '+esc(x.plan)+' ('+esc(pnLeftTxt(x.planLeft))+')</span>':'')
+  var oc=pnOfcCls(x.firm), ofcName=rcFirmShort(x.firm||"")||"미지정";
+  var m=x.m||{};
+  var open=!!pnOpen[id];
+  var ddCol=(x.left===null)?"":(x.left<0?"r":(x.left<=1?"a":"g"));
+
+  var h='<div class="pn-card '+(x.urgent?"urg":"")+'">';
+  if(x.urgent){
+    h+='<div class="pn-redbar"><b>급건</b>'
+      +'<span class="pn-rb-ofc">'+esc(ofcName)+'</span>'
+      +'<span>'+esc(pnLeftTxt(x.left))+(x.due?' · 법원기한 '+esc(x.due):'')
+        +((x.planLeft!==null&&x.planLeft<0)?' · 미뤄 둔 날 '+esc(x.plan)+' 지남':'')+'</span>'
+
+      +'</div>';
+  }
+  h+='<div class="pn-body">';
+  /* 왼쪽 : 사무소 색 */
+  h+='<div class="pn-left '+oc+'">'
+    +'<div class="pn-ofcname">'+esc(ofcName)+'</div>'
+    +'<div class="pn-ofcfull">'+esc(x.firm||"사무소 미지정")+'</div>'
+    +'<div class="pn-hr"></div>'
+    +'<div class="pn-dd2 '+ddCol+'">'+esc(pnLeftTxt(x.left))+'</div>'
+    +'<div class="pn-sub mono">'+(x.due?'법원기한 '+esc(x.due):'기한 미정')+'</div>'
+    +'<div class="pn-hr"></div>'
+    +'<div class="pn-nm2">'+esc(nm)+'</div>'
+    +'<div class="pn-sub mono">'+esc(court)+'<br>'+esc(cno)+'</div>'
+    +'<div>'+(tel?'<a class="pn-tel2" href="tel:'+esc(String(tel).replace(/[^0-9]/g,""))+'">'+esc(tel)+'</a>'
+         :'<span class="pn-nophone">연락처 없음</span>')+'</div>'
+    +'<div><span class="pn-kind2">'+esc(kind)+'</span>'
+    +(x.plan?' <span class="pn-plan2'+((x.planLeft!==null&&x.planLeft<0)?" late":"")+'">처리 예정 '+esc(x.plan)+'</span>':'')
+    +'</div>'
     +'</div>';
-  /* 1줄 : 연락 */
-  h+='<div class="pn-r2"><span class="pn-lb">당사자</span>'
-    +(tel?'<a class="pn-tel" href="tel:'+esc(String(tel).replace(/[^0-9]/g,""))+'">'+esc(tel)+'</a>'
-         :'<span class="pn-warn">연락처 없음</span>')
-    +'<label class="pn-ck"><input type="checkbox" '+(x.m.called?"checked":"")+' onchange="pnCalled('+sid+',this.checked)">연락함</label>'
+  /* 오른쪽 : 시안 D */
+  h+='<div class="pn-right">';
+  h+='<div class="pn-cks">'
+    +pnBigCk(id,"called","당사자 연락함",m.called)
+    +pnBigCk(id,"got","서류 받음",m.got)
+    +pnBigCk(id,"filed","법원 제출함",(x.ws==="보정완료"))
+    +pnBigCk(id,"done","완료",m.done)
     +'</div>';
-  /* 2줄 : 상태 */
-  h+='<div class="pn-r2"><span class="pn-lb">상태</span>'
-    +['보정중','임시저장','추후제출','보정완료'].map(function(v){
-        var lab=(v==="보정완료")?"법원 제출함":(v==="임시저장"?"전자소송 임시저장":v);
-        return '<button class="pn-st'+(x.ws===v?" on":"")+'" onclick="pnState('+sid+','+(did||"null")+',\''+v+'\')">'+esc(lab)+'</button>';
-      }).join("")
-    +'</div>';
-  /* 3줄 : 기한 */
-  h+='<div class="pn-r2"><span class="pn-lb">법원기한</span>'
-    +'<input type="date" value="'+esc(x.due)+'" onchange="pnDue('+sid+',this.value)">'
-    +'<span class="pn-lb" style="margin-left:10px">추후제출 기한</span>'
-    +'<input type="date" value="'+esc(x.hold)+'" onchange="pnHold('+sid+','+(did||"null")+',this.value)">'
-    +[7,14,21,30].map(function(d){return '<button class="pn-mini" onclick="pnHoldDays('+sid+','+(did||"null")+','+d+')">+'+d+'일</button>';}).join("")
-    +(x.hold?'<span class="pn-note">'+esc(pnLeftTxt(x.holdLeft))+'</span>':'')
-    +'</div>';
-  /* 4줄 : 미루기 */
-  h+='<div class="pn-r2"><span class="pn-lb">오늘 처리</span>'
-    +'<button class="pn-mini" onclick="pnPlan('+sid+',0)">오늘</button>'
-    +'<button class="pn-mini warn" onclick="pnPlan('+sid+',1)">내일로 미루기</button>'
-    +'<button class="pn-mini" onclick="pnPlan('+sid+',2)">모레로</button>'
-    +'<input type="date" value="'+esc(x.plan)+'" onchange="pnPlanSet('+sid+',this.value)">'
-    +(x.plan?'<button class="pn-mini" onclick="pnPlanSet('+sid+',\'\')">예정 지우기</button>':'')
-    +'</div>';
-  /* 5줄 : 파일·바로가기 */
-  h+='<div class="pn-r2"><span class="pn-lb">파일</span>'
+  h+='<div class="pn-acts">'
+    +'<button class="pn-big pri" onclick="pnPlan('+sid+',0)">오늘 처리함</button>'
+    +'<button class="pn-big warn" onclick="pnPlan('+sid+',1)">내일로 미루기</button>'
     +(r.delivery_id
-      ? '<label class="pn-mini" style="cursor:pointer;margin:0">＋ 파일 넣기<input type="file" accept="application/pdf,image/*" onchange="pnFile(\''+r.delivery_id+'\',event)" style="display:none"></label>'
-      : '<span class="pn-note">송달문서에 연결돼 있지 않아 파일을 넣을 수 없습니다</span>')
-    +(r.pdf_path?'<button class="pn-mini" onclick="bjPreviewDoc('+JSON.stringify(String(r.pdf_path)).replace(/"/g,"&quot;")+','+JSON.stringify(bjFileName(r)).replace(/"/g,"&quot;")+')">원본 보기</button>':'')
-    +'<button class="pn-mini" onclick="bjOpen('+sid+')">판독 열기</button>'
-    +(r.delivery_id?'<button class="pn-mini" onclick="goDetail(\''+r.delivery_id+'\')">의뢰인 상세</button>':'')
+      ? '<label class="pn-big" style="cursor:pointer">＋ 파일<input type="file" accept="application/pdf,image/*" onchange="pnFile(\''+r.delivery_id+'\',event)" style="display:none"></label>'
+      : '')
+    +'<span class="pn-sp"></span>'
+    +'<button class="pn-big" onclick="pnMore('+sid+')">'+(open?"접기":"더 보기")+'</button>'
     +'</div>';
-  /* 6줄 : 메모 두 가지 (문서 메모 · 사건 메모) */
+  if(open){
+    h+='<div class="pn-more">'
+      +'<div class="pn-mrow"><span class="pn-mlb">상태</span>'
+      +['보정중','임시저장','추후제출'].map(function(v){
+          var lab=(v==="임시저장")?"전자소송 임시저장":v;
+          return '<button class="pn-chip2'+(x.ws===v?" on":"")+'" onclick="pnState('+sid+','+did+',\''+v+'\')">'+esc(lab)+'</button>';
+        }).join("")
+      +'</div>'
+      +'<div class="pn-mrow"><span class="pn-mlb">법원기한</span>'
+      +'<input type="date" value="'+esc(x.due)+'" onchange="pnDue('+sid+',this.value)">'
+      +'<span class="pn-mlb" style="margin-left:8px">추후제출</span>'
+      +'<input type="date" value="'+esc(x.hold)+'" onchange="pnHold('+sid+','+did+',this.value)">'
+      +[7,14,21,30].map(function(d){return '<button class="pn-mini2" onclick="pnHoldDays('+sid+','+did+','+d+')">+'+d+'일</button>';}).join("")
+      +(x.hold?'<span class="pn-note2">'+esc(pnLeftTxt(x.holdLeft))+'</span>':'')
+      +'</div>'
+      +'<div class="pn-mrow"><span class="pn-mlb">처리 예정</span>'
+      +'<button class="pn-mini2" onclick="pnPlan('+sid+',2)">모레로</button>'
+      +'<input type="date" value="'+esc(x.plan)+'" onchange="pnPlanSet('+sid+',this.value)">'
+      +(x.plan?'<button class="pn-mini2" onclick="pnPlanSet('+sid+',\'\')">예정 지우기</button>':'')
+      +'<span class="pn-sp"></span>'
+      +(r.pdf_path?'<button class="pn-mini2" onclick="bjPreviewDoc('+JSON.stringify(String(r.pdf_path)).replace(/"/g,"&quot;")+','+JSON.stringify(bjFileName(r)).replace(/"/g,"&quot;")+')">원본 보기</button>':'')
+      +'<button class="pn-mini2" onclick="bjOpen('+sid+')">판독</button>'
+      +(r.delivery_id?'<button class="pn-mini2" onclick="goDetail(\''+r.delivery_id+'\')">의뢰인 상세</button>':'')
+      +'</div>'
+      +'</div>';
+  }
+  /* ★혜림 지시 : 문서 메모와 사건 메모를 언제나 같이 보이게 */
   h+='<div class="pn-memos">'
-    +'<div><div class="pn-lb2">이 문서 메모</div>'
+    +'<div><div class="pn-mlb2">이 문서 메모</div>'
     +'<textarea placeholder="이 보정 문서에 남길 메모" onblur="pnDocMemo('+sid+',this.value)">'+esc(r.memo||"")+'</textarea></div>'
-    +'<div><div class="pn-lb2">사건 메모 <span class="pn-note">(의뢰인 상세와 같은 메모입니다)</span></div>'
+    +'<div><div class="pn-mlb2">사건 메모 <span class="pn-note2">(의뢰인 상세와 같습니다)</span></div>'
     +(r.delivery_id
       ? '<textarea placeholder="이 사건 전체에 남길 메모" onblur="pnCaseMemo(\''+r.delivery_id+'\',this.value)">'+esc((x.c&&x.c.memo)||"")+'</textarea>'
-      : '<div class="pn-note">송달문서에 연결돼 있지 않습니다</div>')
+      : '<div class="pn-note2">송달문서에 연결돼 있지 않습니다</div>')
     +'</div></div>';
-  return h+'</div>';
+  h+='</div></div></div>';
+  return h;
+}
+function pnBigCk(id,key,label,on){
+  return '<label class="pn-bck'+(on?" on":"")+'">'
+    +'<input type="checkbox" '+(on?"checked":"")+' onchange="pnCk(\''+id+'\',\''+key+'\',this.checked)">'
+    +esc(label)+'</label>';
+}
+var pnOpen={};
+function pnMore(id){ pnOpen[id]=!pnOpen[id]; pnRender(); }
+/* 체크 네 가지.
+   ★「법원 제출함」은 원래 있던 work_state 를 쓰고(송달문서 줄에도 반영된다),
+     「완료」는 우리 쪽 마무리 표시라 bj_settings 에 넣는다. 그래서 둘이 따로 논다. */
+async function pnCk(id,key,v){
+  if(key==="filed"){
+    var row=null;
+    for(var i=0;i<(bxRows||[]).length;i++){ if(bxRows[i].id===id){ row=bxRows[i]; break; } }
+    var did=row?row.delivery_id:null;
+    await pnState(id,did,v?"보정완료":"보정중");
+    return;
+  }
+  var p={}; p[key]=!!v;
+  await pnSaveMeta(id,p);
+  pnRender();
+}
+/* ---- 인쇄 ---- */
+function pnPrint(){
+  var g=pnGroups(pnRows());
+  function tr(x){
+    return '<tr><td>'+esc(rcFirmShort(x.firm||"")||"")+'</td><td><b>'+esc(x.r.client_name||"")+'</b></td>'
+      +'<td>'+esc((x.r.court||"")+" "+(x.r.case_no||""))+'</td>'
+      +'<td>'+esc((typeof bjCardKind==="function")?bjCardKind(x.r):"")+'</td>'
+      +'<td>'+esc(x.due||"")+'</td><td>'+esc(pnLeftTxt(x.left))+'</td>'
+      +'<td>'+esc(x.ws)+'</td><td>'+esc(x.plan||"")+'</td>'
+      +'<td style="width:70px"></td><td style="width:70px"></td><td>'+esc(String(x.r.memo||"").slice(0,40))+'</td></tr>';
+  }
+  var body="";
+  if(g.urg.length)body+='<tr class="gh"><td colspan="11">급한 것 '+g.urg.length+'건</td></tr>'+g.urg.map(tr).join("");
+  g.keys.forEach(function(k){
+    body+='<tr class="gh"><td colspan="11">'+esc(pnDateTitle(k==="~"?"":k))+' · '+g.map[k].length+'건</td></tr>'+g.map[k].map(tr).join("");
+  });
+  var html='<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>보정 점검판 '+fmt(today0())+'</title>'
+    +'<style>body{font-family:"Malgun Gothic",sans-serif;font-size:11px;margin:14px}'
+    +'h1{font-size:16px;margin:0 0 10px}table{width:100%;border-collapse:collapse}'
+    +'th,td{border:1px solid #999;padding:4px 6px;text-align:left}'
+    +'th{background:#eee}tr.gh td{background:#ddd;font-weight:bold}'
+    +'@page{size:A4 landscape;margin:10mm}</style></head><body>'
+    +'<h1>보정 점검판 · '+fmt(today0())+'</h1>'
+    +'<table><thead><tr><th>사무소</th><th>의뢰인</th><th>법원 · 사건번호</th><th>문서</th><th>법원기한</th><th>남은 날</th>'
+    +'<th>상태</th><th>처리예정</th><th>연락</th><th>제출</th><th>메모</th></tr></thead><tbody>'+body+'</tbody></table></body></html>';
+  var wnd=window.open("","_blank");
+  if(!wnd){ alert("팝업이 막혀 있습니다. 주소창 오른쪽에서 팝업을 허용해 주세요."); return; }
+  wnd.document.write(html); wnd.document.close();
+  setTimeout(function(){ try{wnd.print();}catch(e){} },400);
+}
+/* ---- 엑셀(CSV) 내보내기 ---- */
+function pnExcel(){
+  var g=pnGroups(pnRows());
+  var head=["구역","사무소","의뢰인","법원","사건번호","문서","법원기한","남은날","상태","추후제출기한","처리예정","연락함","서류받음","법원제출함","완료","문서메모","사건메모"];
+  var lines=[head];
+  function push(zone,x){
+    var m=x.m||{};
+    lines.push([zone,rcFirmShort(x.firm||"")||"",x.r.client_name||"",x.r.court||"",x.r.case_no||"",
+      (typeof bjCardKind==="function")?bjCardKind(x.r):"",x.due||"",pnLeftTxt(x.left),x.ws,x.hold||"",x.plan||"",
+      m.called?"O":"",m.got?"O":"",(x.ws==="보정완료")?"O":"",m.done?"O":"",
+      String(x.r.memo||"").replace(/\n/g," "),String((x.c&&x.c.memo)||"").replace(/\n/g," ")]);
+  }
+  g.urg.forEach(function(x){ push("급한 것",x); });
+  g.keys.forEach(function(k){ g.map[k].forEach(function(x){ push(pnDateTitle(k==="~"?"":k),x); }); });
+  var csv=lines.map(function(a){
+    return a.map(function(v){ return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'; }).join(",");
+  }).join("\r\n");
+  var blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="보정점검판_"+fmt(today0())+".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},8000);
+  if(typeof wdToast==="function")wdToast("엑셀(CSV)로 내려받았습니다");
 }
 /* ---- 줄에서 바로 고치기 ---- */
 function pnPatchLocal(id,patch){

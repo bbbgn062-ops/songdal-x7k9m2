@@ -1264,6 +1264,10 @@
   .pn-card{margin:9px 20px;border:1px solid #E7E3DE;border-radius:12px;background:#FFF;overflow:hidden;
     box-shadow:0 1px 2px rgba(35,31,29,.04)}
   .pn-card.urg{border-color:#E9A3A3}
+  /* ★완료로 표시하면 회색이 된다 (2026-09-05 혜림) */
+  .pn-card.done{filter:grayscale(1);opacity:.6}
+  .pn-card.done:hover{opacity:.9}
+  .pn-donebar{background:#5B554F;color:#FFF;padding:6px 16px;font-size:12px;font-weight:600}
   .pn-redbar{background:#C62828;color:#FFF;padding:7px 16px;display:flex;align-items:center;gap:10px;
     font-size:12.5px;flex-wrap:wrap}
   .pn-redbar b{font-size:13px;font-weight:700;letter-spacing:.5px}
@@ -1278,14 +1282,25 @@
   .pn-left.b{background:#1E6A8C}
   .pn-left.x{background:#6B645E}
   .pn-hr{height:1px;background:rgba(255,255,255,.22);margin:13px 0}
-  .pn-ofcname{font-size:13.5px;font-weight:700;line-height:1.3}
-  .pn-ofcfull{font-size:10.5px;font-weight:400;opacity:.62;margin-top:1px}
-  .pn-dd2{font-size:27px;font-weight:700;letter-spacing:-.6px;line-height:1.1}
+  .pn-ofcrow{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:9px}
+  .pn-ofcname{font-size:12.5px;font-weight:700;line-height:1.3;opacity:.9}
+  .pn-ofcfull{font-size:10.5px;font-weight:400;opacity:.5;margin-top:10px}
+  /* 사건 종류 딱지 : 회생 · 회복 · 파산 · 둘 다 */
+  .pn-ktag{font-size:11px;font-weight:700;border-radius:5px;padding:2px 8px;white-space:nowrap;color:#231F1D}
+  .pn-ktag.kh{background:#FFE9A8}
+  .pn-ktag.kr{background:#BFE6DA}
+  .pn-ktag.kp{background:#E3D4F2}
+  .pn-ktag.kk{background:#FFD9B0}
+  .pn-ktag.kx{background:rgba(255,255,255,.28);color:#FFF}
+  /* ★이름·사건번호·연락처가 가장 크고 진하다 (2026-09-05 혜림) */
+  .pn-nm2{font-size:23px;font-weight:700;line-height:1.25;word-break:keep-all;letter-spacing:-.4px}
+  .pn-cno{font-size:15px;font-weight:600;line-height:1.4;margin-top:3px;opacity:.96}
+  .pn-court{font-size:12px;font-weight:400;opacity:.7;line-height:1.5;margin-top:1px}
+  .pn-dd2{font-size:19px;font-weight:700;letter-spacing:-.3px;line-height:1.2}
   .pn-dd2.r{color:#FFD3D3}.pn-dd2.a{color:#FFE6BC}.pn-dd2.g{color:#CFEBD2}
-  .pn-nm2{font-size:17px;font-weight:700;line-height:1.35;word-break:keep-all}
   .pn-sub{font-size:11.5px;font-weight:400;opacity:.72;line-height:1.55;margin-top:1px}
-  .pn-tel2{display:inline-block;margin-top:9px;font-size:14px;font-weight:600;color:#FFF;
-    text-decoration:none;background:rgba(255,255,255,.14);border-radius:7px;padding:4px 10px;white-space:nowrap}
+  .pn-tel2{display:inline-block;margin-top:10px;font-size:16px;font-weight:700;color:#FFF;
+    text-decoration:none;background:rgba(255,255,255,.18);border-radius:8px;padding:6px 12px;white-space:nowrap}
   .pn-tel2:hover{background:rgba(255,255,255,.24)}
   .pn-nophone{display:inline-block;margin-top:9px;font-size:11.5px;font-weight:600;opacity:.72;white-space:nowrap}
   .pn-kind2{margin-top:8px;font-size:11px;font-weight:600;background:rgba(255,255,255,.16);
@@ -14407,6 +14422,9 @@ async function wdSubDel(subId){
 var pnOffice="전체", pnFilt="할일", pnHideDone=true, pnReady=false;
 var pnMeta={};      /* 문서id → {called:참/거짓, plan:"2026-09-05"} */
 var pnPhone={};     /* 의뢰인id → 전화번호 */
+/* ★2026-09-05 혜림 : "케이스허브에 써 놓은 게 왜 송달앱에 안 보이냐"
+   그동안 점검판이 전화번호만 가져왔다. 사건 종류(회생·회복·파산)와 진행단계도 같이 가져온다. */
+var pnCli={};       /* 의뢰인id → {case_type, stage} */
 
 function pnKey(id){ return "chk:"+id; }
 function pnDays(ymd){
@@ -14449,14 +14467,33 @@ async function pnLoadPhones(ids){
   var need=[];
   ids.forEach(function(x){ if(x&&!(x in pnPhone)&&need.indexOf(x)<0)need.push(x); });
   if(!need.length)return;
+  var COLS="id,phone,case_type,stage";
   try{
     for(var i=0;i<need.length;i+=100){
-      var r=await sbc.from("clients").select("id,phone").in("id",need.slice(i,i+100));
+      var r=await sbc.from("clients").select(COLS).in("id",need.slice(i,i+100));
+      if(r.error&&COLS!=="id,phone"){ COLS="id,phone"; r=await sbc.from("clients").select(COLS).in("id",need.slice(i,i+100)); }
       if(r.error)throw r.error;
-      (r.data||[]).forEach(function(c){ pnPhone[c.id]=c.phone||""; });
+      (r.data||[]).forEach(function(c){
+        pnPhone[c.id]=c.phone||"";
+        pnCli[c.id]={case_type:c.case_type||"",stage:c.stage||""};
+      });
     }
   }catch(e){}
   need.forEach(function(x){ if(!(x in pnPhone))pnPhone[x]=""; });
+}
+/* 사건 종류를 짧고 눈에 띄게. 케이스허브에 적힌 말이 제각각이라 낱말로 가린다.
+   개인회생 → 회생 · 신용회복/신복위 → 회복 · 파산/면책 → 파산. 둘 다면 '회생+회복'. */
+function pnKindTag(cid){
+  var v=(pnCli[cid]&&pnCli[cid].case_type)||"";
+  var t=String(v).replace(/\s/g,"");
+  if(!t)return null;
+  var 회생=/회생/.test(t), 회복=/회복|신복위|신복/.test(t), 파산=/파산|면책/.test(t);
+  if(회생&&회복)return {t:"회생＋회복",c:"kk"};
+  if(파산&&회생)return {t:"회생＋파산",c:"kk"};
+  if(파산)return {t:"파산",c:"kp"};
+  if(회복)return {t:"회복",c:"kr"};
+  if(회생)return {t:"회생",c:"kh"};
+  return {t:v.slice(0,10),c:"kx"};
 }
 async function pnEnter(){
   var w=document.getElementById("pn-wrap");
@@ -14645,7 +14682,8 @@ function pnCard(x){
   var open=!!pnOpen[id];
   var ddCol=(x.left===null)?"":(x.left<0?"r":(x.left<=1?"a":"g"));
 
-  var h='<div class="pn-card '+(x.urgent?"urg":"")+'">';
+  var h='<div class="pn-card '+(x.urgent?"urg ":"")+(m.done?"done":"")+'">';
+  if(m.done)h+='<div class="pn-donebar">완료 처리한 건입니다. 「완료」를 다시 누르면 되돌아옵니다.</div>';
   if(x.urgent){
     h+='<div class="pn-redbar"><b>급건</b>'
       +'<span class="pn-rb-ofc">'+esc(ofcName)+'</span>'
@@ -14656,26 +14694,32 @@ function pnCard(x){
   }
   h+='<div class="pn-body">';
   /* 왼쪽 : 사무소 색 */
+  /* ★2026-09-05 혜림 : 남은 날짜보다 '누구·무슨 사건·연락처'가 먼저 보여야 한다.
+     그래서 이름과 사건번호를 맨 위에 크게 두고, 기한은 그 아래로 내렸다. */
+  var kt=pnKindTag(x.cid);
+  var stg=(pnCli[x.cid]&&pnCli[x.cid].stage)||"";
   h+='<div class="pn-left '+oc+'">'
-    +'<div class="pn-ofcname">'+esc(ofcName)+'</div>'
-    +'<div class="pn-ofcfull">'+esc(x.firm||"사무소 미지정")+'</div>'
+    +'<div class="pn-ofcrow"><span class="pn-ofcname">'+esc(ofcName)+'</span>'
+      +(kt?'<span class="pn-ktag '+kt.c+'">'+esc(kt.t)+'</span>':'')+'</div>'
+    +'<div class="pn-nm2">'+esc(nm)+'</div>'
+    +'<div class="pn-cno mono">'+esc(cno)+'</div>'
+    +'<div class="pn-court">'+esc(court)+(stg?' · '+esc(stg):'')+'</div>'
+    +'<div>'+(tel?'<a class="pn-tel2" href="tel:'+esc(String(tel).replace(/[^0-9]/g,""))+'">'+esc(tel)+'</a>'
+         :'<span class="pn-nophone">연락처 없음</span>')+'</div>'
     +'<div class="pn-hr"></div>'
     +'<div class="pn-dd2 '+ddCol+'">'+esc(pnLeftTxt(x.left))+'</div>'
     +'<div class="pn-sub mono">'+(x.due?'법원기한 '+esc(x.due):'기한 미정')+'</div>'
-    +'<div class="pn-hr"></div>'
-    +'<div class="pn-nm2">'+esc(nm)+'</div>'
-    +'<div class="pn-sub mono">'+esc(court)+'<br>'+esc(cno)+'</div>'
-    +'<div>'+(tel?'<a class="pn-tel2" href="tel:'+esc(String(tel).replace(/[^0-9]/g,""))+'">'+esc(tel)+'</a>'
-         :'<span class="pn-nophone">연락처 없음</span>')+'</div>'
-    +'<div><span class="pn-kind2">'+esc(kind)+'</span>'
+    +'<div style="margin-top:9px"><span class="pn-kind2">'+esc(kind)+'</span>'
     +(x.plan?' <span class="pn-plan2'+((x.planLeft!==null&&x.planLeft<0)?" late":"")+'">처리 예정 '+esc(x.plan)+'</span>':'')
     +'</div>'
+    +'<div class="pn-ofcfull">'+esc(x.firm||"사무소 미지정")+'</div>'
     +'</div>';
   /* 오른쪽 : 시안 D */
   h+='<div class="pn-right">';
   h+='<div class="pn-cks">'
     +pnBigCk(id,"called","당사자 연락함",m.called)
     +pnBigCk(id,"got","서류 받음",m.got)
+    +pnBigCk(id,"draft","전자소송 임시저장",(x.ws==="임시저장"))
     +pnBigCk(id,"filed","법원 제출함",(x.ws==="보정완료"))
     +pnBigCk(id,"done","완료",m.done)
     +'</div>';
@@ -14737,11 +14781,14 @@ function pnMore(id){ pnOpen[id]=!pnOpen[id]; pnRender(); }
    ★「법원 제출함」은 원래 있던 work_state 를 쓰고(송달문서 줄에도 반영된다),
      「완료」는 우리 쪽 마무리 표시라 bj_settings 에 넣는다. 그래서 둘이 따로 논다. */
 async function pnCk(id,key,v){
-  if(key==="filed"){
+  if(key==="filed"||key==="draft"){
     var row=null;
     for(var i=0;i<(bxRows||[]).length;i++){ if(bxRows[i].id===id){ row=bxRows[i]; break; } }
     var did=row?row.delivery_id:null;
-    await pnState(id,did,v?"보정완료":"보정중");
+    var want;
+    if(key==="filed")want=v?"보정완료":"보정중";
+    else want=v?"임시저장":"보정중";
+    await pnState(id,did,want);
     return;
   }
   var p={}; p[key]=!!v;

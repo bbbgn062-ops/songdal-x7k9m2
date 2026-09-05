@@ -3810,6 +3810,28 @@ function rcOwnerFor(clientId){
   }
   return me.isMaster?null:me.id;
 }
+/* ★2026-09-04 : 한 건을 넣되, 서버가 "이름이 겹친다"고 거절하면 문서명 뒤 번호를 올려 다시 넣는다.
+   왜 필요한가 : 서버 유니크에 법원이 없던 시절에는, 법원만 다른 남의 사건과 이름이 겹쳐도 거절당했다.
+   그때는 우리 사건에 정말 있는 것이 아니므로 번호만 바꿔 넣으면 된다.
+   ★단, 저장 직전 서버 조회가 성공해서 "우리 사건엔 없다"를 확인했을 때만 번호를 올린다(canBump).
+     조회가 실패한 상태에서 올리면 진짜 중복을 한 통 더 만들 수 있다.
+   서버 규칙에 법원이 들어가면(uq_delivery_court) 이 되풀이는 거의 일어나지 않는다. */
+async function rcInsertOne(w,canBump){
+  var one=await sd().from("deliveries").insert([w]);
+  if(!one.error)return {ok:true,bumped:0};
+  if(!rcIsDupErr(one.error))throw one.error;
+  if(!canBump)return {ok:false,bumped:0};
+  var base=String(w.doctype||"").replace(/\s*\(\s*\d+\s*\/\s*\d+\s*\)\s*$/,"");
+  var cur=rcSuffixNo(w.doctype), no=cur?cur.idx:1, den=cur?cur.n:1;
+  for(var t=0;t<9;t++){
+    no++; if(den<no)den=no;
+    w.doctype=base+" ("+no+"/"+den+")";
+    var again=await sd().from("deliveries").insert([w]);
+    if(!again.error)return {ok:true,bumped:t+1};
+    if(!rcIsDupErr(again.error))throw again.error;
+  }
+  return {ok:false,bumped:9};
+}
 /* 고른 건을 송달 목록에 넣는다 */
 async function rcRegister(){
   if(rcBusy)return;
@@ -3891,11 +3913,11 @@ async function rcRegister(){
         var b=gkUq(d.case_no,d.doctype,d.arrived_at);           (byUq[b]=byUq[b]||[]).push(d);
       });
     }
-    /* 이번에 같은 이름으로 몇 줄을 새로 넣는지 미리 세어 둔다 (분모 계산용) */
-    var newInUq={};
-    rows.forEach(function(w){ var b0=gkUq(w.case_no,w.doctype,w.arrived_at); newInUq[b0]=(newInUq[b0]||0)+1; });
+    /* 이번에 같은 사건에 같은 이름으로 몇 줄을 새로 넣는지 미리 세어 둔다 (분모 계산용) */
+    var newInCase={};
+    rows.forEach(function(w){ var b0=gkCase(w.court,w.case_no,w.doctype,w.arrived_at); newInCase[b0]=(newInCase[b0]||0)+1; });
 
-    var suffixed=0, skipped=0, squeezed=0, skipList=[], squeezeList=[], takenBy={}, keep=[];
+    var suffixed=0, skipped=0, skipList=[], takenBy={}, keep=[], bumpOK=[];
     rcSavedDoc={};
     rows.forEach(function(w,i){
       var r=L[i];
@@ -3907,53 +3929,43 @@ async function rcRegister(){
       if(byUq&&byUq[ku])byUq[ku].forEach(function(d){
         if(!rcCourtKey(d.court)&&mineRows.indexOf(d)<0)mineRows.push(d);
       });
-      var allRows =(byUq&&byUq[ku])   ?byUq[ku]   :[];   /* 법원이 달라도 서버는 같다고 보는 것들 */
       var excelN=(r&&r.dupN>1)?r.dupN:1;                 /* 엑셀에 같은 이름이 몇 줄인가 */
       if(byCase&&mineRows.length>=excelN){               /* 우리 사건 기준으로 이미 다 등록돼 있다 */
         skipped++; skipList.push(String(w.case_no||"")+" "+rcDocBase(w.doctype));
         return;
       }
-      /* 번호를 붙여야 하는 경우 두 가지
-         ① 엑셀에 같은 이름이 여러 줄이다 (채권자가 여럿이라 같은 문서가 여러 통)
-         ② 법원은 달라도 서버가 같은 이름으로 보는 행이 이미 있다 (안 붙이면 서버가 거절한다) */
-      var needNo=(excelN>1)||(allRows.length>0);
-      if(!needNo){ keep.push(w); rcSavedDoc[rcKey(r)]=w.doctype; return; }
-      var used=takenBy[ku]||(takenBy[ku]={});
+      /* ★2026-09-04 3단계 : 번호는 '우리 사건(법원+사건번호)' 안에서만 매긴다.
+         법원이 다른 남의 사건 때문에 미리 번호를 밀어 두지 않는다.
+         서버 규칙에 아직 법원이 없어 거절당하면, 아래 rcInsertOne 이 그때 번호를 올려 다시 넣는다. */
+      var needNo=(excelN>1);
+      if(!needNo){ keep.push(w); bumpOK.push(!!byCase); rcSavedDoc[rcKey(r)]=w.doctype; return; }
+      var used=takenBy[kc]||(takenBy[kc]={});
       var plain=0;
-      allRows.forEach(function(d){ var s2=rcSuffixNo(d.doctype); if(s2)used[s2.idx]=true; else plain++; });
+      mineRows.forEach(function(d){ var s2=rcSuffixNo(d.doctype); if(s2)used[s2.idx]=true; else plain++; });
       for(var p=1;plain>0;p++){ if(!used[p]){ used[p]=true; plain--; } }   /* 번호 없이 저장된 옛 행은 앞자리를 차지한 것으로 본다 */
       var pick=1; while(used[pick])pick++;
       used[pick]=true;
-      var denom=Math.max(excelN, allRows.length+(newInUq[ku]||0), pick);
+      var denom=Math.max(excelN, mineRows.length+(newInCase[kc]||0), pick);
       w.doctype=String(w.doctype||"").replace(/\s*\(\s*\d+\s*\/\s*\d+\s*\)\s*$/,"")+" ("+pick+"/"+denom+")";
       suffixed++;
-      if(allRows.length>mineRows.length){
-        /* ★법원이 다른 별개 사건인데 서버 규칙에 법원이 없어서 번호를 붙여 밀어 넣은 경우 */
-        var oc=null;
-        for(var oi=0;oi<allRows.length;oi++){
-          if(rcCourtKey(allRows[oi].court)!==rcCourtKey(w.court)){ oc=allRows[oi].court||"(법원이 비어 있음)"; break; }
-        }
-        squeezed++;
-        squeezeList.push(String(w.case_no||"")+" "+rcDocBase(w.doctype)+(oc?(" ↔ "+oc):""));
-      }
       rcSavedDoc[rcKey(r)]=w.doctype;
       keep.push(w);
+      bumpOK.push(!!byCase);
     });
     rows=keep;
     /* ★서버가 그래도 "이미 있다"고 거절하면(담당자 계정은 남의 담당 사건이 안 보여서
        화면에는 '아직 안 등록'으로 나올 수 있다) 한 건씩 넣어 그 건만 건너뛴다.
        한 줄 때문에 나머지 전부가 날아가지 않게 하는 것이 핵심이다. */
-    var savedN=0, dupServer=0;
+    var savedN=0, dupServer=0, bumped=0;
     if(rows.length){
       var ins=await sd().from("deliveries").insert(rows);
       if(!ins.error){ savedN=rows.length; }
       else if(isStatusRuleErr(ins.error)){ throw new Error("서버가 아직 '추후처리'·'당사자안내' 상태를 받지 않습니다. SQL_송달앱_추후처리_허용_20260901.sql 을 한 번 실행한 뒤 다시 등록해 주세요."); }
       else if(rcIsDupErr(ins.error)){
         for(var ri=0;ri<rows.length;ri++){
-          var one=await sd().from("deliveries").insert([rows[ri]]);
-          if(!one.error){ savedN++; }
-          else if(rcIsDupErr(one.error)){ dupServer++; }
-          else throw one.error;
+          var one=await rcInsertOne(rows[ri],bumpOK[ri]);
+          if(one.ok){ savedN++; if(one.bumped)bumped++; }
+          else dupServer++;
         }
       }else throw ins.error;
     }
@@ -3981,12 +3993,9 @@ async function rcRegister(){
         +(skipList.length?("\n  ("+skipList.slice(0,5).join(" / ")+(skipList.length>5?(" 외 "+(skipList.length-5)+"건"):"")+")"):"")
         +"\n  송달문서 목록에서 그 사건번호로 찾아보시면 있습니다.");
     }
-    if(squeezed){
-      msg.push("★그중 "+squeezed+"건은 법원이 다른 별개 사건인데 사건번호·문서·발송일이 겹쳤습니다."
-        +"\n  서버 규칙(uq_delivery)에 법원이 빠져 있어, 그대로 넣으면 거절당합니다."
-        +"\n  그래서 문서명 뒤에 번호를 붙여 등록했습니다. 사건은 정상 등록됐습니다."
-        +(squeezeList.length?("\n  ("+squeezeList.slice(0,5).join(" / ")+(squeezeList.length>5?(" 외 "+(squeezeList.length-5)+"건"):"")+")"):"")
-        +"\n  근본 해결은 서버 규칙에 법원을 넣는 것입니다(관리자 SQL).");
+    if(bumped){
+      msg.push("★그중 "+bumped+"건은 법원이 다른 사건과 문서 이름이 겹쳐, 문서명 뒤 번호를 바꿔 등록했습니다."
+        +"\n  사건은 정상 등록됐습니다. 자주 뜨면 서버 규칙에 법원이 빠진 것이니 관리자에게 알려 주세요.");
     }
     if(dupServer)msg.push("· "+dupServer+"건은 이미 등록돼 있는 문서라 건너뛰었습니다.\n  담당자가 다른 직원이면 내 화면에 안 보여서 '아직 안 등록'으로 나옵니다.\n  관리자에게 그 사건의 담당자를 확인해 달라고 하세요.");
     if(_att&&_att.done)msg.push("· 미리 담아 둔 PDF "+_att.done+"건을 '이 사건의 문서'에 함께 넣었습니다.");
@@ -5917,7 +5926,7 @@ async function approvePending(id){
   try{
     const nlog=[{t:fmt(new Date()),m:"전자소송 자동감지 → 승인 등록 ("+me.name+")"}];
     const row={client_id:c.id,case_no:splitCourtCase(c.case_no).caseNo||p.case_no,party_name:c.name,owner_id:null,court:c.court||p.court||null,doctype:p.doctype||null,arrived_at:p.sent_date?p.sent_date.replace(/\./g,"-").replace(/-$/,""):null,term_days:7,status:"진행중",confirmed:false,confirmed_at:null,checklist:defaultDocs(),log:nlog,memo:"전자소송 자동감지 → 담당자 승인 등록"};
-    const ins=await sd().from("deliveries").upsert(row,{onConflict:"case_no,doctype,arrived_at"});
+    const ins=await sd().from("deliveries").upsert(row,{onConflict:"court,case_no,doctype,arrived_at"});
     if(ins.error)throw ins.error;
     await sd().from("pending_detect").update({status:"승인"}).eq("id",id);
     await loadPending();await refreshAll();

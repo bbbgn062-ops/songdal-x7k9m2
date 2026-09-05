@@ -143,6 +143,23 @@ body.docmode .bar1 h1{font-size:16px}
 .wbrow .meta{font-size:12.3px;color:hsl(var(--mutf));margin-top:3px;line-height:1.6}
 .wbrow .go{flex:none;font-size:12.5px;font-weight:800;color:hsl(var(--pri))}
 .wbf{padding:12px 20px;border-top:1px solid hsl(var(--line));display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+/* 2026-09-05 : 의뢰인 목록 첫 화면 */
+.hmwrap{max-width:920px;margin:0 auto;padding:26px 20px 60px}
+.hmh{margin-bottom:18px}
+.hmh h2{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-bottom:5px}
+.hmh .dim{font-size:13.5px}
+.hmnew{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:16px 18px;border-radius:14px;border:1px dashed hsl(var(--line2));cursor:pointer;margin-bottom:14px;transition:.12s}
+.hmnew:hover{background:hsl(var(--mut)/.6);border-color:hsl(var(--pri)/.5)}
+.hmnew b{font-size:15px;font-weight:800}
+.hmcard{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:15px 18px;border-radius:14px;border:1px solid hsl(var(--line));background:hsl(var(--card));cursor:pointer;margin-bottom:9px;transition:.12s}
+.hmcard:hover{border-color:hsl(var(--pri)/.55);background:hsl(var(--mut)/.4);transform:translateY(-1px)}
+.hmcard .nm{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.hmcard .mt{font-size:12.5px;color:hsl(var(--mutf));margin-top:4px;line-height:1.65}
+.hmcard .go{flex:none;font-size:13px;font-weight:800;color:hsl(var(--pri))}
+.crumb{display:flex;align-items:center;gap:6px}
+.crumb button{background:none;border:0;padding:2px 6px;border-radius:7px;font:inherit;font-size:14px;font-weight:700;color:hsl(var(--mutf));cursor:pointer}
+.crumb button:hover{background:hsl(var(--mut));color:hsl(var(--fg))}
+.crumb span.sep{color:hsl(var(--mutf));font-size:13px}
 .fchip a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .fig{font-size:40px;font-weight:900;letter-spacing:-.03em;font-family:var(--fm);font-variant-numeric:tabular-nums}
 .figu{font-size:15px;font-weight:700;color:hsl(var(--mutf))}
@@ -2099,7 +2116,16 @@ function body(){
     if(h.say) g.says.push(fill(h.say));
   });
   grp.sort(function(a,b){return a.no-b.no;});
-  var out="",lastDoc=null,anyDoc=false;
+  /* 2026-09-05 : 이미 낸 것을 법원에 밝히는 문단. D.predone 이 있으면 맨 앞에 붙는다 */
+  var pre="";
+  var P=D.predone;
+  if(P&&P.pick!==false&&P.items&&P.items.length){
+    pre = (P.title||"이미 제출한 사항")+"\n";
+    if(P.intro)pre += "   "+P.intro+"\n";
+    P.items.forEach(function(x){ pre += "   "+String(x).split("\n").join("\n   ")+"\n"; });
+    pre += "\n";
+  }
+  var out=pre,lastDoc=null,anyDoc=false;
   grp.forEach(function(g,i){
     var line=(i+1)+". 보정권고"+g.no+"항.";
     if(g.docs.length){ line+=" "+g.docs.join(", "); anyDoc=true; lastDoc=g.docs[g.docs.length-1]; }
@@ -2239,8 +2265,24 @@ function dday(){if(!D.case.served_at)return null;
 function draw(){
   var y=window.scrollY;
   var dd=dday(), r=cur();
+  if(homeOn){
+    var b2h=document.getElementById("bar2");
+    b2h.innerHTML=""; b2h.style.display="none";
+    document.body.classList.remove("docmode");
+    document.getElementById("bar1").innerHTML=
+        '<h1>보정 처리대</h1>'
+      + '<span class="tag">의뢰인 목록</span>'
+      + '<span class="sp"></span>'
+      + (wbCase()?'<button class="b o s" onclick="homeOn=false;draw()">'+esc((D["case"]&&D["case"].debtor)||"열려 있던 사건")+' 처리대로 돌아가기</button>':'')
+      + '<button class="b o s" onclick="wbRefresh()">새로 고침</button>'
+      + '<button class="b g s" onclick="theme()">밝게/어둡게</button>';
+    document.getElementById("main").innerHTML = viewHome();
+    window.scrollTo(0,0);
+    return;
+  }
   document.getElementById("bar1").innerHTML=
-     '<h1>보정 처리대</h1>'
+     '<div class="crumb"><button onclick="goHome()">보정 처리대</button><span class="sep">›</span>'
+   +   '<h1 style="margin:0">'+esc((D["case"]&&D["case"].debtor)||"이름 없음")+' 보정 처리대</h1></div>'
    + '<span class="tag m">'+esc(D.case.case_no)+'</span>'
    + '<span class="tag">'+esc(D.case.court)+'</span>'
    + '<span class="tag p">'+esc(D.case.debtor)+'</span>'
@@ -2282,7 +2324,8 @@ function draw(){
     b2.innerHTML="";
     b2.style.display="none";
     document.getElementById("bar1").innerHTML=
-        '<button class="b g s" onclick="go(\'case\')">◂ 사건으로 돌아가기</button>'
+        '<button class="b g s" onclick="goHome()">◂ 의뢰인 목록</button>'
+      + '<button class="b g s" onclick="go(\'case\')">◂ 사건으로 돌아가기</button>'
       + '<h1 style="margin-left:4px">'+(docKind()==="기간연장신청서"?"기간연장신청서 만들기":"보정서 만들기")+'</h1>'
       + '<span class="tag m">'+esc(D.case.case_no)+'</span>'
       + '<span class="tag p">'+esc(D.case.debtor)+'</span>'
@@ -3256,6 +3299,7 @@ async function cloudFileUrl(path){
    ========================================================== */
 var wbPick=false, wbRows=[], wbQ="", wbBusy=false, wbErr="";
 var wbSaveState="";   /* "server" 서버에 올라감 · "local" 이 브라우저에만 · "" 아직 저장 전 */
+var homeOn=false;     /* 참이면 의뢰인 목록 첫 화면 */
 
 function wbClose(){ wbPick=false; wbErr=""; wbQ=""; draw(); }
 
@@ -3282,7 +3326,44 @@ async function wbRefresh(){
   try{ wbRows=await cloudList(); }
   catch(e){ wbRows=[]; wbErr=(e&&e.message)||String(e); }
   wbBusy=false;
-  if(wbPick)draw();
+  if(wbPick||homeOn)draw();
+}
+
+/* ── 의뢰인 목록 첫 화면 (2026-09-05) ───────────────────── */
+async function goHome(){
+  homeOn=true; view="today"; openTask=null; peekAt=null; wbPick=false;
+  draw();
+  await wbRefresh();
+}
+function homeCards(){
+  if(wbBusy)return '<div class="empty">불러오는 중…</div>';
+  if(wbErr)return '<div class="wbwarn">목록을 불러오지 못했습니다.<br>'+esc(wbErr)+'</div>';
+  if(!wbRows.length)
+    return '<div class="empty">회사 서버에 저장된 의뢰인이 아직 없습니다.<br>'
+         + '위 [새 보정권고 넣기]로 첫 사건을 넣어 보세요.</div>';
+  var here=wbCase();
+  return wbRows.map(function(r){
+    var nm=r.debtor||"이름 없음";
+    return '<div class="hmcard" onclick="wbGo(\''+esc(String(r.case_no).replace(/\'/g,""))+'\')">'
+     + '<div style="flex:1;min-width:0">'
+     +   '<div class="nm">'+esc(nm)
+     +     (r.case_no===here?' <span class="tag p" style="margin-left:6px">열려 있음</span>':'')
+     +     (r.firm_label?' <span class="tag" style="margin-left:5px">'+esc(r.firm_label)+'</span>':'')
+     +   '</div>'
+     +   '<div class="mt">'+esc(r.case_no||"사건번호 없음")+(r.court?' · '+esc(r.court):'')
+     +     '<br>마지막 저장 '+esc(wbFmtWhen(r.updated_at))+(r.updated_by?' · '+esc(r.updated_by):'')+'</div>'
+     + '</div><span class="go">보정 처리대 열기 →</span></div>';
+  }).join("");
+}
+function viewHome(){
+  return '<div class="hmwrap">'
+   + '<div class="hmh"><h2>보정 처리대</h2>'
+   +   '<div class="dim">의뢰인을 고르면 그 사람 전용 처리대로 들어갑니다. 회사 서버에 저장된 사건이라 다른 직원도 같은 화면을 봅니다.</div></div>'
+   + '<div class="hmnew" onclick="homeOn=false;go(\'intake\')"><span style="font-size:20px">＋</span>'
+   +   '<div><b>새 보정권고 넣기</b><div class="mt" style="color:hsl(var(--mutf));font-size:12.5px;margin-top:2px">'
+   +   '클로드가 만들어 준 JSON을 붙여넣어 새 사건을 시작합니다</div></div></div>'
+   + homeCards()
+   + '</div>';
 }
 
 function wbSearch(v){
@@ -3391,7 +3472,7 @@ async function wbGo(no){
   if(here&&wbSaveState==="local"){
     if(!confirm("지금 사건("+here+")이 아직 서버에 저장되지 않았습니다.\n\n그대로 넘어가면 마지막 변경분이 다른 컴퓨터에서는 안 보일 수 있습니다.\n그래도 넘어갈까요?\n\n(취소를 누르고 [지금 저장하기]를 먼저 누르시는 것을 권합니다)"))return;
   }
-  wbPick=false; wbQ=""; 
+  wbPick=false; wbQ=""; homeOn=false;
   await wbSwitch(no);
 }
 
@@ -3472,7 +3553,8 @@ function boot(){
   }).then(function(src){
     return rehydrate().then(function(){ return src; });
   }).then(function(src){
-    draw();
+    if(!wbCase()&&cloudOn){ goHome(); }
+    else draw();
     if(src&&src.from==="서버")saveDot("회사 서버에서 불러옴 "+src.at,"g");
     else if(localState)saveDot(cloudOn?"이 브라우저에서 불러옴":"저장된 것 불러옴","g");
     else saveDot(cloudOn?"회사 서버에 연결됨":"저장 안 됨","");

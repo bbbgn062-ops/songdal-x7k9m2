@@ -125,6 +125,24 @@ body.docmode .bar1 h1{font-size:16px}
 .peekb{max-height:460px;overflow:auto;display:grid;place-items:center;background:hsl(var(--mut)/.35)}
 .peekb img{max-width:100%;display:block}
 .peekb iframe{width:100%;height:460px;border:0;display:block}
+/* 2026-09-03 : 사건 고르기 창 */
+.wbwrap{position:fixed;inset:0;z-index:75;background:hsl(24 12% 11%/.5);display:grid;place-items:center;padding:24px}
+.wbbox{width:min(760px,95vw);max-height:86vh;display:flex;flex-direction:column;border-radius:16px;overflow:hidden;border:1px solid hsl(var(--line));background:hsl(var(--card));box-shadow:0 24px 60px hsl(24 12% 11%/.28)}
+.wbh{padding:16px 20px 12px;border-bottom:1px solid hsl(var(--line))}
+.wbh h3{font-size:18px;font-weight:800;margin:0 0 3px}
+.wbh .dim{font-size:12.5px}
+.wbnow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:11px;padding:10px 13px;border-radius:11px;background:hsl(var(--mut)/.6);font-size:12.8px}
+.wbwarn{margin-top:9px;padding:11px 14px;border-radius:11px;font-size:13px;line-height:1.7;background:hsl(4 70% 96%);color:hsl(4 60% 32%);border:1px solid hsl(4 60% 86%)}
+.wbok{margin-top:9px;padding:9px 13px;border-radius:11px;font-size:12.8px;background:hsl(150 45% 95%);color:hsl(150 45% 26%);border:1px solid hsl(150 40% 84%)}
+.wbsearch{padding:12px 20px 0}
+.wblist{padding:8px 14px 14px;overflow:auto;flex:1;min-height:120px}
+.wbrow{display:flex;align-items:center;gap:13px;width:100%;text-align:left;padding:12px 14px;border-radius:12px;border:1px solid transparent;cursor:pointer;transition:.12s}
+.wbrow:hover{background:hsl(var(--mut)/.7);border-color:hsl(var(--line2))}
+.wbrow.on{background:hsl(var(--pri)/.09);border-color:hsl(var(--pri)/.45);cursor:default}
+.wbrow .who{font-size:15.5px;font-weight:800;letter-spacing:-.01em}
+.wbrow .meta{font-size:12.3px;color:hsl(var(--mutf));margin-top:3px;line-height:1.6}
+.wbrow .go{flex:none;font-size:12.5px;font-weight:800;color:hsl(var(--pri))}
+.wbf{padding:12px 20px;border-top:1px solid hsl(var(--line));display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .fchip a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .fig{font-size:40px;font-weight:900;letter-spacing:-.03em;font-family:var(--fm);font-variant-numeric:tabular-nums}
 .figu{font-size:15px;font-weight:700;color:hsl(var(--mutf))}
@@ -2241,7 +2259,7 @@ function draw(){
         + '<button class="b o s" onclick="backAdmin()">관리자로 돌아가기</button>'
       : '')
    + '<span class="tag" id="savedot">저장 준비 중</span>'
-   + '<button class="b o s" onclick="wbOpenList()" title="회사 서버에 저장된 사건을 골라서 엽니다">다른 사건 열기</button>'
+   + '<button class="b o s" onclick="wbOpenList()" title="회사 서버에 저장된 사건을 목록에서 골라 엽니다">사건 바꾸기</button>'
    + '<button class="b g s" onclick="wipeSave()">저장 지우기</button>'
    + '<button class="b g s" onclick="theme()">밝게/어둡게</button>';
 
@@ -2282,7 +2300,7 @@ function draw(){
   }
 
   document.getElementById("main").innerHTML =
-      (peekAt?peekBox():"") +
+      (peekAt?peekBox():"") + (wbPick?wbPickBox():"") +
     ( view==="today"?viewToday() : view==="case"?viewCase() : view==="doc"?viewDoc()
     : view==="check"?viewCheck() : view==="json"?viewJson()
     : view==="intake"?viewIntake() : view==="get"?viewGet() : view==="ours"?viewOurs()
@@ -3230,23 +3248,145 @@ async function cloudFileUrl(path){
   if(r.error)return "";
   return (r.data&&r.data.signedUrl)||"";
 }
-/* 사건 고르기 창 */
-async function wbOpenList(){
-  if(!cloudOn){ alert("회사 서버에 연결돼 있지 않습니다.\n송달앱에 로그인한 창에서 열어 주세요."); return; }
-  saveDot("목록 불러오는 중","");
-  var rows=[];
-  try{ rows=await cloudList(); }
-  catch(e){ alert("목록을 불러오지 못했습니다\n\n"+((e&&e.message)||e)+"\n\nSQL_보정처리대_20260902 의 SQL을 실행했는지 확인해 주세요."); saveDot("저장 실패","r"); return; }
-  if(!rows.length){ alert("회사 서버에 저장된 처리대가 아직 없습니다.\n\n보정권고를 넣고 작업을 시작하면 자동으로 저장됩니다."); saveDot("저장됨","g"); return; }
-  var t=rows.map(function(r,i){
-    return (i+1)+". "+(r.debtor||"이름 없음")+"  "+(r.case_no||"")+"  ("+String(r.updated_at||"").slice(0,10)+" "+(r.updated_by||"")+")";
-  }).join("\n");
-  var pick=prompt("열 사건의 번호를 적어 주세요.\n\n"+t+"\n\n지금 열려 있는 것은 "+(wbCase()||"없음")+" 입니다.","1");
-  if(pick===null)return;
-  var idx=parseInt(pick,10)-1;
-  if(!(idx>=0&&idx<rows.length)){ alert("번호를 잘못 적으셨습니다."); return; }
-  await wbSwitch(rows[idx].case_no);
+/* ==========================================================
+   사건 고르기 창 (2026-09-03 개편)
+   전에는 prompt() 에 번호를 타이핑해야 했다. 목록이 길면 못 읽고,
+   지금 것이 저장됐는지도 모른 채 넘어가서 작업이 날아갈까 무서웠다.
+   이제 화면 안에 창을 띄우고 눌러서 고른다.
+   ========================================================== */
+var wbPick=false, wbRows=[], wbQ="", wbBusy=false, wbErr="";
+
+function wbClose(){ wbPick=false; wbErr=""; wbQ=""; draw(); }
+
+function wbFmtWhen(t){
+  var s=String(t||""); if(!s)return "";
+  var d=new Date(s); if(isNaN(d))return s.slice(0,10);
+  var now=new Date(), ms=now-d, day=Math.floor(ms/86400000);
+  var hm=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);
+  if(day<=0&&now.getDate()===d.getDate())return "오늘 "+hm;
+  if(day<=1)return "어제 "+hm;
+  if(day<7)return day+"일 전";
+  return (d.getMonth()+1)+"월 "+d.getDate()+"일";
 }
+
+async function wbOpenList(){
+  if(!cloudOn){ alert("회사 서버에 연결돼 있지 않습니다.\n송달앱 왼쪽 메뉴의 「보정 처리대」로 열어 주세요."); return; }
+  wbPick=true; wbBusy=true; wbErr=""; wbQ=""; draw();
+  await wbRefresh();
+}
+
+async function wbRefresh(){
+  wbBusy=true; wbErr=""; 
+  var el=document.getElementById("wb-list"); if(el)el.innerHTML='<div class="empty">불러오는 중…</div>';
+  try{ wbRows=await cloudList(); }
+  catch(e){ wbRows=[]; wbErr=(e&&e.message)||String(e); }
+  wbBusy=false;
+  if(wbPick)draw();
+}
+
+function wbSearch(v){
+  wbQ=String(v||"");
+  var el=document.getElementById("wb-list");
+  if(el)el.innerHTML=wbListHtml();
+}
+
+function wbListHtml(){
+  var here=wbCase();
+  var q=wbQ.replace(/\s/g,"").toLowerCase();
+  var rows=wbRows.filter(function(r){
+    if(!q)return true;
+    return [r.debtor,r.case_no,r.court,r.firm_label,r.updated_by].join(" ").replace(/\s/g,"").toLowerCase().indexOf(q)>=0;
+  });
+  if(!wbRows.length){
+    return '<div class="empty">회사 서버에 저장된 처리대가 아직 없습니다.<br>'
+      +'보정권고를 넣고 작업을 시작하면 이 목록에 자동으로 쌓입니다.</div>';
+  }
+  if(!rows.length)return '<div class="empty">“'+esc(wbQ)+'” 로 찾은 사건이 없습니다.</div>';
+  return rows.map(function(r){
+    var mine=(r.case_no===here);
+    return '<div class="wbrow'+(mine?" on":"")+'" '+(mine?'':'onclick="wbGo(\''+esc(String(r.case_no).replace(/\'/g,""))+'\')"')+'>'
+     + '<div style="flex:1;min-width:0">'
+     +   '<div class="who">'+esc(r.debtor||"이름 없음")
+     +     (mine?' <span class="tag p" style="margin-left:5px">지금 이 사건</span>':'')
+     +     (r.firm_label?' <span class="tag" style="margin-left:4px">'+esc(r.firm_label)+'</span>':'')
+     +   '</div>'
+     +   '<div class="meta">'+esc(r.case_no||"사건번호 없음")+(r.court?' · '+esc(r.court):'')
+     +     '<br>마지막 저장 '+esc(wbFmtWhen(r.updated_at))+(r.updated_by?' · '+esc(r.updated_by):'')+'</div>'
+     + '</div>'
+     + (mine?'<span class="go" style="color:hsl(var(--mutf))">열려 있음</span>':'<span class="go">열기 →</span>')
+     + '</div>';
+  }).join("");
+}
+
+function wbPickBox(){
+  var here=wbCase(), dot=document.getElementById("savedot");
+  var st=dot?dot.textContent:"";
+  var saved=/회사 서버에 저장됨/.test(st);
+  var localOnly=/이 브라우저에만/.test(st);
+  var h='<div class="wbwrap" onclick="if(event.target===this)wbClose()"><div class="wbbox">'
+   + '<div class="wbh">'
+   +   '<h3>다른 사건 열기</h3>'
+   +   '<div class="dim">회사 서버에 저장된 처리대입니다. 마지막에 저장한 순서로 보입니다.</div>'
+   +   '<div class="wbnow"><span class="tag m">지금 열려 있는 사건</span>'
+   +     '<b>'+esc((D["case"]&&D["case"].debtor)||"이름 없음")+'</b>'
+   +     '<span class="dim">'+esc(here||"사건번호 없음")+'</span></div>';
+
+  if(!here){
+    h+='<div class="wbwarn"><b>지금 이 사건은 서버에 저장되지 않습니다.</b><br>'
+      +'붙여넣은 보정권고 JSON에 사건번호(case.case_no)가 비어 있습니다. '
+      +'다른 사건으로 넘어가면 지금 작업한 내용은 이 브라우저에만 남고 다른 직원은 못 봅니다.</div>';
+  }else if(saved){
+    h+='<div class="wbok">지금 사건은 회사 서버에 저장돼 있습니다. 안심하고 넘어가셔도 됩니다.</div>';
+  }else if(localOnly){
+    h+='<div class="wbwarn"><b>지금 사건이 아직 서버에 안 올라갔습니다.</b> ('+esc(st)+')<br>'
+      +'이대로 넘어가면 마지막 변경분이 다른 컴퓨터에서 안 보일 수 있습니다. '
+      +'아래 [지금 저장하기]를 먼저 눌러 주세요.</div>';
+  }
+
+  h+= '</div>'
+   + '<div class="wbsearch"><input class="in" id="wb-q" placeholder="이름 · 사건번호 · 법원 · 사무소로 찾기" value="'+esc(wbQ)+'" oninput="wbSearch(this.value)"></div>'
+   + (wbErr?'<div class="wbsearch"><div class="wbwarn">목록을 불러오지 못했습니다.<br>'+esc(wbErr)+'</div></div>':'')
+   + '<div class="wblist" id="wb-list">'+(wbBusy?'<div class="empty">불러오는 중…</div>':wbListHtml())+'</div>'
+   + '<div class="wbf">'
+   +   '<button class="b o s" onclick="wbRefresh()">새로 고침</button>'
+   +   (here&&!saved?'<button class="b p s" onclick="wbSaveNow()">지금 저장하기</button>':'')
+   +   '<button class="b o s" onclick="wbClose();go(\'intake\')">새 보정권고 넣기</button>'
+   +   '<span class="sp" style="flex:1"></span>'
+   +   '<span class="dim">'+wbRows.length+'건</span>'
+   +   '<button class="b g s" onclick="wbClose()">닫기</button>'
+   + '</div></div></div>';
+  return h;
+}
+
+async function wbSaveNow(){
+  var no=wbCase(); if(!no){ alert("사건번호가 없어 서버에 저장할 수 없습니다."); return; }
+  saveDot("회사 서버에 저장 중","");
+  try{
+    var copy=JSON.parse(JSON.stringify(D,function(k,v){return k==="url"?undefined:v;}));
+    await cloudSave(copy);
+    savedAt=new Date().toTimeString().slice(0,5);
+    saveDot("회사 서버에 저장됨 "+savedAt,"g");
+    toast("저장했습니다");
+    await wbRefresh();
+  }catch(e){
+    saveDot("저장 실패","r");
+    alert("저장하지 못했습니다\n\n"+((e&&e.message)||e));
+  }
+}
+
+async function wbGo(no){
+  if(!no)return;
+  var here=wbCase();
+  if(no===here){ wbClose(); return; }
+  var dot=document.getElementById("savedot");
+  var st=dot?dot.textContent:"";
+  if(here&&!/회사 서버에 저장됨/.test(st)){
+    if(!confirm("지금 사건("+here+")이 아직 서버에 저장되지 않았습니다.\n\n그대로 넘어가면 마지막 변경분이 다른 컴퓨터에서는 안 보일 수 있습니다.\n그래도 넘어갈까요?\n\n(취소를 누르고 [지금 저장하기]를 먼저 누르시는 것을 권합니다)"))return;
+  }
+  wbPick=false; wbQ=""; 
+  await wbSwitch(no);
+}
+
 async function wbSwitch(no){
   saveDot("불러오는 중","");
   try{

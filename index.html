@@ -1229,6 +1229,9 @@
   .bjpick-thumb .noimg{font-size:10px;font-weight:700;color:var(--muted);text-align:center;line-height:1.4}
   .bjpick-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
   .bjpick-r1{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+  .bjpick-edit{border:1px solid var(--line,#DDD);background:#FFF;color:#666;border-radius:6px;
+    font-size:11px;line-height:1;padding:3px 6px;cursor:pointer;margin-left:2px}
+  .bjpick-edit:hover{background:#F2F2F2;color:#111}
   .bjpick-kind{font-size:11px;font-weight:800;padding:3px 9px;border-radius:6px;white-space:nowrap}
   .bjpick-st{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;white-space:nowrap}
   .bjpick-dday{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;background:var(--red-bg);color:var(--red);white-space:nowrap}
@@ -5478,7 +5481,7 @@ function renderDetail(){
   w.innerHTML=`<div class="detail">
     <div class="h2row"><h2 style="margin:0">${esc(c.name)} · ${esc(c.caseno)} <span class="pill">서류 ${docProg(c)}%</span>${firmChipOf(c)}${c.court?' <span class="pill" style="font-size:10.5px;background:#EEF1F8;color:#2b3a67">'+esc(c.court)+'</span>':''}</h2>
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">닫기</button></div>
-    <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")} <button class="btn primary mini" onclick="bjFromDelivery('${c.id}')">문서 등록·판독</button> <label class="btn ghost mini" style="margin:0;cursor:pointer" title="판독 화면으로 넘어가지 않고 '이 사건의 문서'에만 넣습니다. 판독은 나중에 [판독] 버튼으로 이어서 하면 됩니다">파일만 등록<input type="file" accept="application/pdf,image/*" onchange="caseFilePick('${c.id}',event)" style="display:none"></label> <button class="btn ghost mini" onclick="wdOpenFromCase('${c.id}')">대행 작업대</button></span></div>
+    <div class="kv"><span class="k">문서 종류</span><span>${esc(c.doctype||"-")} <button class="btn ghost mini" title="송달문서의 문서명을 고칩니다" onclick="editDeliveryDoctype('${c.id}')">✏ 이름</button> <button class="btn primary mini" onclick="bjFromDelivery('${c.id}')">문서 등록·판독</button> <label class="btn ghost mini" style="margin:0;cursor:pointer" title="판독 화면으로 넘어가지 않고 '이 사건의 문서'에만 넣습니다. 판독은 나중에 [판독] 버튼으로 이어서 하면 됩니다">파일만 등록<input type="file" accept="application/pdf,image/*" onchange="caseFilePick('${c.id}',event)" style="display:none"></label> <button class="btn ghost mini" onclick="wdOpenFromCase('${c.id}')">대행 작업대</button></span></div>
     ${c.client_id?'':`<div class="bj-alert amber" style="margin:10px 0">
       <b>케이스허브 의뢰인과 연결돼 있지 않습니다.</b><br>
       그래서 이런 일이 생깁니다.
@@ -5636,8 +5639,9 @@ async function loadBojeong(c){
       return '<div class="bjf-row"><span class="nm">'+esc(dn)+'</span>'
         +'<button class="btn ghost mini" onclick="previewBojeong('+pj+','+nj+')">미리보기</button>'
         +'<button class="btn ghost mini" onclick="downloadBojeong('+pj+','+nj+')">내려받기</button>'
+        +'<button class="btn ghost mini" title="저장할 이름을 정해서 내려받습니다" onclick="downloadBojeong('+pj+','+nj+',true)">이름 정해 받기</button>'
         +'<button class="btn ghost mini up" onclick="bjAddExisting('+cj+','+pj+','+nj+')" title="이 보정서를 위쪽 「이 사건의 문서」에 카드로 올립니다. 제출일자와 연장기한을 서류에서 자동으로 읽습니다">문서 목록에 올리기</button>'
-        +'<button class="btn ghost mini" onclick="renameBojeong('+cj+','+pj+','+nj+')">이름 바꾸기</button>'
+        +'<button class="btn ghost mini" title="이 파일의 이름을 고칩니다" onclick="renameBojeong('+cj+','+pj+','+nj+')">✏ 이름</button>'
         +'<button class="btn ghost mini" onclick="deleteBojeong('+cj+','+pj+','+nj+')">삭제</button></div>';
     }).join("");
   }catch(e){el.innerHTML='<span style="color:var(--muted);font-size:12.5px">목록을 불러오지 못했어요.</span>';}
@@ -5865,18 +5869,86 @@ function fpShow(url,name){
   if(nb)nb.onclick=function(){ window.open(url,"_blank","noopener"); };
   w.style.display="flex";
 }
-async function downloadBojeong(path,name){
+/* ★2026-09-04 혜림 신고 : 내려받으면 파일 이름이 깨져서 저장됐다.
+   원인 = 서명 주소를 그냥 열면 파일 이름을 저장소 서버가 정한다.
+          한글 이름은 그 과정에서 깨진다(저장소가 이름에 한글을 못 써서 b64u_… 로 넣어 두기 때문).
+   고침 = 파일 알맹이를 먼저 받아 온 뒤, 브라우저가 우리가 정한 이름으로 저장하게 한다.
+   askName=true 면 저장 직전에 이름을 고칠 수 있다. */
+async function downloadBojeong(path,name,askName){
+  var nm=String(name||sbShowName(String(path||"").split("/").pop())||"file");
+  if(askName){
+    var t=prompt("어떤 이름으로 저장할까요?\n(확장자 .pdf 까지 적어 주세요)",nm);
+    if(t===null)return;
+    t=String(t).trim();
+    if(t)nm=t;
+  }
   busy(true);
   try{
-    /* 저장소 이름이 b64u_… 라도 내려받을 때는 원래 이름으로 저장되게 한다 */
-    var opt=name?{download:String(name)}:undefined;
-    var r=await sbc.storage.from("bojeong").createSignedUrl(path,120,opt);
-    if(r.error&&opt){ r=await sbc.storage.from("bojeong").createSignedUrl(path,120); }
-    const {data,error}=r;
-    if(error)throw error;
-    window.open(data.signedUrl,"_blank");
-  }catch(e){alert("내려받기 실패: "+(e.message||e));}
+    var r=await sbc.storage.from("bojeong").download(path);
+    if(r.error)throw r.error;
+    var buf=await r.data.arrayBuffer();
+    /* 모바일에서도 확실히 '저장'이 되도록 octet-stream 으로 넘긴다 */
+    var url=URL.createObjectURL(new Blob([buf],{type:"application/octet-stream"}));
+    var a=document.createElement("a");
+    a.href=url; a.download=nm;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},15000);
+    if(typeof wdToast==="function")wdToast(nm+" 로 저장했습니다");
+  }catch(e){
+    /* 알맹이 받기가 막히면 예전 방식으로라도 내려받는다(이름이 깨질 수 있음) */
+    try{
+      var sg=await sbc.storage.from("bojeong").createSignedUrl(path,120,{download:nm});
+      if(sg.error)throw sg.error;
+      window.open(sg.data.signedUrl,"_blank");
+      if(typeof wdToast==="function")wdToast("이름이 깨져 저장되면 받은 뒤 바꿔 주세요");
+    }catch(e2){ alert("내려받기 실패: "+(e.message||e)); }
+  }
   finally{busy(false);}
+}
+/* ★2026-09-04 : 카드에 뜨는 문서 이름(doc_type)을 그 자리에서 고친다.
+   자동 교정(bjTypeWithTitle·bjTypeFix)은 이름이 하나만 들어 있으면 손대지 않으므로
+   손으로 고친 이름은 다시 덮어써지지 않는다. 그래서 쉼표는 가운뎃점으로 바꿔 넣는다. */
+async function bjCardName(docId,cur){
+  var nn=prompt("이 문서의 이름을 적어 주세요.\n(예: 보정권고 · 보정명령 · 개시결정 · 보정서)",String(cur||""));
+  if(nn===null)return;
+  nn=String(nn).trim().replace(/,/g,"·");
+  if(!nn||nn===cur)return;
+  busy(true);
+  try{
+    var r=await sbc.from("bj_documents").update({doc_type:nn}).eq("id",docId).select("id");
+    if(r.error)throw r.error;
+    if(typeof bjPrevCase!=="undefined"&&bjPrevCase)await bjLoadPreview(bjPrevCase);
+    if(typeof wdToast==="function")wdToast("문서 이름을 「"+nn+"」 로 바꿨습니다");
+  }catch(e){ alert("이름 바꾸기 실패: "+(e.message||e)); }
+  finally{busy(false);}
+}
+/* ★2026-09-04 : 송달문서 자체의 문서명(deliveries.doctype)을 고친다.
+   ★이 이름은 서버 유니크(uq_delivery_court = 법원+사건번호+문서명+발송일자)에 들어간다.
+     같은 이름이 이미 있으면 서버가 거절하므로 뒤에 (2/2) 같은 번호로 구분해야 한다. */
+async function editDeliveryDoctype(id){
+  var c=(typeof cases!=="undefined"&&cases)?cases.find(function(x){return x.id===id;}):null;
+  if(!c)return;
+  var cur=String(c.doctype||"");
+  var nn=prompt("송달문서의 문서명을 적어 주세요.\n\n★뒤에 붙은 (1/2) 같은 번호는 같은 이름의 문서가 여러 통 올 때 서로 구분하는 표시입니다.\n지우면 다른 문서와 이름이 겹쳐 저장이 거절될 수 있습니다.",cur);
+  if(nn===null)return;
+  nn=String(nn).trim();
+  if(!nn||nn===cur)return;
+  busy(true);
+  var ok=false;
+  try{
+    var r=await sd().from("deliveries").update({doctype:nn}).eq("id",id).select("id");
+    if(r.error){
+      if(typeof rcIsDupErr==="function"&&rcIsDupErr(r.error))
+        throw new Error("같은 법원·같은 사건번호에 같은 이름·같은 발송일 문서가 이미 있습니다.\n이름 뒤에 (2/2) 처럼 번호를 붙여 구분해 주세요.");
+      throw r.error;
+    }
+    ok=true;
+  }catch(e){ alert("문서명 바꾸기 실패: "+(e.message||e)); }
+  finally{busy(false);}
+  if(!ok)return;
+  await patchCase(id,{},"문서명 변경 : "+cur+" → "+nn);
+  if(typeof renderDetail==="function")renderDetail();
+  if(typeof wdToast==="function")wdToast("문서명을 바꿨습니다");
 }
 
 /* ---------- 감지 대기함 (자동감지 승인) ---------- */
@@ -12978,6 +13050,7 @@ function bjDocCardHtml(a){ /* 사건 상세·팝업 공용 문서 카드 (2026-0
       +(a.pdf_path?'':'<span class="noimg">PDF<br>없음</span>')+'</div>'
     +'<div class="bjpick-b">'
     +'<div class="bjpick-r1">'+bjPickKindBadge(kindTxt)
+    +'<button class="bjpick-edit" title="이 문서의 이름을 고칩니다" onclick="event.stopPropagation();bjCardName('+sid+','+JSON.stringify(kindTxt).replace(/"/g,"&quot;")+')">✏</button>'
     +(mainD?'<span class="bjpick-od" title="'+(ours?"보정서에 적힌 제출일자입니다":"서류 맨 끝장 「등본입니다」 아래에 적힌 보정명령일입니다")+'">'+mainL+' '+esc(mainD)+'</span>'
            :'<span class="bjpick-od none">'+mainL+' 미확인</span>')
     +'<span class="bjpick-ws" style="background:'+wsBg+';color:'+wsFg+'">'+esc(ws)+'</span>'
@@ -12992,6 +13065,7 @@ function bjDocCardHtml(a){ /* 사건 상세·팝업 공용 문서 카드 (2026-0
     +(ours?'':'<button class="pri" onclick="event.stopPropagation();wdCloseModal();bjOpen(\''+a.id+'\')">판독</button>')
     +'<button onclick="event.stopPropagation();bjPreviewDoc('+pj+','+nj+')">미리보기</button>'
     +'<button onclick="event.stopPropagation();downloadBojeong('+pj+','+nj+')">내려받기</button>'
+    +'<button title="저장할 이름을 정해서 내려받습니다" onclick="event.stopPropagation();downloadBojeong('+pj+','+nj+',true)">이름 정해 받기</button>'
     +(ours?'<button onclick="event.stopPropagation();wdCloseModal();bjOpen(\''+a.id+'\')">자세히</button>':'')
     +(bjCanDelDoc(a)?'<button class="del" title="이 문서를 지웁니다" onclick="event.stopPropagation();bjDelDoc(\''+a.id+'\','+JSON.stringify(kindTxt+" "+(mainD||"")+" · "+fname).replace(/"/g,"&quot;")+','+pj+')">휴지통</button>':'')
     +'</div>'

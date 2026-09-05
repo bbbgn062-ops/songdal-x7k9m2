@@ -1320,6 +1320,9 @@
   .pn-now.tmp{background:#E8EEF7;color:#2B4570;border-color:#CBD8EC}
   .pn-now.hold{background:#EFE9F7;color:#5B4B8A;border-color:#DCD2EE}
   .pn-now.ok{background:#EAF4EB;color:#2E7D32;border-color:#CBE3CC}
+  .pn-now.pre{background:#FDF3E3;color:#B45309;border-color:#F0DDBC}
+  .pn-predoc{margin-top:10px;padding:9px 13px;background:#FDF8EE;border:1px solid #F0E2C6;
+    border-radius:9px;font-size:12.5px;color:#7A5C1E;line-height:1.6}
   .pn-bck{display:inline-flex;align-items:center;gap:8px;border:1px solid #E1DCD6;border-radius:9px;
     padding:9px 15px;font-size:13.5px;font-weight:600;background:#FFF;white-space:nowrap;color:#3D3833}
   .pn-bck:hover{border-color:#C9C3BC}
@@ -14543,6 +14546,33 @@ function pnRows(){
     out.push({r:r,c:c,cid:cid,firm:firm,ws:ws,due:due,hold:hold,plan:plan,
               left:left,planLeft:planLeft,holdLeft:holdLeft,urgent:urgent,m:m});
   });
+  /* ★2026-09-05 혜림 : "최만호는 보정권고랑 기각결정 2개인데 하나만 보여?"
+     점검판이 bj_documents(등록·판독한 보정 문서)만 보고 있었다.
+     PDF 를 아직 안 올린 송달문서는 문서 행이 없어서 통째로 빠졌다.
+     그래서 문서가 하나도 안 붙은 송달문서를 「판독 전」 줄로 함께 올린다. */
+  var haveDel={};
+  (bxRows||[]).forEach(function(r0){ if(r0.delivery_id)haveDel[r0.delivery_id]=true; });
+  (typeof cases!=="undefined"?(cases||[]):[]).forEach(function(c){
+    if(!c||haveDel[c.id])return;
+    if(String(c.status||"")==="처리완료")return;
+    var firm=pnFirmOf(c.client_id);
+    if(pnOffice!=="전체"&&rcFirmShort(firm)!==pnOffice)return;
+    var due="";
+    try{ var dd=(typeof procDueDate==="function")?procDueDate(c):null; if(dd)due=fmt(dd); }catch(e){}
+    var m2=pnMeta["del:"+c.id]||{};
+    if(pnHideDone&&m2.done)return;
+    var plan2=String(m2.plan||"").slice(0,10);
+    var left2=pnDays(due), planLeft2=pnDays(plan2);
+    var off=(typeof isOffDeadline==="function")&&isOffDeadline(c);
+    out.push({
+      r:{id:"del:"+c.id, client_name:c.name||"", doc_type:c.doctype||"", delivery_id:c.id,
+         court:c.court||"", case_no:c.caseno||"", memo:"", pdf_path:""},
+      c:c, cid:c.client_id||null, firm:firm, ws:(off?String(c.status||""):"판독 전"),
+      due:due, hold:"", plan:plan2, left:left2, planLeft:planLeft2, holdLeft:null,
+      urgent:(!off)&&!m2.done&&((planLeft2!==null&&planLeft2<0)||(left2!==null&&left2<=0)),
+      m:m2, isDel:true
+    });
+  });
   out=out.filter(function(x){
     if(pnFilt==="급건")return x.urgent;
     if(pnFilt==="오늘")return x.urgent||(x.planLeft===0)||(x.left===0);
@@ -14732,14 +14762,19 @@ function pnCard(x){
   h+='<div class="pn-cks">'
     +pnBigCk(id,"called","당사자 연락함",m.called)
     +pnBigCk(id,"got","서류 받음",m.got)
-    +pnBigCk(id,"draft","전자소송 임시저장",(x.ws==="임시저장"))
-    +pnBigCk(id,"filed","법원 제출함",(x.ws==="보정완료"))
+    +(x.isDel?'':pnBigCk(id,"draft","전자소송 임시저장",(x.ws==="임시저장")))
+    +(x.isDel?'':pnBigCk(id,"filed","법원 제출함",(x.ws==="보정완료")))
     +pnBigCk(id,"done","완료",m.done)
     /* ★2026-09-05 혜림 : 체크를 눌렀을 때 상태가 바뀐 것이 보여야 한다.
        [더 보기] 안에만 있던 상태를 밖으로 꺼내 항상 띄운다. */
     +'<span class="pn-sp"></span>'
     +'<span class="pn-now '+pnWsCls(x.ws)+'">지금 상태 · '+esc(x.ws)+(x.hold?' ('+esc(x.hold)+'까지)':'')+'</span>'
     +'</div>';
+  if(x.isDel){
+    h+='<div class="pn-predoc">이 송달문서는 <b>아직 보정 PDF를 등록하지 않았습니다.</b> '
+      +'[＋ 파일]로 올리면 문서 카드가 생기고 상태·기한을 여기서 바로 다룰 수 있습니다.'
+      +(x.ws!=="판독 전"?' 지금 송달문서 상태는 <b>'+esc(x.ws)+'</b> 입니다.':'')+'</div>';
+  }
   h+='<div class="pn-acts">'
     +'<button class="pn-big pri" onclick="pnPlan('+sid+',0)">오늘 처리함</button>'
     +'<button class="pn-big warn" onclick="pnPlan('+sid+',1)">내일로 미루기</button>'
@@ -14749,11 +14784,19 @@ function pnCard(x){
     +'<span class="pn-sp"></span>'
     +'<button class="pn-big" onclick="pnMore('+sid+')">'+(open?"접기":"더 보기")+'</button>'
     +'</div>';
-  if(open){
+  if(open&&x.isDel){
+    h+='<div class="pn-more"><div class="pn-mrow"><span class="pn-mlb">처리 예정</span>'
+      +'<button class="pn-mini2" onclick="pnPlan('+sid+',2)">모레로</button>'
+      +'<input type="date" value="'+esc(x.plan)+'" onchange="pnPlanSet('+sid+',this.value)">'
+      +(x.plan?'<button class="pn-mini2" onclick="pnPlanSet('+sid+',\'\')">예정 지우기</button>':'')
+      +'<span class="pn-sp"></span>'
+      +'<button class="pn-mini2" onclick="goDetail(\''+r.delivery_id+'\')">의뢰인 상세</button>'
+      +'</div></div>';
+  }else if(open){
     h+='<div class="pn-more">'
       +'<div class="pn-mrow"><span class="pn-mlb">상태</span>'
-      +['보정중','임시저장','추후제출'].map(function(v){
-          var lab=(v==="임시저장")?"전자소송 임시저장":v;
+      +['보정중','임시저장','추후제출','보정완료'].map(function(v){
+          var lab=(v==="임시저장")?"전자소송 임시저장":(v==="보정완료"?"보정완료(법원 제출함)":v);
           return '<button class="pn-chip2'+(x.ws===v?" on":"")+'" onclick="pnState('+sid+','+did+',\''+v+'\')">'+esc(lab)+'</button>';
         }).join("")
       +'</div>'
@@ -14776,18 +14819,25 @@ function pnCard(x){
       +'</div>';
   }
   /* ★혜림 지시 : 문서 메모와 사건 메모를 언제나 같이 보이게 */
+  /* ★2026-09-05 혜림 : 사건 메모를 먼저(왼쪽) 본다 */
   h+='<div class="pn-memos">'
-    +'<div><div class="pn-mlb2">이 문서 메모</div>'
-    +'<textarea placeholder="이 보정 문서에 남길 메모" onblur="pnDocMemo('+sid+',this.value)">'+esc(r.memo||"")+'</textarea></div>'
     +'<div><div class="pn-mlb2">사건 메모 <span class="pn-note2">(의뢰인 상세와 같습니다)</span></div>'
     +(r.delivery_id
       ? '<textarea placeholder="이 사건 전체에 남길 메모" onblur="pnCaseMemo(\''+r.delivery_id+'\',this.value)">'+esc((x.c&&x.c.memo)||"")+'</textarea>'
       : '<div class="pn-note2">송달문서에 연결돼 있지 않습니다</div>')
+    +'</div>'
+    +'<div><div class="pn-mlb2">이 문서 메모</div>'
+    +(x.isDel
+      ? '<div class="pn-note2">아직 보정 문서를 등록하지 않아 문서 메모가 없습니다</div>'
+      : '<textarea placeholder="이 보정 문서에 남길 메모" onblur="pnDocMemo('+sid+',this.value)">'+esc(r.memo||"")+'</textarea>')
     +'</div></div>';
   h+='</div></div></div>';
   return h;
 }
 function pnWsCls(ws){
+  if(ws==="판독 전")return "pre";
+  if(ws==="처리완료")return "ok";
+  if(ws==="당사자안내"||ws==="추후처리")return "hold";
   if(ws==="보정완료")return "ok";
   if(ws==="임시저장")return "tmp";
   if(ws==="추후제출")return "hold";
@@ -14804,6 +14854,10 @@ function pnMore(id){ pnOpen[id]=!pnOpen[id]; pnRender(); }
    ★「법원 제출함」은 원래 있던 work_state 를 쓰고(송달문서 줄에도 반영된다),
      「완료」는 우리 쪽 마무리 표시라 bj_settings 에 넣는다. 그래서 둘이 따로 논다. */
 async function pnCk(id,key,v){
+  if(String(id).indexOf("del:")===0&&(key==="filed"||key==="draft")){
+    alert("아직 보정 문서를 등록하지 않은 송달문서입니다.\n[＋ 파일]로 PDF를 올린 뒤에 상태를 바꿀 수 있습니다.");
+    pnRender(); return;
+  }
   if(key==="filed"||key==="draft"){
     var row=null;
     for(var i=0;i<(bxRows||[]).length;i++){ if(bxRows[i].id===id){ row=bxRows[i]; break; } }

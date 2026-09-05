@@ -2862,6 +2862,10 @@ function rcCourtExpand(c){
   var t=String(c||"").replace(/\s/g,"");
   if(!t)return "";
   t=t.replace(/지법/g,"지방법원").replace(/고법/g,"고등법원").replace(/가법/g,"가정법원").replace(/회법/g,"회생법원");
+  /* ★2026-09-04 혜림 : 옛 기록에 '부산개인회생법원'처럼 적힌 것이 간혹 있다.
+     우리나라 회생법원은 서울·수원·부산 셋뿐이고 정식 이름에 '개인'이 없다.
+     펴 두지 않으면 같은 법원인데 다른 법원으로 갈라져 사건을 놓친다. */
+  t=t.replace(/개인회생법원/g,"회생법원");
   t=t.replace(/지방법원지방법원/g,"지방법원");   /* 이미 펴져 있던 것이 두 번 붙는 것 막기 */
   return t;
 }
@@ -3871,53 +3875,67 @@ async function rcRegister(){
         (q.data||[]).forEach(function(d){ srvAll.push(d); });
       }
     }catch(e){ srvAll=null; }
-    /* 서버 행을 '사건번호 + 문서 기본이름 + 발송일' 로 묶는다(뒤 번호는 떼고 본다).
-       ★서버 유니크 uq_delivery 에는 법원이 없으므로 여기서도 법원은 열쇠에 넣지 않는다.
-         예전에는 넣어서, 법원 이름이 다르게 저장된 옛 행을 못 알아보고 통째로 실패했다. */
-    function _gk(caseno,doc,date){ return rcNormCase(caseno)+"|"+rcDocBase(doc)+"|"+String(date||"").slice(0,10); }
-    var srv=null;
+    /* ★2026-09-04 혜림 규칙 : 같은 사건인지 아닌지는 언제나 「법원 + 사건번호」 2중 열쇠로 본다.
+       법원 이름은 rcCourtKey 로 펴서 비교한다('인천지법'→'인천지방법원', '부산개인회생법원'→'부산회생법원').
+       ★그런데 서버 유니크 uq_delivery 에는 법원이 없다(사건번호+문서종류+발송일자).
+         그래서 열쇠를 두 벌 쓴다. 섞으면 안 된다.
+         · gkCase (법원 포함) = "이 사건에 이 문서가 이미 등록됐나" 판정용  ← 혜림 규칙
+         · gkUq   (법원 제외) = "서버가 거절할 이름인가" 회피용            ← 서버 규칙 */
+    function gkCase(court,caseno,doc,date){ return rcCourtKey(court)+"|"+rcNormCase(caseno)+"|"+rcDocBase(doc)+"|"+String(date||"").slice(0,10); }
+    function gkUq(caseno,doc,date){ return rcNormCase(caseno)+"|"+rcDocBase(doc)+"|"+String(date||"").slice(0,10); }
+    var byCase=null, byUq=null;
     if(srvAll){
-      srv={};
+      byCase={}; byUq={};
       srvAll.forEach(function(d){
-        var k0=_gk(d.case_no,d.doctype,d.arrived_at);
-        (srv[k0]=srv[k0]||[]).push(d);
+        var a=gkCase(d.court,d.case_no,d.doctype,d.arrived_at); (byCase[a]=byCase[a]||[]).push(d);
+        var b=gkUq(d.case_no,d.doctype,d.arrived_at);           (byUq[b]=byUq[b]||[]).push(d);
       });
     }
-    var suffixed=0, skipped=0, courtClash=0, skipList=[], takenBy={}, keep=[];
+    /* 이번에 같은 이름으로 몇 줄을 새로 넣는지 미리 세어 둔다 (분모 계산용) */
+    var newInUq={};
+    rows.forEach(function(w){ var b0=gkUq(w.case_no,w.doctype,w.arrived_at); newInUq[b0]=(newInUq[b0]||0)+1; });
+
+    var suffixed=0, skipped=0, squeezed=0, skipList=[], squeezeList=[], takenBy={}, keep=[];
     rcSavedDoc={};
     rows.forEach(function(w,i){
       var r=L[i];
-      var k0=_gk(w.case_no,w.doctype,w.arrived_at);
-      var have=(srv&&srv[k0])?srv[k0]:null;          /* 서버가 이미 갖고 있는 같은 문서들 */
-      var haveN=have?have.length:0;
-      var excelN=(r&&r.dupN>1)?r.dupN:1;             /* 엑셀에 같은 이름이 몇 줄인가 */
-      var total=Math.max(excelN,haveN);              /* 이 문서는 모두 몇 통인가 */
-      if(srv&&haveN>=total){                         /* 서버가 이미 다 갖고 있다 → 넣을 것이 없다 */
-        /* ★2026-09-04 혜림 지적 : "법원이 다르면 아예 다른 사건 아니냐"
-           맞는 말이지만 서버 유니크 uq_delivery 에 법원이 없어서, 법원만 다르고
-           사건번호·문서·발송일이 같으면 서버가 두 번째 줄을 받아 주지 않는다.
-           그래서 여기서 미리 걸러 주되, '법원만 다르다'는 사실을 반드시 알려 준다. */
-        var odCourt=null;
-        if(have)for(var hi=0;hi<have.length;hi++){
-          if(rcCourtKey(have[hi].court)!==rcCourtKey(w.court)){ odCourt=have[hi].court||"(법원이 비어 있음)"; break; }
-        }
-        if(odCourt)courtClash++;
-        skipped++;
-        skipList.push(String(w.case_no||"")+" "+rcDocBase(w.doctype)+(odCourt?(" ← 이미 등록된 법원 : "+odCourt):""));
+      var kc=gkCase(w.court,w.case_no,w.doctype,w.arrived_at);
+      var ku=gkUq(w.case_no,w.doctype,w.arrived_at);
+      var mineRows=(byCase&&byCase[kc])?byCase[kc].slice():[];   /* ★같은 법원 + 같은 사건번호 = 진짜 같은 사건 */
+      /* ★법원 칸이 비어 있는 옛 행은 '다른 법원'이 아니라 '모르는 것'이다.
+         남으로 치면 같은 문서를 한 번 더 만들게 되므로, 우리 사건 쪽으로 붙여 센다. */
+      if(byUq&&byUq[ku])byUq[ku].forEach(function(d){
+        if(!rcCourtKey(d.court)&&mineRows.indexOf(d)<0)mineRows.push(d);
+      });
+      var allRows =(byUq&&byUq[ku])   ?byUq[ku]   :[];   /* 법원이 달라도 서버는 같다고 보는 것들 */
+      var excelN=(r&&r.dupN>1)?r.dupN:1;                 /* 엑셀에 같은 이름이 몇 줄인가 */
+      if(byCase&&mineRows.length>=excelN){               /* 우리 사건 기준으로 이미 다 등록돼 있다 */
+        skipped++; skipList.push(String(w.case_no||"")+" "+rcDocBase(w.doctype));
         return;
       }
-      if(total<=1){ keep.push(w); rcSavedDoc[rcKey(r)]=w.doctype; return; }   /* 한 통뿐 → 번호 안 붙임 */
-      var used=takenBy[k0]||(takenBy[k0]={});
-      if(have)have.forEach(function(d){ var s2=rcSuffixNo(d.doctype); if(s2)used[s2.idx]=true; });
-      /* 번호 없이 저장된 옛 행은 앞에서부터 한 칸씩 차지한 것으로 본다 */
-      var noSfx=have?have.filter(function(d){return !rcSuffixNo(d.doctype);}).length:0;
-      for(var p=1;noSfx>0&&p<=total;p++){ if(!used[p]){ used[p]=true; noSfx--; } }
-      var pick=0;
-      for(var p2=1;p2<=total;p2++){ if(!used[p2]){ pick=p2; break; } }
-      if(!pick){ skipped++; skipList.push(String(w.case_no||"")+" "+rcDocBase(w.doctype)); return; }
+      /* 번호를 붙여야 하는 경우 두 가지
+         ① 엑셀에 같은 이름이 여러 줄이다 (채권자가 여럿이라 같은 문서가 여러 통)
+         ② 법원은 달라도 서버가 같은 이름으로 보는 행이 이미 있다 (안 붙이면 서버가 거절한다) */
+      var needNo=(excelN>1)||(allRows.length>0);
+      if(!needNo){ keep.push(w); rcSavedDoc[rcKey(r)]=w.doctype; return; }
+      var used=takenBy[ku]||(takenBy[ku]={});
+      var plain=0;
+      allRows.forEach(function(d){ var s2=rcSuffixNo(d.doctype); if(s2)used[s2.idx]=true; else plain++; });
+      for(var p=1;plain>0;p++){ if(!used[p]){ used[p]=true; plain--; } }   /* 번호 없이 저장된 옛 행은 앞자리를 차지한 것으로 본다 */
+      var pick=1; while(used[pick])pick++;
       used[pick]=true;
-      w.doctype=String(w.doctype||"").replace(/\s*\(\s*\d+\s*\/\s*\d+\s*\)\s*$/,"")+" ("+pick+"/"+total+")";
+      var denom=Math.max(excelN, allRows.length+(newInUq[ku]||0), pick);
+      w.doctype=String(w.doctype||"").replace(/\s*\(\s*\d+\s*\/\s*\d+\s*\)\s*$/,"")+" ("+pick+"/"+denom+")";
       suffixed++;
+      if(allRows.length>mineRows.length){
+        /* ★법원이 다른 별개 사건인데 서버 규칙에 법원이 없어서 번호를 붙여 밀어 넣은 경우 */
+        var oc=null;
+        for(var oi=0;oi<allRows.length;oi++){
+          if(rcCourtKey(allRows[oi].court)!==rcCourtKey(w.court)){ oc=allRows[oi].court||"(법원이 비어 있음)"; break; }
+        }
+        squeezed++;
+        squeezeList.push(String(w.case_no||"")+" "+rcDocBase(w.doctype)+(oc?(" ↔ "+oc):""));
+      }
       rcSavedDoc[rcKey(r)]=w.doctype;
       keep.push(w);
     });
@@ -3956,17 +3974,19 @@ async function rcRegister(){
       if(noticeN)msg.push("· 그중 "+noticeN+"건은 당사자 안내입니다. 알린 뒤 상태를 처리완료로 내리세요.");
       if(suffixed)msg.push("· 이름이 똑같은 "+suffixed+"건은 문서명 뒤에 (1/2) 같은 번호를 붙여 각각 등록했습니다.");
     }else{
-      msg.push("새로 등록한 것은 없습니다. 고른 "+L.length+"건이 모두 이미 등록돼 있습니다.");
+      msg.push("새로 등록한 것은 없습니다. 고른 "+L.length+"건이 모두 이미 등록돼 있습니다.\n(같은 법원 + 같은 사건번호 + 같은 문서 + 같은 발송일 기준)");
     }
     if(skipped){
-      msg.push("· "+skipped+"건은 사건번호·문서 이름·발송일이 같은 문서가 이미 등록돼 있어 건너뛰었습니다."
+      msg.push("· "+skipped+"건은 같은 법원·같은 사건번호에 같은 문서·같은 발송일로 이미 등록돼 있어 건너뛰었습니다."
         +(skipList.length?("\n  ("+skipList.slice(0,5).join(" / ")+(skipList.length>5?(" 외 "+(skipList.length-5)+"건"):"")+")"):"")
         +"\n  송달문서 목록에서 그 사건번호로 찾아보시면 있습니다.");
     }
-    if(courtClash){
-      msg.push("★그중 "+courtClash+"건은 법원 이름만 다르고 사건번호·문서·발송일이 같습니다."
-        +"\n  서버 규칙(uq_delivery)에 법원이 빠져 있어 두 건을 함께 담지 못합니다."
-        +"\n  정말 서로 다른 사건이면 관리자에게 알려 규칙에 법원을 넣어야 합니다.");
+    if(squeezed){
+      msg.push("★그중 "+squeezed+"건은 법원이 다른 별개 사건인데 사건번호·문서·발송일이 겹쳤습니다."
+        +"\n  서버 규칙(uq_delivery)에 법원이 빠져 있어, 그대로 넣으면 거절당합니다."
+        +"\n  그래서 문서명 뒤에 번호를 붙여 등록했습니다. 사건은 정상 등록됐습니다."
+        +(squeezeList.length?("\n  ("+squeezeList.slice(0,5).join(" / ")+(squeezeList.length>5?(" 외 "+(squeezeList.length-5)+"건"):"")+")"):"")
+        +"\n  근본 해결은 서버 규칙에 법원을 넣는 것입니다(관리자 SQL).");
     }
     if(dupServer)msg.push("· "+dupServer+"건은 이미 등록돼 있는 문서라 건너뛰었습니다.\n  담당자가 다른 직원이면 내 화면에 안 보여서 '아직 안 등록'으로 나옵니다.\n  관리자에게 그 사건의 담당자를 확인해 달라고 하세요.");
     if(_att&&_att.done)msg.push("· 미리 담아 둔 PDF "+_att.done+"건을 '이 사건의 문서'에 함께 넣었습니다.");

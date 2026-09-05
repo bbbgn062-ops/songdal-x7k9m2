@@ -3255,6 +3255,7 @@ async function cloudFileUrl(path){
    이제 화면 안에 창을 띄우고 눌러서 고른다.
    ========================================================== */
 var wbPick=false, wbRows=[], wbQ="", wbBusy=false, wbErr="";
+var wbSaveState="";   /* "server" 서버에 올라감 · "local" 이 브라우저에만 · "" 아직 저장 전 */
 
 function wbClose(){ wbPick=false; wbErr=""; wbQ=""; draw(); }
 
@@ -3319,10 +3320,9 @@ function wbListHtml(){
 }
 
 function wbPickBox(){
-  var here=wbCase(), dot=document.getElementById("savedot");
-  var st=dot?dot.textContent:"";
-  var saved=/회사 서버에 저장됨/.test(st);
-  var localOnly=/이 브라우저에만/.test(st);
+  var here=wbCase();
+  var saved=(wbSaveState==="server");
+  var localOnly=(wbSaveState==="local");
   var h='<div class="wbwrap" onclick="if(event.target===this)wbClose()"><div class="wbbox">'
    + '<div class="wbh">'
    +   '<h3>다른 사건 열기</h3>'
@@ -3338,9 +3338,13 @@ function wbPickBox(){
   }else if(saved){
     h+='<div class="wbok">지금 사건은 회사 서버에 저장돼 있습니다. 안심하고 넘어가셔도 됩니다.</div>';
   }else if(localOnly){
-    h+='<div class="wbwarn"><b>지금 사건이 아직 서버에 안 올라갔습니다.</b> ('+esc(st)+')<br>'
+    h+='<div class="wbwarn"><b>지금 사건이 아직 회사 서버에 안 올라갔습니다.</b><br>'
       +'이대로 넘어가면 마지막 변경분이 다른 컴퓨터에서 안 보일 수 있습니다. '
-      +'아래 [지금 저장하기]를 먼저 눌러 주세요.</div>';
+      +'아래 [지금 저장하기]를 먼저 눌러 주세요.'
+      +(cloudErr?'<br><br><span style="font-size:12px">서버가 돌려준 이유 : '+esc(cloudErr)+'</span>':'')
+      +'</div>';
+  }else{
+    h+='<div class="wbok">아직 저장할 변경이 없습니다. 넘어가셔도 됩니다.</div>';
   }
 
   h+= '</div>'
@@ -3365,12 +3369,15 @@ async function wbSaveNow(){
     var copy=JSON.parse(JSON.stringify(D,function(k,v){return k==="url"?undefined:v;}));
     await cloudSave(copy);
     savedAt=new Date().toTimeString().slice(0,5);
+    cloudErr=""; wbSaveState="server";
     saveDot("회사 서버에 저장됨 "+savedAt,"g");
     toast("저장했습니다");
     await wbRefresh();
   }catch(e){
+    cloudErr=(e&&e.message)||String(e); wbSaveState="local";
     saveDot("저장 실패","r");
-    alert("저장하지 못했습니다\n\n"+((e&&e.message)||e));
+    alert("저장하지 못했습니다\n\n"+cloudErr);
+    draw();
   }
 }
 
@@ -3378,9 +3385,7 @@ async function wbGo(no){
   if(!no)return;
   var here=wbCase();
   if(no===here){ wbClose(); return; }
-  var dot=document.getElementById("savedot");
-  var st=dot?dot.textContent:"";
-  if(here&&!/회사 서버에 저장됨/.test(st)){
+  if(here&&wbSaveState==="local"){
     if(!confirm("지금 사건("+here+")이 아직 서버에 저장되지 않았습니다.\n\n그대로 넘어가면 마지막 변경분이 다른 컴퓨터에서는 안 보일 수 있습니다.\n그래도 넘어갈까요?\n\n(취소를 누르고 [지금 저장하기]를 먼저 누르시는 것을 권합니다)"))return;
   }
   wbPick=false; wbQ=""; 
@@ -3417,12 +3422,13 @@ function doSave(){
   saveDot("저장 중","");
   idbPut("kv","state",copy).then(function(){
     savedAt=new Date().toTimeString().slice(0,5); saveErr="";
-    if(!cloudOn||!wbCase()){ saveDot("이 브라우저에만 저장됨 "+savedAt,"a"); return; }
+    if(!cloudOn||!wbCase()){ wbSaveState="local"; saveDot("이 브라우저에만 저장됨 "+savedAt,"a"); return; }
     saveDot("회사 서버에 저장 중","");
     cloudSave(copy).then(function(){
+      cloudErr=""; wbSaveState="server";
       saveDot("회사 서버에 저장됨 "+savedAt,"g");
     }).catch(function(e){
-      cloudErr=(e&&e.message)||String(e);
+      cloudErr=(e&&e.message)||String(e); wbSaveState="local";
       saveDot("이 브라우저에만 저장됨 "+savedAt,"a");
     });
   }).catch(function(){ saveErr="저장 실패"; saveDot("저장 실패","r"); });

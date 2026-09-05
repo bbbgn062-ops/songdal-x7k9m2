@@ -3188,7 +3188,7 @@ function idbWipe(){return db().then(function(d){return new Promise(function(res)
 var SBW=null, cloudOn=false, cloudBusy=false, cloudErr="";
 try{
   if(window.supabase&&window.supabase.createClient){
-    SBW=window.supabase.createClient("https://zxwsfwhyjkixsnfpzpkt.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4d3Nmd2h5amtpeHNuZnB6cGt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NjUxMzIsImV4cCI6MjA5ODA0MTEzMn0.mHfZJNRMmH-I2XI3ISutaYNemIbjKvWzFlOzMLmi-aQ",{auth:{persistSession:true,autoRefreshToken:false}});
+    SBW=window.supabase.createClient("https://zxwsfwhyjkixsnfpzpkt.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4d3Nmd2h5amtpeHNuZnB6cGt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NjUxMzIsImV4cCI6MjA5ODA0MTEzMn0.mHfZJNRMmH-I2XI3ISutaYNemIbjKvWzFlOzMLmi-aQ",{auth:{persistSession:true,autoRefreshToken:true}});
     cloudOn=true;
   }
 }catch(e){ cloudOn=false; }
@@ -3341,6 +3341,9 @@ function wbPickBox(){
     h+='<div class="wbwarn"><b>지금 사건이 아직 회사 서버에 안 올라갔습니다.</b><br>'
       +'이대로 넘어가면 마지막 변경분이 다른 컴퓨터에서 안 보일 수 있습니다. '
       +'아래 [지금 저장하기]를 먼저 눌러 주세요.'
+      +(/row-level security|JWT|permission/i.test(cloudErr)
+          ? '<br><br><b>로그인이 풀린 것 같습니다.</b> 송달앱 창을 한 번 새로고침해 로그인 상태를 되살린 뒤, 왼쪽 메뉴 「보정 처리대」로 다시 들어와 주세요.'
+          : '')
       +(cloudErr?'<br><br><span style="font-size:12px">서버가 돌려준 이유 : '+esc(cloudErr)+'</span>':'')
       +'</div>';
   }else{

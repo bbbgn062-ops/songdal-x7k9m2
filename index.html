@@ -14500,9 +14500,20 @@ function pnRoll(ymd){
    ② 미뤄 둔 날이 없고 추후제출 기한이 있으면 그 날을 본다.
    ③ 둘 다 없으면 법원기한을 본다.
    완료·종결·보정완료는 어떤 경우에도 급건이 아니다. */
+/* ★2026-09-06 : 케이스허브 단계가 끝난 사건이면 급한 것이 아니다.
+   혜림 규칙 — 인가결정된 건은 종결사건이고, 파산도 면책허가결정이 나면 종결이다.
+   실제로 강태연(인가결정)이 9월 7일 급건에 들어가 있었다.
+   보류(나중으로 미루기)로 표시한 의뢰인도 급한 것에서 뺀다. 아침 점검과 규칙을 맞춘 것이다. */
+var PN_CLOSED_STAGE=["종결","기각","인가결정","면책허가결정","폐지"];
+function pnStageClosed(cid){
+  var st=(pnCli[cid]&&pnCli[cid].stage)||"";
+  return PN_CLOSED_STAGE.indexOf(String(st))>=0;
+}
+function pnOnHold(cid){ return !!(pnCli[cid]&&pnCli[cid].on_hold); }
 function pnUrg(x){
   var m=x.m||{};
   if(m.done||m.closed)return false;
+  if(x.stageClosed||x.onHold)return false;
   if(x.ws==="보정완료"||x.ws==="종결"||x.ws==="처리완료")return false;
   if(x.plan)return (x.planLeft!==null&&x.planLeft<0);
   if(x.hold)return (x.holdLeft!==null&&x.holdLeft<0);
@@ -14674,7 +14685,7 @@ async function pnLoadPhones(ids){
   var need=[];
   ids.forEach(function(x){ if(x&&!(x in pnPhone)&&need.indexOf(x)<0)need.push(x); });
   if(!need.length)return;
-  var COLS="id,phone,case_type,stage,name,case_no,intake_type";
+  var COLS="id,phone,case_type,stage,name,case_no,intake_type,on_hold";
   try{
     for(var i=0;i<need.length;i+=100){
       var r=await sbc.from("clients").select(COLS).in("id",need.slice(i,i+100));
@@ -14683,7 +14694,8 @@ async function pnLoadPhones(ids){
       (r.data||[]).forEach(function(c){
         pnPhone[c.id]=c.phone||"";
         pnCli[c.id]={case_type:c.case_type||"",stage:c.stage||"",
-                     name:c.name||"",case_no:c.case_no||"",intake_type:c.intake_type||""};
+                     name:c.name||"",case_no:c.case_no||"",intake_type:c.intake_type||"",
+                     on_hold:!!c.on_hold};
       });
     }
   }catch(e){}
@@ -14746,6 +14758,7 @@ function pnRows(){
            hold:pnRoll(String(r.hold_until||"").slice(0,10)),
            plan:pnRoll(String(m0.plan||"").slice(0,10)),
            m:m0};
+    x.stg=(pnCli[cid]&&pnCli[cid].stage)||""; x.stageClosed=pnStageClosed(cid); x.onHold=pnOnHold(cid);
     x.left=pnDays(x.due); x.planLeft=pnDays(x.plan); x.holdLeft=pnDays(x.hold);
     x.urgent=pnUrg(x);
     pnSeen(cid,x.due);
@@ -14772,6 +14785,7 @@ function pnRows(){
       due:pnRoll(due), hold:"", plan:pnRoll(String(m2.plan||"").slice(0,10)),
       m:m2, isDel:true
     };
+    x.stg=(pnCli[c.client_id]&&pnCli[c.client_id].stage)||""; x.stageClosed=pnStageClosed(c.client_id); x.onHold=pnOnHold(c.client_id);
     x.left=pnDays(x.due); x.planLeft=pnDays(x.plan); x.holdLeft=null;
     x.urgent=off?false:pnUrg(x);
     if(!off)pnSeen(c.client_id,x.due);
@@ -14804,6 +14818,7 @@ function pnRows(){
       chk:String(b.check_date||"").slice(0,10)
     };
     if(pnDup(b.client_id,x.due))return;   /* 같은 사람 + 같은 기한 = 같은 보정 건이므로 한 줄로 */
+    x.stg=String(info.stage||""); x.stageClosed=pnStageClosed(b.client_id); x.onHold=pnOnHold(b.client_id);
     x.left=pnDays(x.due); x.planLeft=pnDays(x.plan); x.holdLeft=pnDays(x.hold);
     x.urgent=b.closed?false:pnUrg(x);
     out.push(x);
@@ -14960,6 +14975,11 @@ function pnCard(x){
 
   var h='<div class="pn-card '+(x.urgent?"urg ":"")+(m.done?"done":"")+'">';
   if(m.done)h+='<div class="pn-donebar">완료 처리한 건입니다. 「완료」를 다시 누르면 되돌아옵니다.</div>';
+  else if(x.stageClosed)
+    h+='<div class="pn-donebar" style="background:#8a5a00">케이스허브 단계가 <b>'+esc(x.stg)+'</b> 입니다. '
+      +'끝난 사건이면 「완료」를 눌러 목록에서 내려 주세요. 급한 것에서는 빼 두었습니다.</div>';
+  else if(x.onHold)
+    h+='<div class="pn-donebar" style="background:#4a5568">이 의뢰인은 <b>보류</b>로 표시돼 있습니다. 급한 것에서는 빼 두었습니다.</div>';
   if(x.urgent){
     h+='<div class="pn-redbar"><b>급건</b>'
       +'<span class="pn-rb-ofc">'+esc(ofcName)+'</span>'

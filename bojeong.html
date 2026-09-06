@@ -2554,7 +2554,7 @@ function dueBox(){
    + '<div class="dl"><span class="lb">당사자 마감일</span>'
    +   '<input type="date" value="'+esc(mine)+'" onchange="setDue(this.value)">'
    +   (mine?'<span class="tag '+leftTone(mine)+'">'+esc(kor(mine))+' · '+esc(leftTxt(mine))+'</span>'
-          :'<span class="dim">아직 안 정했습니다. 정하면 카톡 첫머리에 들어갑니다</span>')
+          :'<span class="tag r">안 정하면 카톡에 기한이 한 줄도 안 들어갑니다</span>')
    + '</div>'
    + '<div class="dl"><span class="lb"></span><span class="qb">'
    +   qb("오늘",today())+qb("내일",addDays(today(),1))+qb("3일 뒤",addDays(today(),3))
@@ -2569,7 +2569,10 @@ function dueBox(){
    + '<div class="dl"><span class="lb">법원 제출기한</span>'
    +   (court?'<span class="tag '+leftTone(court)+'">'+esc(kor(court))+' · '+esc(leftTxt(court))+'</span>'
           :'<span class="dim">이번 차수에 마감일이 없습니다</span>')
-   + '</div>';
+   +   '<span class="dim">우리끼리 보는 날짜입니다. 카톡에는 안 나갑니다</span>'
+   + '</div>'
+   + '<div class="note">당사자에게는 <b>당사자 마감일</b>만 나갑니다. '
+   +   '법원 제출기한을 알려드리면 그날 보내주셔서, 우리가 정리해 제출할 시간이 없어집니다.</div>';
   return h+'</div>';
 }
 function msgCard(){
@@ -2672,14 +2675,15 @@ function idBox(){
    + '</div></div>';
 }
 /* 2026-09-05 : 카톡 머리에 기한을 박는다. 언제까지인지 없으면 아무도 안 움직인다 */
+/* 2026-09-05 혜림 지시 : 당사자에게는 법원 제출기한을 알리지 않는다.
+   법원 기한을 알려주면 그날 보내주셔서 우리가 정리해 제출할 시간이 없다.
+   당사자 마감일(case.client_due) 하나만 나간다. */
 function dueLine(){
-  var c=D.case, r=cur();
-  var court=(r&&r.deadline)||"", mine=c.client_due||"";
+  var c=D.case, mine=c.client_due||"";
   var t="";
   if(mine) t+=kor(mine)+"까지 보내주셔야 합니다.\n";
-  if(court) t+="법원 제출기한이 "+kor(court)+"이라 그 전에 정리해야 합니다.\n";
   if(c.msg_head) t+=c.msg_head+"\n";
-  if(!t) t="되는 것부터 하나씩 보내주시면 됩니다.\n";
+  if(!t) t="저희가 정리해서 법원에 내야 하니 되도록 빨리 부탁드립니다.\n";
   return t+"\n";
 }
 function msgText(k){
@@ -2752,14 +2756,14 @@ function msgText(k){
       +"기억나는 대로 적어주시면 저희가 정리합니다. 길게 안 쓰셔도 됩니다.\n"+close;
   }
   if(k===6){
-    var when = (r&&r.mode==="fact") ? (r.fact_note||"사실조회촉탁 회신")+"이 오는 대로"
-             : (r&&r.promise) ? kor(r.promise)+"까지" : "다음 기한까지";
+    /* 법원에 약속한 날짜는 당사자에게 알리지 않는다. 당사자 마감일만 나간다. */
+    var when = (r&&r.mode==="fact") ? (r.fact_note||"사실조회촉탁 회신")+"이 오는 대로 " : "";
     return open
       +"오늘 준비된 자료로 법원에 먼저 제출했습니다.\n"
-      +"나머지 자료는 "+when+" 제출하겠다고 법원에 말씀드렸습니다.\n\n"
-      +(reqs.length||accts.length?"그때까지 아래 자료만 보내주시면 됩니다.\n\n":"")
+      +"나머지 자료는 "+when+"추가로 제출하겠다고 법원에 말씀드렸습니다.\n\n"
+      +(reqs.length||accts.length?"아래 자료만 보내주시면 됩니다.\n"+dueLine():"")
       +blockFiles()+blockAccts()+blockSays()+blockBoth()
-      +"이 날짜가 새 기한이 됩니다. 늦어지면 절차가 흔들리니 그전까지 꼭 부탁드립니다.\n"+close;
+      +"늦어지면 절차가 흔들리니 그전까지 꼭 부탁드립니다.\n"+close;
   }
   var head = k===1
     ? "법원 보정 자료 요청드립니다.\n"+dueLine()

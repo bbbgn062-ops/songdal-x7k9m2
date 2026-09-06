@@ -1344,7 +1344,23 @@
   .pn-mini2:hover{background:#F4F1EC}
   .pn-note2{font-size:11.5px;color:#8A8078;font-weight:600}
   .pn-mrow input[type=date],.pn-more input[type=date]{padding:4px 8px;font-size:12.5px;width:auto}
-  .pn-memos{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:13px}
+  .pn-files{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:11px;padding-top:10px;
+    border-top:1px dashed #EDE9E4}
+  .pn-fic{color:#8A8078;display:inline-flex;align-items:center;flex:none}
+  .pn-fchip{display:inline-flex;align-items:center;border:1px solid #E1DCD6;border-radius:8px;
+    background:#FDFCFB;overflow:hidden;max-width:230px}
+  .pn-fchip.main{border-color:#C9D6EA;background:#F5F8FD}
+  .pn-fname{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;cursor:pointer;
+    font-family:inherit;font-size:11.5px;font-weight:600;color:#3D3833;padding:5px 8px;max-width:190px}
+  .pn-fname span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pn-fname:hover{background:#F1EEEA;color:#9B1B33}
+  .pn-fdl{border:0;border-left:1px solid #E7E3DE;background:transparent;cursor:pointer;color:#8A8078;
+    padding:5px 7px;display:inline-flex;align-items:center}
+  .pn-fdl:hover{background:#F1EEEA;color:#231F1D}
+  .pn-fmore{border:1px dashed #DDD8D2;background:transparent;border-radius:8px;padding:4px 9px;
+    font-size:11.5px;color:#8A8078;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .pn-fmore:hover{background:#F4F1EC;color:#231F1D}
+  .pn-memos{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:11px}
   .pn-mlb2{font-size:11.5px;color:#6B645E;font-weight:700;margin-bottom:5px}
   .pn-memos textarea{width:100%;min-height:56px;font-size:13px;padding:9px 11px;
     border:1px solid #E7E3DE;border-radius:9px;font-family:inherit;line-height:1.6}
@@ -14437,6 +14453,47 @@ var pnPhone={};     /* 의뢰인id → 전화번호 */
 /* ★2026-09-05 혜림 : "케이스허브에 써 놓은 게 왜 송달앱에 안 보이냐"
    그동안 점검판이 전화번호만 가져왔다. 사건 종류(회생·회복·파산)와 진행단계도 같이 가져온다. */
 var pnCli={};       /* 의뢰인id → {case_type, stage} */
+/* ★2026-09-05 혜림 : 진행 중인 보정건에 올려 둔 보정 파일을 카드에서 바로 보고 받게 한다.
+   파일은 의뢰인 폴더(bojeong 버킷의 사무소id/의뢰인id)에 있다. 화면에 보이는 줄만 한 번씩 훑고 기억해 둔다. */
+var pnFiles={};     /* 폴더경로 → [{name,path,show}] */
+var pnFileBusy=false;
+function pnFolderOf(x){
+  if(!x||!x.cid)return "";
+  var oid=null;
+  try{ var v=(typeof calCli!=="undefined"&&calCli)?calCli[x.cid]:null; oid=v?v.office_id:null; }catch(e){}
+  return (oid||"none")+"/"+x.cid;
+}
+async function pnLoadFiles(rows){
+  if(pnFileBusy)return false;
+  var want=[];
+  (rows||[]).slice(0,40).forEach(function(x){
+    var f=pnFolderOf(x);
+    if(f&&!(f in pnFiles)&&want.indexOf(f)<0)want.push(f);
+  });
+  if(!want.length)return false;
+  pnFileBusy=true;
+  try{
+    for(var i=0;i<want.length;i++){
+      pnFiles[want[i]]=[];
+      try{
+        var r=await sbc.storage.from("bojeong").list(want[i],{limit:30});
+        if(r.error)throw r.error;
+        pnFiles[want[i]]=(r.data||[]).filter(function(f){return f&&f.name&&f.id;}).map(function(f){
+          return {name:f.name, path:want[i]+"/"+f.name, show:(typeof sbShowName==="function")?sbShowName(f.name):f.name};
+        });
+      }catch(e){ pnFiles[want[i]]=[]; }
+    }
+  } finally { pnFileBusy=false; }
+  return true;
+}
+/* 작은 그림표 (이모지 대신 선으로 그린다) */
+var PN_IC={
+  /* 파일 있음 = C(꽉 찬 계열의 클립) · 미리보기 = D(돋보기) · 내려받기 = C(채운 화살표)
+     ★2026-09-05 혜림이 시안 5개를 보고 고른 조합이다. 바꾸지 말 것. */
+  clip:'<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 6.5l-8.49 8.49a2.5 2.5 0 0 0 3.54 3.54l8.49-8.49a4.5 4.5 0 0 0-6.37-6.36l-8.48 8.49a6.5 6.5 0 0 0 9.19 9.19l7.78-7.78"/></svg>',
+  eye :'<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20.5 20.5L16 16"/></svg>',
+  dl  :'<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" stroke="none"><path d="M12 2.5a1 1 0 0 1 1 1v8.6l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4A1 1 0 0 1 8.7 9.8l2.3 2.3V3.5a1 1 0 0 1 1-1z"/><path d="M4 14.5a1 1 0 0 1 1 1V19h14v-3.5a1 1 0 1 1 2 0V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3.5a1 1 0 0 1 1-1z"/></svg>'
+};
 
 function pnKey(id){ return "chk:"+id; }
 function pnDays(ymd){
@@ -14704,6 +14761,8 @@ function pnRender(){
     });
   }
   w.innerHTML=h;
+  /* 파일 목록은 화면을 그린 뒤에 채운다. 한 번 채우면 다시 서버를 보지 않는다 */
+  pnLoadFiles(rows).then(function(changed){ if(changed)pnRender(); });
 }
 /* ★시안 D + 표시 2 (혜림 확정)
    왼쪽 칸은 사무소 색으로 통째로 칠하고, 급한 건은 카드 맨 위에 빨간 띠를 두른다.
@@ -14819,6 +14878,36 @@ function pnCard(x){
       +'</div>';
   }
   /* ★혜림 지시 : 문서 메모와 사건 메모를 언제나 같이 보이게 */
+  /* ★2026-09-05 혜림 : 올려 둔 보정 파일을 카드에서 바로 보고 받는다.
+     이름을 누르면 미리보기, 오른쪽 화살표를 누르면 내려받기. 파일이 없으면 이 줄 자체가 안 나온다. */
+  var folder=pnFolderOf(x);
+  var flist=(folder&&pnFiles[folder])?pnFiles[folder]:null;
+  var chips=[];
+  if(r.pdf_path){
+    var onm=(typeof bjFileName==="function")?bjFileName(r):"원본.pdf";
+    chips.push({path:String(r.pdf_path),show:onm,main:true});
+  }
+  (flist||[]).forEach(function(f){
+    if(r.pdf_path&&f.path===String(r.pdf_path))return;
+    chips.push({path:f.path,show:f.show,main:false});
+  });
+  if(chips.length){
+    var showN=Math.min(chips.length,4);
+    h+='<div class="pn-files"><span class="pn-fic" title="올려 둔 보정 파일">'+PN_IC.clip+'</span>';
+    for(var ci=0;ci<showN;ci++){
+      var f2=chips[ci];
+      var pj2=JSON.stringify(f2.path).replace(/"/g,"&quot;");
+      var nj2=JSON.stringify(f2.show).replace(/"/g,"&quot;");
+      h+='<span class="pn-fchip'+(f2.main?" main":"")+'">'
+        +'<button class="pn-fname" title="눌러서 미리보기" onclick="pnPreview('+pj2+','+nj2+')">'
+        +PN_IC.eye+'<span>'+esc(f2.show)+'</span></button>'
+        +'<button class="pn-fdl" title="내려받기" onclick="downloadBojeong('+pj2+','+nj2+')">'+PN_IC.dl+'</button>'
+        +'</span>';
+    }
+    if(chips.length>showN)
+      h+='<button class="pn-fmore" onclick="goDetail(\''+(r.delivery_id||"")+'\')">＋'+(chips.length-showN)+'개 더</button>';
+    h+='</div>';
+  }
   /* ★2026-09-05 혜림 : 사건 메모를 먼저(왼쪽) 본다 */
   h+='<div class="pn-memos">'
     +'<div><div class="pn-mlb2">사건 메모 <span class="pn-note2">(의뢰인 상세와 같습니다)</span></div>'
@@ -14850,6 +14939,12 @@ function pnBigCk(id,key,label,on){
 }
 var pnOpen={};
 function pnMore(id){ pnOpen[id]=!pnOpen[id]; pnRender(); }
+/* 파일 이름을 누르면 앱 안에서 바로 미리보기 (PDF 는 화면 안, 사진은 그림으로) */
+function pnPreview(path,name){
+  if(typeof previewBojeong==="function")previewBojeong(path,name);
+  else if(typeof bjPreviewDoc==="function")bjPreviewDoc(path,name);
+  else alert("미리보기를 열 수 없습니다.");
+}
 /* 체크 네 가지.
    ★「법원 제출함」은 원래 있던 work_state 를 쓰고(송달문서 줄에도 반영된다),
      「완료」는 우리 쪽 마무리 표시라 bj_settings 에 넣는다. 그래서 둘이 따로 논다. */

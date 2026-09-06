@@ -2316,7 +2316,7 @@ function draw(){
         '<h1>보정 처리대</h1>'
       + '<span class="tag">의뢰인 목록</span>'
       + '<span class="sp"></span>'
-      + (wbCase()?'<button class="b o s" onclick="homeOn=false;draw()">'+esc((D["case"]&&D["case"].debtor)||"열려 있던 사건")+' 처리대로 돌아가기</button>':'')
+      + (wbCase()?'<button class="b o s" onclick="homeOn=false;draw()">◂ '+esc((D["case"]&&D["case"].debtor)||"열려 있던 사건")+' 처리대로 돌아가기</button>':'')
       + '<button class="b o s" onclick="wbRefresh()">새로 고침</button>'
       + '<button class="b g s" onclick="theme()">밝게/어둡게</button>';
     document.getElementById("main").innerHTML = viewHome();
@@ -3553,7 +3553,10 @@ function homeCards(){
   if(wbErr)return '<div class="wbwarn">목록을 불러오지 못했습니다.<br>'+esc(wbErr)+'</div>';
   if(!wbRows.length)
     return '<div class="empty">회사 서버에 저장된 의뢰인이 아직 없습니다.<br>'
-         + '위 [새 보정권고 넣기]로 첫 사건을 넣어 보세요.</div>';
+         + '위 [새 보정권고 넣기]로 첫 사건을 넣어 보세요.'
+         + (wbCase()?'<br><br>지금 이 브라우저에는 <b>'+esc((D["case"]&&D["case"].debtor)||"사건")+'</b> 이(가) 열려 있습니다.<br>'
+                    +'위 [◂ '+esc((D["case"]&&D["case"].debtor)||"열려 있던 사건")+' 처리대로 돌아가기]를 누르시면 이어서 하실 수 있습니다.':'')
+         + '</div>';
   var here=wbCase();
   return wbRows.map(function(r){
     var nm=r.debtor||"이름 없음";
@@ -3768,7 +3771,10 @@ function boot(){
   }).then(function(src){
     return rehydrate().then(function(){ return src; });
   }).then(function(src){
-    if(!wbCase()&&cloudOn){ goHome(); }
+    /* 2026-09-05 혜림 지시 : 들어오면 무조건 의뢰인 목록부터 보인다.
+       최근 사건이 바로 열리면 남의 사건 화면을 보고 있는 줄 모르고 손댈 수 있다.
+       열려 있던 사건은 상단 「○○○ 처리대로 돌아가기」 로 한 번에 돌아간다. */
+    if(cloudOn){ goHome(); }
     else draw();
     if(src&&src.from==="서버")saveDot("회사 서버에서 불러옴 "+src.at,"g");
     else if(localState)saveDot(cloudOn?"이 브라우저에서 불러옴":"저장된 것 불러옴","g");

@@ -14465,6 +14465,104 @@ var pnPhone={};     /* 의뢰인id → 전화번호 */
 /* ★2026-09-05 혜림 : "케이스허브에 써 놓은 게 왜 송달앱에 안 보이냐"
    그동안 점검판이 전화번호만 가져왔다. 사건 종류(회생·회복·파산)와 진행단계도 같이 가져온다. */
 var pnCli={};       /* 의뢰인id → {case_type, stage} */
+/* ===== 2026-09-06 : 점검판의 정본을 케이스허브 「보정 점검표」(bj_board) 로 옮겼다 =====
+   왜 : 9월 7일 낼 것이 12건인데 화면엔 3건만 떴다.
+        점검판이 등록된 보정 문서(bj_documents)와 송달문서(deliveries)만 보고 있어서,
+        아직 PDF를 안 올린 사건은 줄 자체가 안 생겼기 때문이다. 12건이 전부 그런 건이었다.
+   무엇 : bj_board 222줄을 세 번째 원천으로 함께 읽는다. 문서도 송달문서도 없는 사건은
+        「보정 점검표에서 온 줄」로 올라온다.
+   ★한 줄의 기준은 그대로 '문서 한 장'이다(혜림 확정 B안).
+     같은 사람이라도 보정권고와 기각결정은 기한이 따로 가므로 줄도 따로 둔다.
+     그래서 bj_board 에 ref 칸을 두어 한 사람이 여러 줄을 가질 수 있게 했다.
+       ref ''            = 사건 줄 (이관해 둔 222줄)
+       ref 'doc:<문서id>' = 그 보정 문서 줄
+       ref 'del:<송달id>' = 아직 판독 전인 송달문서 줄
+   ★체크·메모·미룬 날은 이제 bj_settings 가 아니라 bj_board 에 저장한다.
+     옛 bj_settings 값도 같이 읽어서, 표에 아직 없는 것만 살려 준다(잃는 값이 없다). */
+var pnBdRows=[];    /* bj_board 전량 */
+var pnBd={};        /* "의뢰인id|ref" → bj_board 한 줄 */
+var pnRef={};       /* 화면 줄 id → {cid, ref} */
+var pnLegacy={};    /* 옛 bj_settings 값 */
+
+function pnBdKey(cid,ref){ return String(cid||"")+"|"+String(ref||""); }
+
+/* 기한 말일이 토·일·공휴일이면 다음 영업일로 민다 (민법 제161조) */
+function pnRoll(ymd){
+  var t=String(ymd||"").slice(0,10);
+  if(!t)return "";
+  var d=parseD(t); if(!d)return t;
+  try{ if(typeof rollFwd==="function")return fmt(rollFwd(d)); }catch(e){}
+  var x=new Date(d); while(x.getDay()===0||x.getDay()===6)x.setDate(x.getDate()+1);
+  return fmt(x);
+}
+/* ★급건 판정 (혜림 확정)
+   ① 미뤄 둔 날이 있으면 그 날만 본다. 아직 안 지났으면 급건이 아니다.
+   ② 미뤄 둔 날이 없고 추후제출 기한이 있으면 그 날을 본다.
+   ③ 둘 다 없으면 법원기한을 본다.
+   완료·종결·보정완료는 어떤 경우에도 급건이 아니다. */
+function pnUrg(x){
+  var m=x.m||{};
+  if(m.done||m.closed)return false;
+  if(x.ws==="보정완료"||x.ws==="종결"||x.ws==="처리완료")return false;
+  if(x.plan)return (x.planLeft!==null&&x.planLeft<0);
+  if(x.hold)return (x.holdLeft!==null&&x.holdLeft<0);
+  return (x.left!==null&&x.left<=0);
+}
+/* clients.case_no 는 "법원이름 사건번호" 가 한 칸에 통째로 들어 있다 */
+function pnSplitCase(v){
+  var t=String(v||"").replace(/\s+/g," ").trim();
+  var m=t.match(/20[0-9]{2}\s*(?:개회|하단|하면|회단|회합)\s*[0-9]+/);
+  if(!m)return {court:t,no:""};
+  return {court:t.slice(0,m.index).trim(), no:m[0].replace(/\s/g,"")};
+}
+/* 화면 줄 하나를 bj_board 의 어느 줄에 붙일지 정하고, 표시값을 꺼내 온다 */
+function pnBind(id,cid,ref){
+  pnRef[id]={cid:cid||null, ref:String(ref||"")};
+  var b=cid?pnBd[pnBdKey(cid,ref)]:null;
+  var lg=pnLegacy[id]||{};
+  var m;
+  if(b){
+    m={called:!!b.called, got:!!b.got, done:!!(b.done||b.closed), closed:!!b.closed,
+       plan:String(b.plan_date||"").slice(0,10), bd:b};
+    if(!m.called&&lg.called)m.called=true;
+    if(!m.got&&lg.got)m.got=true;
+    if(!m.done&&lg.done)m.done=true;
+    if(!m.plan&&lg.plan)m.plan=String(lg.plan).slice(0,10);
+  }else{
+    m={called:!!lg.called, got:!!lg.got, done:!!lg.done, closed:false,
+       plan:String(lg.plan||"").slice(0,10), bd:null};
+  }
+  pnMeta[id]=m;
+  return m;
+}
+/* 저장한 줄을 기억해 둔 것에도 반영한다 (다시 서버를 보지 않아도 화면이 맞는다) */
+function pnBdKeep(nb){
+  if(!nb)return;
+  pnBd[pnBdKey(nb.client_id,nb.ref||"")]=nb;
+  for(var i=0;i<pnBdRows.length;i++){ if(pnBdRows[i].id===nb.id){ pnBdRows[i]=nb; return; } }
+  pnBdRows.push(nb);
+}
+/* 기한·상태·메모를 bj_board 에 저장한다 (사건 줄 전용 경로) */
+async function pnBdUpd(id,patch,msg){
+  var t=pnRef[id]||{};
+  if(!t.cid){ alert("이 줄은 케이스허브 사건과 연결돼 있지 않아 저장할 수 없습니다."); return; }
+  var row={client_id:t.cid, ref:t.ref};
+  if("court_deadline" in patch)row.court_deadline=patch.court_deadline||null;
+  if("hold_until" in patch)row.ext_date=patch.hold_until||null;
+  if("memo" in patch)row.memo=patch.memo||null;
+  if("work_state" in patch){
+    row.status=patch.work_state||null;
+    if(patch.work_state==="보정완료")row.filed=true;
+  }
+  busy(true);
+  try{
+    var r=await sbc.from("bj_board").upsert([row],{onConflict:"client_id,ref"}).select("*");
+    if(r.error)throw r.error;
+    pnBdKeep((r.data&&r.data[0])||null);
+    if(typeof wdToast==="function"&&msg)wdToast(msg);
+  }catch(e){ alert("저장 실패: "+(e.message||e)); }
+  finally{ busy(false); pnRender(); }
+}
 /* ★2026-09-05 혜림 : 진행 중인 보정건에 올려 둔 보정 파일을 카드에서 바로 보고 받게 한다.
    파일은 의뢰인 폴더(bojeong 버킷의 사무소id/의뢰인id)에 있다. 화면에 보이는 줄만 한 번씩 훑고 기억해 둔다. */
 var pnFiles={};     /* 폴더경로 → [{name,path,show}] */
@@ -14526,29 +14624,57 @@ function pnFirmOf(cid){
   }catch(e){ return ""; }
 }
 async function pnLoadMeta(){
-  pnMeta={};
+  pnMeta={}; pnBdRows=[]; pnBd={}; pnRef={}; pnLegacy={};
+  /* ① 케이스허브 보정 점검표를 통째로 읽는다. 1,000줄 한계가 있어 500씩 나눠 받는다 */
   try{
-    var r=await sbc.from("bj_settings").select("key,value").like("key","chk:%");
-    if(r.error)throw r.error;
-    (r.data||[]).forEach(function(x){
+    var from=0;
+    for(;;){
+      var r=await sbc.from("bj_board").select("*").range(from,from+499);
+      if(r.error)throw r.error;
+      pnBdRows=pnBdRows.concat(r.data||[]);
+      if((r.data||[]).length<500)break;
+      from+=500;
+    }
+  }catch(e){ pnBdRows=[]; }
+  pnBdRows.forEach(function(b){ pnBd[pnBdKey(b.client_id,b.ref||"")]=b; });
+  /* ② 옛 표시(bj_settings)도 읽어 둔다. 표에 아직 없는 값만 살려 쓴다 */
+  try{
+    var s=await sbc.from("bj_settings").select("key,value").like("key","chk:%");
+    if(s.error)throw s.error;
+    (s.data||[]).forEach(function(x){
       var id=String(x.key||"").slice(4);
-      try{ pnMeta[id]=JSON.parse(x.value||"{}")||{}; }catch(e){ pnMeta[id]={}; }
+      try{ pnLegacy[id]=JSON.parse(x.value||"{}")||{}; }catch(e){ pnLegacy[id]={}; }
     });
-  }catch(e){ pnMeta={}; }
+  }catch(e){ pnLegacy={}; }
 }
 async function pnSaveMeta(id,patch){
   var m=Object.assign({},pnMeta[id]||{},patch||{});
   pnMeta[id]=m;
+  var t=pnRef[id]||{};
+  /* 케이스허브 사건과 연결되지 않은 줄은 예전 자리에 그대로 둔다 */
+  if(!t.cid){
+    try{
+      var r0=await sbc.from("bj_settings").upsert(
+        [{key:pnKey(id),value:JSON.stringify({called:!!m.called,got:!!m.got,done:!!m.done,plan:m.plan||""})}],
+        {onConflict:"key"}).select("key");
+      if(r0.error)throw r0.error;
+    }catch(e){ if(typeof wdToast==="function")wdToast("표시를 저장하지 못했습니다 : "+(e.message||e)); }
+    return;
+  }
+  var row={client_id:t.cid, ref:t.ref,
+           called:!!m.called, got:!!m.got, done:!!m.done,
+           plan_date:(m.plan||null)};
   try{
-    var r=await sbc.from("bj_settings").upsert([{key:pnKey(id),value:JSON.stringify(m)}],{onConflict:"key"}).select("key");
+    var r=await sbc.from("bj_board").upsert([row],{onConflict:"client_id,ref"}).select("*");
     if(r.error)throw r.error;
-  }catch(e){ if(typeof wdToast==="function")wdToast("표시를 저장하지 못했습니다 : "+(e.message||e)); }
+    pnBdKeep((r.data&&r.data[0])||null);
+  }catch(e){ if(typeof wdToast==="function")wdToast("점검표에 저장하지 못했습니다 : "+(e.message||e)); }
 }
 async function pnLoadPhones(ids){
   var need=[];
   ids.forEach(function(x){ if(x&&!(x in pnPhone)&&need.indexOf(x)<0)need.push(x); });
   if(!need.length)return;
-  var COLS="id,phone,case_type,stage";
+  var COLS="id,phone,case_type,stage,name,case_no,intake_type";
   try{
     for(var i=0;i<need.length;i+=100){
       var r=await sbc.from("clients").select(COLS).in("id",need.slice(i,i+100));
@@ -14556,7 +14682,8 @@ async function pnLoadPhones(ids){
       if(r.error)throw r.error;
       (r.data||[]).forEach(function(c){
         pnPhone[c.id]=c.phone||"";
-        pnCli[c.id]={case_type:c.case_type||"",stage:c.stage||""};
+        pnCli[c.id]={case_type:c.case_type||"",stage:c.stage||"",
+                     name:c.name||"",case_no:c.case_no||"",intake_type:c.intake_type||""};
       });
     }
   }catch(e){}
@@ -14587,38 +14714,45 @@ async function pnEnter(){
     var cid=(c&&c.client_id)||r.client_id||null;
     if(cid)ids.push(cid);
   });
+  pnBdRows.forEach(function(b){ if(b.client_id)ids.push(b.client_id); });
   await pnLoadPhones(ids);
   pnRender();
 }
 async function pnReload(){ pnReady=false; if(typeof bxLoad==="function")await bxLoad(true); await pnEnter(); }
-/* 화면에 그릴 줄을 고르고 순서를 정한다 */
+/* 화면에 그릴 줄을 고르고 순서를 정한다
+   원천이 셋이다 : ① 등록된 보정 문서  ② 아직 판독 전인 송달문서  ③ 케이스허브 보정 점검표 */
 function pnRows(){
-  var out=[];
+  var out=[], seenDue={};
+  /* ★2026-09-06 고침 : 사람으로 막으면 안 된다.
+     김미영은 보정 기한이 09-07인데, 보정과 상관없는 「명의변경신고서」 줄이 있다는
+     이유만으로 09-07 보정 건이 통째로 사라졌다.
+     그래서 「같은 사람 + 같은 기한」일 때만 같은 건으로 보고 한 줄로 합친다. */
+  function pnSeen(cid,due){ if(!cid||!due)return; (seenDue[cid]=seenDue[cid]||{})[due]=true; }
+  function pnDup(cid,due){ return !!(cid&&due&&seenDue[cid]&&seenDue[cid][due]); }
+  /* ① 등록된 보정 문서 — 문서 한 장이 한 줄 */
   (bxRows||[]).forEach(function(r){
     if(typeof bjIsOurDoc==="function"&&bjIsOurDoc(r))return;       /* 우리가 낸 보정서는 '낼 것'이 아니다 */
     var ws=bjWorkStateOf(r);
-    var m0=pnMeta[r.id]||{};
-    /* ★2026-09-05 혜림 : 「법원 제출함」과 「완료」는 다른 것이다.
-       숨기는 기준은 우리 쪽 마무리 표시인 '완료'다. 제출만 하고 마무리를 안 한 건은 남는다. */
-    if(pnHideDone&&m0.done)return;
     var c=(typeof cases!=="undefined"&&cases)?cases.find(function(x){return x.id===r.delivery_id;}):null;
     var cid=(c&&c.client_id)||r.client_id||null;
+    var m0=pnBind(r.id,cid,"doc:"+r.id);
+    /* ★「법원 제출함」과 「완료」는 다른 것이다. 숨기는 기준은 우리 쪽 마무리 표시인 '완료'다 */
+    if(pnHideDone&&m0.done)return;
     var firm=pnFirmOf(cid);
     if(pnOffice!=="전체"&&rcFirmShort(firm)!==pnOffice)return;
-    var due=(typeof bjDueOf==="function")?(bjDueOf(r).date||""):String(r.court_deadline||"").slice(0,10);
-    var hold=String(r.hold_until||"").slice(0,10);
-    var m=pnMeta[r.id]||{};
-    var plan=String(m.plan||"").slice(0,10);
-    var left=pnDays(due), planLeft=pnDays(plan), holdLeft=pnDays(hold);
-    /* ★급건 = 미뤄 둔 날이 지났거나, 법원기한이 오늘이거나 지났을 때 */
-    var urgent=(ws!=="보정완료")&&!m.done&&((planLeft!==null&&planLeft<0)||(left!==null&&left<=0)||(holdLeft!==null&&holdLeft<0));
-    out.push({r:r,c:c,cid:cid,firm:firm,ws:ws,due:due,hold:hold,plan:plan,
-              left:left,planLeft:planLeft,holdLeft:holdLeft,urgent:urgent,m:m});
+    var due0=(typeof bjDueOf==="function")?(bjDueOf(r).date||""):String(r.court_deadline||"").slice(0,10);
+    var x={r:r,c:c,cid:cid,firm:firm,ws:ws,
+           due:pnRoll(due0),
+           hold:pnRoll(String(r.hold_until||"").slice(0,10)),
+           plan:pnRoll(String(m0.plan||"").slice(0,10)),
+           m:m0};
+    x.left=pnDays(x.due); x.planLeft=pnDays(x.plan); x.holdLeft=pnDays(x.hold);
+    x.urgent=pnUrg(x);
+    pnSeen(cid,x.due);
+    out.push(x);
   });
-  /* ★2026-09-05 혜림 : "최만호는 보정권고랑 기각결정 2개인데 하나만 보여?"
-     점검판이 bj_documents(등록·판독한 보정 문서)만 보고 있었다.
-     PDF 를 아직 안 올린 송달문서는 문서 행이 없어서 통째로 빠졌다.
-     그래서 문서가 하나도 안 붙은 송달문서를 「판독 전」 줄로 함께 올린다. */
+  /* ② 문서가 하나도 안 붙은 송달문서 — 「판독 전」 줄
+     ★"최만호는 보정권고랑 기각결정 2개인데 하나만 보여?" 때 넣은 것이다. 그대로 둔다. */
   var haveDel={};
   (bxRows||[]).forEach(function(r0){ if(r0.delivery_id)haveDel[r0.delivery_id]=true; });
   (typeof cases!=="undefined"?(cases||[]):[]).forEach(function(c){
@@ -14626,21 +14760,53 @@ function pnRows(){
     if(String(c.status||"")==="처리완료")return;
     var firm=pnFirmOf(c.client_id);
     if(pnOffice!=="전체"&&rcFirmShort(firm)!==pnOffice)return;
+    var m2=pnBind("del:"+c.id, c.client_id||null, "del:"+c.id);
+    if(pnHideDone&&m2.done)return;
     var due="";
     try{ var dd=(typeof procDueDate==="function")?procDueDate(c):null; if(dd)due=fmt(dd); }catch(e){}
-    var m2=pnMeta["del:"+c.id]||{};
-    if(pnHideDone&&m2.done)return;
-    var plan2=String(m2.plan||"").slice(0,10);
-    var left2=pnDays(due), planLeft2=pnDays(plan2);
     var off=(typeof isOffDeadline==="function")&&isOffDeadline(c);
-    out.push({
+    var x={
       r:{id:"del:"+c.id, client_name:c.name||"", doc_type:c.doctype||"", delivery_id:c.id,
          court:c.court||"", case_no:c.caseno||"", memo:"", pdf_path:""},
       c:c, cid:c.client_id||null, firm:firm, ws:(off?String(c.status||""):"판독 전"),
-      due:due, hold:"", plan:plan2, left:left2, planLeft:planLeft2, holdLeft:null,
-      urgent:(!off)&&!m2.done&&((planLeft2!==null&&planLeft2<0)||(left2!==null&&left2<=0)),
+      due:pnRoll(due), hold:"", plan:pnRoll(String(m2.plan||"").slice(0,10)),
       m:m2, isDel:true
-    });
+    };
+    x.left=pnDays(x.due); x.planLeft=pnDays(x.plan); x.holdLeft=null;
+    x.urgent=off?false:pnUrg(x);
+    if(!off)pnSeen(c.client_id,x.due);
+    out.push(x);
+  });
+  /* ③ 케이스허브 보정 점검표에만 있는 사건
+     ★2026-09-06 : 9월 7일 낼 것 12건이 전부 여기 있었다. 문서도 송달문서도 아직 없어서
+       그동안 화면에 아예 안 떴다. 이제 이 줄이 올라온다. */
+  pnBdRows.forEach(function(b){
+    if(String(b.ref||"")!=="")return;                 /* 문서용 줄은 ①②에서 이미 다뤘다 */
+    if(!b.client_id)return;
+    var info=pnCli[b.client_id]||{};
+    if(String(info.intake_type||"")==="보정만")return; /* ★블루 '보정만' 사건은 다른 사무장님 담당 */
+    var firm=pnFirmOf(b.client_id);
+    if(pnOffice!=="전체"&&rcFirmShort(firm)!==pnOffice)return;
+    var m3=pnBind("bd:"+b.client_id, b.client_id, "");
+    if(pnHideDone&&m3.done)return;
+    var cl=(typeof calCli!=="undefined"&&calCli)?calCli[b.client_id]:null;
+    var sp=pnSplitCase(info.case_no||"");
+    var x={
+      r:{id:"bd:"+b.client_id, client_name:(info.name||(cl&&cl.name)||""),
+         doc_type:(b.kind||"보정"), delivery_id:null,
+         court:sp.court, case_no:sp.no, memo:String(b.memo||""), pdf_path:""},
+      c:null, cid:b.client_id, firm:firm,
+      ws:(b.closed?"종결":(b.status||(b.kind==="완료"?"보정완료":"보정중"))),
+      due:pnRoll(String(b.court_deadline||b.check_date||"").slice(0,10)),
+      hold:pnRoll(String(b.ext_date||"").slice(0,10)),
+      plan:pnRoll(String(b.plan_date||m3.plan||"").slice(0,10)),
+      m:m3, isDel:true, isBd:true, bd:b,
+      chk:String(b.check_date||"").slice(0,10)
+    };
+    if(pnDup(b.client_id,x.due))return;   /* 같은 사람 + 같은 기한 = 같은 보정 건이므로 한 줄로 */
+    x.left=pnDays(x.due); x.planLeft=pnDays(x.plan); x.holdLeft=pnDays(x.hold);
+    x.urgent=b.closed?false:pnUrg(x);
+    out.push(x);
   });
   out=out.filter(function(x){
     if(pnFilt==="급건")return x.urgent;
@@ -14841,7 +15007,13 @@ function pnCard(x){
     +'<span class="pn-sp"></span>'
     +'<span class="pn-now '+pnWsCls(x.ws)+'">지금 상태 · '+esc(x.ws)+(x.hold?' ('+esc(x.hold)+'까지)':'')+'</span>'
     +'</div>';
-  if(x.isDel){
+  if(x.isBd){
+    h+='<div class="pn-predoc">케이스허브 <b>보정 점검표</b>에서 온 줄입니다. '
+      +'전자소송 송달문서가 아직 연결되지 않았지만 <b>낼 것은 낼 것</b>입니다. '
+      +'기한·미룬 날·메모를 여기서 바로 고치면 케이스허브에 그대로 저장됩니다.'
+      +(x.chk&&x.chk!==x.due?' <b>내부 점검일 '+esc(x.chk)+'</b> (미리 챙기려고 앞당겨 적어 둔 날)':'')
+      +'</div>';
+  }else if(x.isDel){
     h+='<div class="pn-predoc">이 송달문서는 <b>아직 보정 PDF를 등록하지 않았습니다.</b> '
       +'[＋ 파일]로 올리면 문서 카드가 생기고 상태·기한을 여기서 바로 다룰 수 있습니다.'
       +(x.ws!=="판독 전"?' 지금 송달문서 상태는 <b>'+esc(x.ws)+'</b> 입니다.':'')+'</div>';
@@ -14855,7 +15027,21 @@ function pnCard(x){
     +'<span class="pn-sp"></span>'
     +'<button class="pn-big" onclick="pnMore('+sid+')">'+(open?"접기":"더 보기")+'</button>'
     +'</div>';
-  if(open&&x.isDel){
+  if(open&&x.isBd){
+    h+='<div class="pn-more">'
+      +'<div class="pn-mrow"><span class="pn-mlb">법원기한</span>'
+      +'<input type="date" value="'+esc(x.due)+'" onchange="pnDue('+sid+',this.value)">'
+      +'<span class="pn-mlb" style="margin-left:8px">추후제출</span>'
+      +'<input type="date" value="'+esc(x.hold)+'" onchange="pnHold('+sid+',null,this.value)">'
+      +[7,14,21,30].map(function(d){return '<button class="pn-mini2" onclick="pnHoldDays('+sid+',null,'+d+')">+'+d+'일</button>';}).join("")
+      +(x.hold?'<span class="pn-note2">'+esc(pnLeftTxt(x.holdLeft))+'</span>':'')
+      +'</div>'
+      +'<div class="pn-mrow"><span class="pn-mlb">처리 예정</span>'
+      +'<button class="pn-mini2" onclick="pnPlan('+sid+',2)">모레로</button>'
+      +'<input type="date" value="'+esc(x.plan)+'" onchange="pnPlanSet('+sid+',this.value)">'
+      +(x.plan?'<button class="pn-mini2" onclick="pnPlanSet('+sid+',\'\')">예정 지우기</button>':'')
+      +'</div></div>';
+  }else if(open&&x.isDel){
     h+='<div class="pn-more"><div class="pn-mrow"><span class="pn-mlb">처리 예정</span>'
       +'<button class="pn-mini2" onclick="pnPlan('+sid+',2)">모레로</button>'
       +'<input type="date" value="'+esc(x.plan)+'" onchange="pnPlanSet('+sid+',this.value)">'
@@ -14929,7 +15115,9 @@ function pnCard(x){
       : '<div class="pn-note2">송달문서에 연결돼 있지 않습니다</div>')
     +'</div>'
     +'<div class="pn-m-doc"><div class="pn-mlb2"><span class="pn-mtag">이 문서만</span>이 문서 메모</div>'
-    +(x.isDel
+    +(x.isBd
+      ? '<textarea placeholder="이 보정 건에 남길 메모 (케이스허브에 저장됩니다)" onblur="pnDocMemo('+sid+',this.value)">'+esc(r.memo||"")+'</textarea>'
+      : x.isDel
       ? '<div class="pn-note2">아직 보정 문서를 등록하지 않아 문서 메모가 없습니다</div>'
       : '<textarea placeholder="이 보정 문서에 남길 메모" onblur="pnDocMemo('+sid+',this.value)">'+esc(r.memo||"")+'</textarea>')
     +'</div></div>';
@@ -14962,7 +15150,7 @@ function pnPreview(path,name){
    ★「법원 제출함」은 원래 있던 work_state 를 쓰고(송달문서 줄에도 반영된다),
      「완료」는 우리 쪽 마무리 표시라 bj_settings 에 넣는다. 그래서 둘이 따로 논다. */
 async function pnCk(id,key,v){
-  if(String(id).indexOf("del:")===0&&(key==="filed"||key==="draft")){
+  if((String(id).indexOf("del:")===0||String(id).indexOf("bd:")===0)&&(key==="filed"||key==="draft")){
     alert("아직 보정 문서를 등록하지 않은 송달문서입니다.\n[＋ 파일]로 PDF를 올린 뒤에 상태를 바꿀 수 있습니다.");
     pnRender(); return;
   }
@@ -15040,6 +15228,8 @@ function pnPatchLocal(id,patch){
   for(var i=0;i<(bxRows||[]).length;i++){ if(bxRows[i].id===id){ Object.assign(bxRows[i],patch); break; } }
 }
 async function pnUpd(id,patch,msg){
+  /* 점검표에서 온 줄은 bj_documents 가 아니라 bj_board 에 저장한다 */
+  if(String(id).indexOf("bd:")===0)return pnBdUpd(id,patch,msg);
   busy(true);
   try{
     var r=await sbc.from("bj_documents").update(patch).eq("id",id).select("id");
@@ -15147,6 +15337,66 @@ async function chkLoadOffices(){
     if(!r.error)(r.data||[]).forEach(function(o){ chkOff[o.id]=o.name||""; });
   }catch(e){}
 }
+/* ===== 2026-09-06 : 아침 점검의 보정 기한도 「보정 점검표」(bj_board) 를 따른다 =====
+   왜 : 같은 앱에서 보정 점검판은 9월 7일을 12건이라 하고 아침 점검은 2건이라 했다.
+        아침 점검이 clients 의 기한 칸을 보는데, 그 칸은 641건 중 93건에만 적혀 있고
+        날짜도 어긋난 것이 있었다(유현욱 : 실제 09-07 인데 clients 는 08-29).
+   무엇 : 화면에 쓰는 기한만 점검표 값으로 갈아 끼운다. */
+var chkBd={};   /* 의뢰인id → 보정 점검표 한 줄 (가장 급한 것) */
+
+/* 실효 기한 : 미룬 날 > 추후제출 > 법원기한 > 내부 점검일. 토·일·공휴일이면 다음 영업일 */
+function chkEff(b){
+  var v=b&&(b.plan_date||b.ext_date||b.court_deadline||b.check_date);
+  if(!v)return "";
+  v=String(v).slice(0,10);
+  try{ var d=parseD(v); if(d&&typeof rollFwd==="function")return fmt(rollFwd(d)); }catch(e){}
+  return v;
+}
+async function chkLoadBoard(){
+  chkBd={};
+  var rows=[],from=0;
+  try{
+    for(;;){
+      var r=await sbc.from("bj_board").select("*").range(from,from+499);
+      if(r.error)throw r.error;
+      rows=rows.concat(r.data||[]);
+      if((r.data||[]).length<500)break;
+      from+=500;
+    }
+  }catch(e){ return; }
+  /* 한 사람에게 줄이 여러 개면 가장 급한(이른) 기한을 대표로 쓴다 */
+  rows.forEach(function(b){
+    if(!b.client_id)return;
+    var cur=chkBd[b.client_id];
+    if(!cur){ chkBd[b.client_id]=b; return; }
+    var curDone=(cur.closed||cur.done), newDone=(b.closed||b.done);
+    if(curDone&&!newDone){ chkBd[b.client_id]=b; return; }
+    if(!curDone&&newDone)return;
+    var a=chkEff(cur), c=chkEff(b);
+    if(!a&&c){ chkBd[b.client_id]=b; return; }
+    if(a&&c&&c<a)chkBd[b.client_id]=b;
+  });
+  var byId={};
+  chkCli.forEach(function(c){ byId[c.id]=c; });
+  Object.keys(chkBd).forEach(function(id){
+    var c=byId[id]; if(!c)return;
+    var b=chkBd[id];
+    c.bjBoard=b;
+    if(b.closed||b.done){ c.court_deadline=null; c.correcting=false; return; }
+    var e=chkEff(b);
+    if(e){ c.court_deadline=e; c.deadline_kind="보정기한"; c.correcting=true; }
+  });
+}
+/* 아침 점검에서 고친 것을 점검표에도 그대로 넣는다 (안 그러면 새로 고치면 되살아난다) */
+async function chkBdSave(id,patch){
+  var b=chkBd[id];
+  var row=Object.assign({client_id:id, ref:(b?(b.ref||""):"")}, patch||{});
+  try{
+    var r=await sbc.from("bj_board").upsert([row],{onConflict:"client_id,ref"}).select("*");
+    if(r.error)throw r.error;
+    if(r.data&&r.data[0])chkBd[id]=r.data[0];
+  }catch(e){ if(typeof toast==="function")toast("점검표에 저장하지 못했습니다 : "+(e.message||e)); }
+}
 async function chkLoad(force){
   if(chkLoaded&&!force)return;
   if(typeof busy==="function")busy(true);
@@ -15167,6 +15417,7 @@ async function chkLoad(force){
       from+=STEP;
     }
     chkCli=rows.filter(function(c){return !c.archived;});
+    await chkLoadBoard();          /* ★보정 기한은 점검표가 정본이다 */
     chkLoaded=true;
   }catch(e){ chkCli=[]; }
   finally{ if(typeof busy==="function")busy(false); }
@@ -15322,11 +15573,12 @@ async function chkPaid(docId,on){
   }catch(e){ alert("납부 확인 저장에 실패했습니다.\n\n"+((e&&(e.message||e.hint||e.details))||e)); }
 }
 /* 기한 바꾸기 (연장받았을 때) */
-function chkSetDue(id,v){
+async function chkSetDue(id,v){
   v=String(v||"").trim();
   if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return;
-  chkSave(id,{court_deadline:v,deadline_kind:"보정기한",needs_review:false,
+  await chkSave(id,{court_deadline:v,deadline_kind:"보정기한",needs_review:false,
               review_note:chkStamp()+" 기한을 "+v+"로 바꿈"},"기한을 "+v+"로 바꿨습니다");
+  await chkBdSave(id,{court_deadline:v});   /* ★점검표에도 같이 */
 }
 /* 보정을 다 냈을 때 : 기한을 비우고 무엇을 했는지 기록으로 남긴다 */
 async function chkSubmitted(id){
@@ -15337,6 +15589,7 @@ async function chkSubmitted(id){
     review_note:chkStamp()+" 보정 제출 완료",
     sheet_memo:String(c.sheet_memo||"").trim()?(String(c.sheet_memo).trim()+" / "+chkStamp()+" 보정 제출 완료"):(chkStamp()+" 보정 제출 완료")
   },c.name+" 제출 완료로 정리했습니다");
+  await chkBdSave(id,{filed:true,done:true,status:"보정완료"});   /* ★점검표에도 같이 */
 }
 /* 이번 건은 우리가 할 게 없을 때 */
 async function chkNotOurs(id){
@@ -15349,6 +15602,7 @@ async function chkNotOurs(id){
     review_note:chkStamp()+" "+why,
     sheet_memo:String(c.sheet_memo||"").trim()?(String(c.sheet_memo).trim()+" / "+chkStamp()+" "+why):(chkStamp()+" "+why)
   },"목록에서 내렸습니다");
+  await chkBdSave(id,{done:true,memo:why});   /* ★점검표에도 같이 */
 }
 
 /* ---------- 화면 ---------- */

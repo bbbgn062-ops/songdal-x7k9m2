@@ -14574,6 +14574,88 @@ async function pnBdUpd(id,patch,msg){
   }catch(e){ alert("저장 실패: "+(e.message||e)); }
   finally{ busy(false); pnRender(); }
 }
+/* ===== 2026-09-06 혜림 : 점검표에서 온 줄에서도 사건 메모·의뢰인 상세·＋파일이 되게 =====
+   왜 : 사건 메모는 송달문서 한 줄(deliveries.memo)에 붙고, 의뢰인 상세도 송달문서 한 줄을 여는 화면이다.
+        점검표(bj_board)에서만 온 사건은 송달문서가 없어서 "송달문서에 연결돼 있지 않습니다"로 막혀 있었다.
+   무엇 : ① 같은 의뢰인의 송달문서가 이미 있으면 그 줄을 붙인다.
+            (진행 중인 것 우선 → 같은 사건번호 우선 → 점검표로 만든 줄 → 그다음 아무 줄)
+         ② 없으면 사건 메모를 적거나 [의뢰인 상세]·[＋ 파일]을 누르는 순간 송달문서 목록에
+            「보정명령(점검표)」 줄을 하나 만들어 붙인다. 도착일 없음 · 상태 추후처리 이므로
+            송달확인 기한·처리기한·급건·달력에는 안 올라가고 송달문서 목록에만 남는다.
+            (빈 메모로는 만들지 않는다. 필요할 때만 생긴다.)
+         ③ 그렇게 만든 줄은 점검판 ②(판독 전 송달문서)에서 한 줄 더 만들지 않는다. 점검표 줄이 대신 보여 준다.
+   나중에 전자소송에서 진짜 송달문서가 들어오면 ①의 규칙대로 진행 중인 진짜 줄에 붙는다. */
+var PN_BD_DOCTYPE="보정명령(점검표)";
+function pnIsBdDel(c){ return !!c&&String(c.doctype||"")===PN_BD_DOCTYPE; }
+function pnDelForCli(cid,caseNo){
+  if(!cid||typeof cases==="undefined"||!cases)return null;
+  var no=String(caseNo||"").replace(/\s/g,"");
+  var mine=cases.filter(function(c){ return !!c&&c.client_id===cid; });
+  if(!mine.length)return null;
+  var live=mine.filter(function(c){ return String(c.status||"")!=="처리완료"&&!pnIsBdDel(c); });
+  var sameNo=live.filter(function(c){ return no&&String(c.caseno||"").replace(/\s/g,"")===no; });
+  if(sameNo.length)return sameNo[0];
+  if(live.length)return live[0];
+  var ph=mine.filter(pnIsBdDel);
+  if(ph.length)return ph[0];
+  return mine[0];      /* 처리완료뿐이어도 의뢰인 정보·파일은 같은 폴더라 상세는 쓸모가 있다 */
+}
+/* 점검표 줄에 붙일 송달문서를 찾고, 없으면 만든다. 돌려주는 것은 cases 의 한 줄 */
+async function pnBdEnsureDel(id){
+  var t=pnRef[id]||{}; var cid=t.cid;
+  if(!cid){ alert("이 줄은 케이스허브 사건과 연결돼 있지 않아 송달문서를 만들 수 없습니다."); return null; }
+  var info=pnCli[cid]||{};
+  var sp=pnSplitCase(info.case_no||"");
+  var have=pnDelForCli(cid,sp.no);
+  if(have)return have;
+  var cl=(typeof calCli!=="undefined"&&calCli)?calCli[cid]:null;
+  var name=String(info.name||(cl&&cl.name)||"").trim();
+  if(!name){ alert("케이스허브에 이름이 없어 송달문서를 만들 수 없습니다."); return null; }
+  var caseNo=sp.no||String(info.case_no||"").replace(/\s+/g," ").trim();
+  var who=(typeof me!=="undefined"&&me&&me.name)?me.name:"";
+  var row={client_id:cid, case_no:caseNo||("미정-"+String(cid).slice(0,8)), party_name:name, owner_id:null,
+    court:sp.court||null, doctype:PN_BD_DOCTYPE, arrived_at:null, term_days:7, status:"추후처리",
+    confirmed:false, confirmed_at:null, checklist:defaultDocs(),
+    log:[{t:fmt(new Date()),m:"보정 점검판에서 만든 줄 — 전자소송 송달문서가 아니라 케이스허브 점검표의 사건 ("+who+")"}],
+    memo:null, submit_status:"미제출"};
+  busy(true);
+  try{
+    var ins=await sd().from("deliveries").insert(row).select("*");
+    if(ins.error&&typeof isStatusRuleErr==="function"&&isStatusRuleErr(ins.error)){
+      row.status="진행중";                     /* 서버가 아직 추후처리를 안 받으면 진행중으로 */
+      ins=await sd().from("deliveries").insert(row).select("*");
+    }
+    if(ins.error){
+      var dup=(String(ins.error.code||"")==="23505")||/duplicate key|unique constraint/i.test(String(ins.error.message||""));
+      if(!dup)throw ins.error;
+      var ex=await sd().from("deliveries").select("*").eq("doctype",PN_BD_DOCTYPE).eq("case_no",row.case_no).limit(5);
+      if(ex.error||!ex.data||!ex.data.length)throw ins.error;
+      ins={data:[ex.data[0]]};
+    }
+    if(!ins.data||!ins.data.length)throw new Error("송달문서 줄이 저장되지 않았어요(0건). 로그인 계정 권한(role)을 확인하세요.");
+    var c=rowToCase(ins.data[0]);
+    if(typeof cases!=="undefined"&&cases&&!cases.some(function(x){return x.id===c.id;}))cases.unshift(c);
+    if(typeof wdToast==="function")wdToast(name+" 님 사건을 송달문서 목록에 만들었습니다 (도착일 없음 · 추후처리)");
+    return c;
+  }catch(e){ alert("송달문서 줄을 만들지 못했습니다: "+(e.message||e)); return null; }
+  finally{ busy(false); }
+}
+async function pnBdGo(id){
+  var c=await pnBdEnsureDel(id);
+  if(!c)return;
+  goDetail(c.id);
+}
+async function pnBdCaseMemo(id,v){
+  if(!String(v||"").trim())return;            /* 빈 메모로는 줄을 만들지 않는다 */
+  var c=await pnBdEnsureDel(id);
+  if(!c)return;
+  await pnCaseMemo(c.id,v);
+}
+async function pnBdFile(id,ev){
+  var c=await pnBdEnsureDel(id);
+  if(!c){ try{ ev.target.value=""; }catch(e){} return; }
+  await pnFile(c.id,ev);
+}
 /* ★2026-09-05 혜림 : 진행 중인 보정건에 올려 둔 보정 파일을 카드에서 바로 보고 받게 한다.
    파일은 의뢰인 폴더(bojeong 버킷의 사무소id/의뢰인id)에 있다. 화면에 보이는 줄만 한 번씩 훑고 기억해 둔다. */
 var pnFiles={};     /* 폴더경로 → [{name,path,show}] */
@@ -14771,6 +14853,7 @@ function pnRows(){
   (typeof cases!=="undefined"?(cases||[]):[]).forEach(function(c){
     if(!c||haveDel[c.id])return;
     if(String(c.status||"")==="처리완료")return;
+    if(pnIsBdDel(c))return;                       /* 점검표로 만든 줄은 ③ 점검표 줄이 대신 보여 준다 */
     var firm=pnFirmOf(c.client_id);
     if(pnOffice!=="전체"&&rcFirmShort(firm)!==pnOffice)return;
     var m2=pnBind("del:"+c.id, c.client_id||null, "del:"+c.id);
@@ -14817,6 +14900,9 @@ function pnRows(){
       m:m3, isDel:true, isBd:true, bd:b,
       chk:String(b.check_date||"").slice(0,10)
     };
+    /* ★2026-09-06 : 같은 의뢰인의 송달문서가 있으면 붙인다 → 사건 메모·의뢰인 상세·＋파일이 그 줄로 간다 */
+    var dl=pnDelForCli(b.client_id,sp.no);
+    if(dl){ x.r.delivery_id=dl.id; x.c=dl; }
     if(pnDup(b.client_id,x.due))return;   /* 같은 사람 + 같은 기한 = 같은 보정 건이므로 한 줄로 */
     x.stg=String(info.stage||""); x.stageClosed=pnStageClosed(b.client_id); x.onHold=pnOnHold(b.client_id);
     x.left=pnDays(x.due); x.planLeft=pnDays(x.plan); x.holdLeft=pnDays(x.hold);
@@ -14996,11 +15082,13 @@ function pnCard(x){
   var stg=(pnCli[x.cid]&&pnCli[x.cid].stage)||"";
   /* ★2026-09-05 혜림 : 왼쪽 카드를 누르면 그 의뢰인 상세 화면으로 넘어간다.
      전화번호를 누를 때는 전화만 걸리고 화면이 넘어가지 않게 막아 둔다. */
-  var goAttr=r.delivery_id?(' onclick="goDetail(\''+r.delivery_id+'\')" title="누르면 의뢰인 상세로 갑니다"'):'';
-  h+='<div class="pn-left '+oc+(r.delivery_id?' link':'')+'"'+goAttr+'>'
+  var goAttr=r.delivery_id?(' onclick="goDetail(\''+r.delivery_id+'\')" title="누르면 의뢰인 상세로 갑니다"')
+    :(x.isBd&&x.cid?(' onclick="pnBdGo('+sid+')" title="누르면 이 사건을 송달문서 목록에 만들고 의뢰인 상세로 갑니다"'):'');
+  var canGo=!!(r.delivery_id||(x.isBd&&x.cid));
+  h+='<div class="pn-left '+oc+(canGo?' link':'')+'"'+goAttr+'>'
     +'<div class="pn-ofcrow"><span class="pn-ofcname">'+esc(ofcName)+'</span>'
       +(kt?'<span class="pn-ktag '+kt.c+'">'+esc(kt.t)+'</span>':'')
-      +(r.delivery_id?'<span class="pn-goto">상세 ›</span>':'')+'</div>'
+      +(canGo?'<span class="pn-goto">상세 ›</span>':'')+'</div>'
     +'<div class="pn-nm2">'+esc(nm)+'</div>'
     +'<div class="pn-cno mono">'+esc(cno)+'</div>'
     +'<div class="pn-court">'+esc(court)+(stg?' · '+esc(stg):'')+'</div>'
@@ -15029,8 +15117,10 @@ function pnCard(x){
     +'</div>';
   if(x.isBd){
     h+='<div class="pn-predoc">케이스허브 <b>보정 점검표</b>에서 온 줄입니다. '
-      +'전자소송 송달문서가 아직 연결되지 않았지만 <b>낼 것은 낼 것</b>입니다. '
-      +'기한·미룬 날·메모를 여기서 바로 고치면 케이스허브에 그대로 저장됩니다.'
+      +(r.delivery_id
+        ? '송달문서 <b>'+esc((x.c&&x.c.doctype)||"")+'</b> 줄에 붙어 있어 사건 메모·의뢰인 상세·파일이 그 줄과 같이 갑니다. '
+        : '전자소송 송달문서가 아직 없지만 <b>낼 것은 낼 것</b>입니다. 사건 메모를 적거나 [의뢰인 상세]·[＋ 파일]을 누르면 송달문서 목록에 이 사건 줄이 생깁니다(도착일 없음 · 추후처리). ')
+      +'기한·미룬 날·이 문서 메모를 여기서 바로 고치면 케이스허브에 그대로 저장됩니다.'
       +(x.chk&&x.chk!==x.due?' <b>내부 점검일 '+esc(x.chk)+'</b> (미리 챙기려고 앞당겨 적어 둔 날)':'')
       +'</div>';
   }else if(x.isDel){
@@ -15043,6 +15133,8 @@ function pnCard(x){
     +'<button class="pn-big warn" onclick="pnPlan('+sid+',1)">내일로 미루기</button>'
     +(r.delivery_id
       ? '<label class="pn-big" style="cursor:pointer">＋ 파일<input type="file" accept="application/pdf,image/*" onchange="pnFile(\''+r.delivery_id+'\',event)" style="display:none"></label>'
+      : (x.isBd&&x.cid)
+      ? '<label class="pn-big" style="cursor:pointer" title="송달문서 목록에 이 사건 줄을 만들고 파일을 붙입니다">＋ 파일<input type="file" accept="application/pdf,image/*" onchange="pnBdFile('+sid+',event)" style="display:none"></label>'
       : '')
     +'<span class="pn-sp"></span>'
     +'<button class="pn-big" onclick="pnMore('+sid+')">'+(open?"접기":"더 보기")+'</button>'
@@ -15060,6 +15152,8 @@ function pnCard(x){
       +'<button class="pn-mini2" onclick="pnPlan('+sid+',2)">모레로</button>'
       +'<input type="date" value="'+esc(x.plan)+'" onchange="pnPlanSet('+sid+',this.value)">'
       +(x.plan?'<button class="pn-mini2" onclick="pnPlanSet('+sid+',\'\')">예정 지우기</button>':'')
+      +'<span class="pn-sp"></span>'
+      +(x.cid?'<button class="pn-mini2" onclick="pnBdGo('+sid+')">의뢰인 상세</button>':'')
       +'</div></div>';
   }else if(open&&x.isDel){
     h+='<div class="pn-more"><div class="pn-mrow"><span class="pn-mlb">처리 예정</span>'
@@ -15132,6 +15226,8 @@ function pnCard(x){
       +' <span class="pn-note2">(의뢰인 상세와 같음)</span></div>'
     +(r.delivery_id
       ? '<textarea placeholder="이 사건 전체에 남길 메모" onblur="pnCaseMemo(\''+r.delivery_id+'\',this.value)">'+esc((x.c&&x.c.memo)||"")+'</textarea>'
+      : (x.isBd&&x.cid)
+      ? '<textarea placeholder="이 사건 전체에 남길 메모 (적으면 송달문서 목록에 이 사건 줄이 만들어집니다)" onblur="pnBdCaseMemo('+sid+',this.value)"></textarea>'
       : '<div class="pn-note2">송달문서에 연결돼 있지 않습니다</div>')
     +'</div>'
     +'<div class="pn-m-doc"><div class="pn-mlb2"><span class="pn-mtag">이 문서만</span>이 문서 메모</div>'

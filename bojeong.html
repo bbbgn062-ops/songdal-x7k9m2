@@ -110,6 +110,16 @@ main{max-width:1280px;margin:0 auto;padding:20px 20px 80px}
 .idbox .fl > span{font-size:12px;font-weight:800;color:hsl(var(--mutf))}
 .idbox select,.idbox input{height:32px;padding:0 9px;border:1px solid hsl(var(--line2));border-radius:var(--rs);
   background:hsl(var(--card));color:hsl(var(--fg))}
+/* 2026-09-05 : 카톡 기한 상자 */
+.duebox{border:1px solid hsl(var(--line));border-radius:var(--rs);background:hsl(var(--mut)/.45);
+  padding:11px 13px;margin-bottom:11px}
+.duebox .dl{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:7px}
+.duebox .dl:last-child{margin-bottom:0}
+.duebox .dl > span.lb{font-size:12.5px;font-weight:800;color:hsl(var(--mutf));min-width:132px}
+.duebox input[type=date]{height:31px;padding:0 8px;border:1px solid hsl(var(--line2));border-radius:var(--rs);
+  background:hsl(var(--card));color:hsl(var(--fg))}
+.duebox .qb{display:flex;gap:5px;flex-wrap:wrap}
+.duebox .note{font-size:12.5px;color:hsl(var(--warn));margin-top:8px;line-height:1.55}
 .b{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 14px;
   border-radius:var(--rs);border:1px solid transparent;font-size:13px;font-weight:700;white-space:nowrap;transition:.12s}
 .b.p{background:hsl(var(--pri));color:hsl(var(--prif))}
@@ -1991,9 +2001,15 @@ function toast(m){var e=document.getElementById("toast");if(!e){e=document.creat
   e.textContent=m;e.className="on";clearTimeout(window._tt);window._tt=setTimeout(function(){e.className="";},2800);}
 function kb(n){return n<1024?n+"B":(n<1048576?Math.round(n/1024)+"KB":(n/1048576).toFixed(1)+"MB");}
 function kor(s){if(!s)return"";var d=new Date(s+"T00:00:00");return d.getFullYear()+". "+(d.getMonth()+1)+". "+d.getDate()+".";}
-function biz(s){if(!s)return"";var d=new Date(s+"T00:00:00");while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);return d.toISOString().slice(0,10);}
-function addDays(s,n){var d=s?new Date(s+"T00:00:00"):new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
-function today(){return new Date().toISOString().slice(0,10);}
+/* 2026-09-05 고침 : toISOString() 은 세계표준시라 한국시간으로 계산하면 하루가 밀렸다.
+   14일 뒤가 13일 뒤로 나오던 버그. 이제 화면 시계 기준으로 그대로 센다. */
+function ymd(d){return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);}
+function biz(s){if(!s)return"";var d=new Date(s+"T00:00:00");while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);return ymd(d);}
+function addDays(s,n){var d=s?new Date(s+"T00:00:00"):new Date();d.setDate(d.getDate()+n);return ymd(d);}
+function today(){return ymd(new Date());}
+function leftDays(s){if(!s)return null;var d=new Date(s+"T00:00:00"),t=new Date();t.setHours(0,0,0,0);return Math.round((d-t)/86400000);}
+function leftTxt(s){var n=leftDays(s);if(n===null)return"";return n>0?("D-"+n):(n===0?"오늘":("D+"+(-n)+" 지남"));}
+function leftTone(s){var n=leftDays(s);if(n===null)return"";return n<0?"r":(n<=2?"y":"g");}
 
 /* ── 자료 ─────────────────────────────── */
 var MT={"파일":{need:"파일",step:["요청전","요청함","받음"]},
@@ -2498,26 +2514,96 @@ var MSGS=[{k:1,n:"최초 요청",d:"처음 한 번에 다 요청합니다"},
           {k:5,n:"말로 알려줄 것만",d:"카톡으로 답만 받으면 되는 것"},
           {k:6,n:"추후제출 통보",d:"법원에 약속한 날짜를 알립니다"}];
 var TONES=[["담백","짧고 사무적으로"],["보통","기본"],["정중","정중하고 길게"]];
+/* 2026-09-05 : 카톡 문구를 손으로 고쳐 저장해 두고 계속 그 문구로 본다.
+   msgDraft = 아직 저장 안 한 타이핑 / D.msg_edit = 저장된 문구(서버까지 같이 간다) */
+var msgDraft={};
+function msgSavedTxt(k){ var m=D.msg_edit; return (m&&typeof m[k]==="string")?m[k]:null; }
+function msgShow(k){
+  if(typeof msgDraft[k]==="string")return msgDraft[k];
+  var t=msgSavedTxt(k); return t!==null?t:msgText(k);
+}
+function msgWhen(k){
+  var a=D.msg_edit_at&&D.msg_edit_at[k]; if(!a)return "";
+  var d=new Date(a); if(isNaN(d))return "";
+  return (d.getMonth()+1)+"월 "+d.getDate()+"일 "+("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);
+}
+function msgType(el){ msgDraft[msgOpen]=el.value; var b=document.getElementById("msgstate");
+  if(b){ b.className="tag y"; b.textContent="고치는 중 · 아직 저장 안 됨"; } }
+function msgSave(){
+  var el=document.getElementById("msgta"); if(!el)return;
+  D.msg_edit=D.msg_edit||{}; D.msg_edit_at=D.msg_edit_at||{};
+  D.msg_edit[msgOpen]=el.value;
+  D.msg_edit_at[msgOpen]=new Date().toISOString();
+  delete msgDraft[msgOpen];
+  draw(); toast("이 카톡 문구를 저장했습니다");
+}
+function msgReset(){
+  if(!confirm("손으로 고치신 내용이 지워집니다.\n\n지금 자료 상태와 기한으로 문구를 새로 만듭니다.\n계속할까요?"))return;
+  if(D.msg_edit)delete D.msg_edit[msgOpen];
+  if(D.msg_edit_at)delete D.msg_edit_at[msgOpen];
+  delete msgDraft[msgOpen];
+  draw(); toast("자동으로 만든 문구로 되돌렸습니다");
+}
+function setDue(v){ if(!D["case"])return; D["case"].client_due=v||""; draw(); }
+function setUrgent(v){ if(!D["case"])return; D["case"].urgent_at=v||""; draw(); }
+function dueBox(){
+  var c=D["case"]||{}, r=cur();
+  var court=(r&&r.deadline)||"", mine=c.client_due||"", urg=c.urgent_at||"";
+  function qb(lb,v){ return '<button class="b o s" onclick="setDue(\''+v+'\')">'+esc(lb)+'</button>'; }
+  var h='<div class="duebox">'
+   + '<div class="dl"><span class="lb">당사자 마감일</span>'
+   +   '<input type="date" value="'+esc(mine)+'" onchange="setDue(this.value)">'
+   +   (mine?'<span class="tag '+leftTone(mine)+'">'+esc(kor(mine))+' · '+esc(leftTxt(mine))+'</span>'
+          :'<span class="dim">아직 안 정했습니다. 정하면 카톡 첫머리에 들어갑니다</span>')
+   + '</div>'
+   + '<div class="dl"><span class="lb"></span><span class="qb">'
+   +   qb("오늘",today())+qb("내일",addDays(today(),1))+qb("3일 뒤",addDays(today(),3))
+   +   (court?qb("법원기한 3일 전",addDays(court,-3)):"")
+   +   (mine?'<button class="b g s" onclick="setDue(\'\')">지우기</button>':"")
+   + '</span></div>'
+   + '<div class="dl"><span class="lb">급한 건 기한</span>'
+   +   '<input type="date" value="'+esc(urg)+'" onchange="setUrgent(this.value)">'
+   +   (urg?'<span class="tag '+leftTone(urg)+'">'+esc(kor(urg))+' · '+esc(leftTxt(urg))+'</span>'
+         :'<span class="dim">「급한 건 독촉」 카톡에 들어갑니다</span>')
+   + '</div>'
+   + '<div class="dl"><span class="lb">법원 제출기한</span>'
+   +   (court?'<span class="tag '+leftTone(court)+'">'+esc(kor(court))+' · '+esc(leftTxt(court))+'</span>'
+          :'<span class="dim">이번 차수에 마감일이 없습니다</span>')
+   + '</div>';
+  return h+'</div>';
+}
 function msgCard(){
-  var txt=msgText(msgOpen), cur=MSGS.filter(function(x){return x.k===msgOpen;})[0];
+  var one=MSGS.filter(function(x){return x.k===msgOpen;})[0];
+  var txt=msgShow(msgOpen);
   var left=MATS().filter(function(a){return !a.mat.round&&!full(a)&&a.ty!=="우리작성";}).length;
   var accts=D.accounts?D.accounts.rows.filter(function(r){return !r.got;}).length:0;
+  var saved=msgSavedTxt(msgOpen), typing=(typeof msgDraft[msgOpen]==="string");
+  var state = typing ? '<span class="tag y" id="msgstate">고치는 중 · 아직 저장 안 됨</span>'
+            : (saved!==null ? '<span class="tag p" id="msgstate">고쳐 쓴 문구'+(msgWhen(msgOpen)?' · '+esc(msgWhen(msgOpen))+' 저장':'')+'</span>'
+                            : '<span class="tag g" id="msgstate">자동으로 만든 문구</span>');
   return '<section class="card msgcard"><div class="hd">'
    + '<h3>당사자에게 보낼 카톡</h3>'
    + '<span class="tag y">아직 안 온 것 '+left+'건'+(accts?' + 계좌 '+accts+'개':'')+'</span>'
    + '<span class="sp"></span>'
    + '<span class="dim">받은 것은 빠지고 안 온 것만 자동으로 들어갑니다</span>'
    + '</div><div class="pad">'
-   + '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px">'
+   + dueBox()
+   + '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px;align-items:center">'
    +   MSGS.map(function(x){
+         var mk=(D.msg_edit&&typeof D.msg_edit[x.k]==="string");
          return '<button class="b '+(msgOpen===x.k?"p":"o")+'" onclick="msgOpen='+x.k+';draw()">'
-           + esc(x.n)+'</button>';}).join("")
-   + '<span class="sp"></span><span class="dim">'+esc(cur.d)+'</span></div>'
-   + '<textarea class="in msgta" id="msgta" spellcheck="false">'+esc(txt)+'</textarea>'
+           + esc(x.n)+(mk?' ✎':'')+'</button>';}).join("")
+   + '<span class="sp"></span><span class="dim">'+esc(one.d)+'</span></div>'
+   + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:7px">'
+   +   state
+   +   (saved!==null?'<span class="dim">자료를 받거나 기한을 바꿔도 이 글은 그대로입니다. 새로 만들려면 [자동 문구로 되돌리기]</span>'
+                    :'<span class="dim">고쳐 쓰고 [이 문구 저장하기]를 누르면 다음에도 이 글이 나옵니다</span>')
+   + '</div>'
+   + '<textarea class="in msgta" id="msgta" spellcheck="false" oninput="msgType(this)">'+esc(txt)+'</textarea>'
    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">'
    +   '<button class="b p" style="width:auto;height:44px;padding:0 22px" onclick="copy(document.getElementById(\'msgta\').value,\'카톡 문구를 복사했습니다\')">복사해서 카톡에 붙여넣기</button>'
-   +   '<button class="b g s" onclick="draw()">다시 만들기</button>'
-   +   '<span class="dim">고쳐 쓰셔도 됩니다. 복사는 지금 화면 내용 그대로 됩니다.</span>'
+   +   '<button class="b o" style="width:auto;height:44px;padding:0 18px" onclick="msgSave()">이 문구 저장하기</button>'
+   +   ((saved!==null||typing)?'<button class="b g s" onclick="msgReset()">자동 문구로 되돌리기</button>':'')
    + '</div></div></section>';
 }
 /* 2026-09-05 : 사건 종류와 사무소.
@@ -2646,20 +2732,21 @@ function msgText(k){
   if(k===3){
     return open
       +"급한 것 두 가지만 먼저 말씀드립니다.\n\n"
-      +(D.case.urgent_at?kor(D.case.urgent_at)+"까지 처리하시고 결과를 꼭 알려주셔야 합니다.\n\n":"")
+      +(D.case.urgent_at?kor(D.case.urgent_at)+"까지 처리하시고 결과를 꼭 알려주셔야 합니다.\n\n"
+        :(D.case.client_due?kor(D.case.client_due)+"까지 처리하시고 결과를 꼭 알려주셔야 합니다.\n\n":""))
       +"1. 회생위원 예납금 150,000원 입금\n   보내드린 가상계좌 파일의 계좌로 입금해 주세요.\n   입금 후 \"입금했습니다\" 라고 연락 주시면 됩니다.\n\n"
       +"2. 국민건강보험공단 체납액 완납\n   완납 후 영수증 사진을 보내주세요.\n\n"
       +"이 두 가지는 법원 기한과 직결되는 부분이라 늦어지면 절차가 흔들립니다.\n"
       +"나머지 서류는 준비되는 대로 천천히 보내주셔도 괜찮습니다.\n"+close;
   }
   if(k===4){
-    return open+"아래 서류만 파일로 보내주시면 됩니다.\n\n"
+    return open+"아래 서류만 파일로 보내주시면 됩니다.\n"+dueLine()
       +blockFiles()+blockAccts()
       +(files.length||accts.length?"":"■ 지금 받을 서류가 없습니다.\n\n")
       +"사진보다 원본 파일(PDF·엑셀)이 좋습니다.\n"+close;
   }
   if(k===5){
-    return open+"아래 내용만 카톡으로 알려주시면 됩니다.\n\n"
+    return open+"아래 내용만 카톡으로 알려주시면 됩니다.\n"+dueLine()
       +blockSays()+blockBoth()
       +(says.length||both.length?"":"■ 지금 여쭤볼 것이 없습니다.\n\n")
       +"기억나는 대로 적어주시면 저희가 정리합니다. 길게 안 쓰셔도 됩니다.\n"+close;
@@ -3603,7 +3690,7 @@ async function wbSwitch(no){
   try{
     var got=await cloudLoad(no);
     if(!got||!got.state){ alert("그 사건의 저장본을 찾지 못했습니다."); saveDot("저장됨","g"); return; }
-    D=got.state; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null;
+    D=got.state; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null; msgDraft={};
     await rehydrate();
     draw();
     saveDot("서버에서 불러옴 "+String(got.updated_at||"").slice(0,10),"g");
@@ -3667,7 +3754,7 @@ function boot(){
     /* ★서버에 더 최근 것이 있으면 그것으로 연다. 회사 컴퓨터와 집 컴퓨터가 어긋나지 않게 */
     return cloudLoad(no).then(function(got){
       if(got&&got.state){
-        D=got.state; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null;
+        D=got.state; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null; msgDraft={};
         return {from:"서버",at:String(got.updated_at||"").slice(0,10)};
       }
       return null;

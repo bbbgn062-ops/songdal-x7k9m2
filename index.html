@@ -1348,8 +1348,10 @@
     border-top:1px dashed #EDE9E4}
   .pn-fic{color:#8A8078;display:inline-flex;align-items:center;flex:none}
   .pn-fchip{display:inline-flex;align-items:center;border:1px solid #E1DCD6;border-radius:8px;
-    background:#FDFCFB;overflow:hidden;max-width:230px}
-  .pn-fchip.main{border-color:#C9D6EA;background:#F5F8FD}
+    background:#FDFCFB;overflow:hidden;max-width:230px;flex:0 1 auto;padding:0;height:27px}
+  /* ★2026-09-06 혜림 : 예전에 쓰던 이름 main 은 화면 전체를 감싸는 큰 상자 이름과 겹쳐서
+     파일 상자가 세로로 길게 늘어났다. 그래서 orig(원본) 로 이름을 바꿨다. 되돌리지 말 것. */
+  .pn-fchip.orig{border-color:#C9D6EA;background:#F5F8FD}
   .pn-fname{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;cursor:pointer;
     font-family:inherit;font-size:11.5px;font-weight:600;color:#3D3833;padding:5px 8px;max-width:190px}
   .pn-fname span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1361,10 +1363,20 @@
     font-size:11.5px;color:#8A8078;cursor:pointer;font-family:inherit;white-space:nowrap}
   .pn-fmore:hover{background:#F4F1EC;color:#231F1D}
   .pn-memos{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:11px}
-  .pn-mlb2{font-size:11.5px;color:#6B645E;font-weight:700;margin-bottom:5px}
+  .pn-mlb2{font-size:11.5px;color:#6B645E;font-weight:700;margin-bottom:5px;
+    display:flex;align-items:center;gap:6px}
+  /* ★2026-09-06 혜림 : 메모 두 칸이 똑같이 생겨서 헷갈렸다.
+     왼쪽(사건 메모)은 남색, 오른쪽(이 문서 메모)은 자주색으로 나눠 둔다. */
+  .pn-mtag{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;
+    white-space:nowrap;letter-spacing:-.2px;flex:none}
+  .pn-m-case .pn-mtag{background:#E7EDF7;color:#2B4570}
+  .pn-m-doc .pn-mtag{background:#F8E8EC;color:#9B1B33}
   .pn-memos textarea{width:100%;min-height:56px;font-size:13px;padding:9px 11px;
     border:1px solid #E7E3DE;border-radius:9px;font-family:inherit;line-height:1.6}
-  .pn-memos textarea:focus{border-color:#9B1B33;outline:none}
+  .pn-m-case textarea{border-left:3px solid #2B4570;background:#FBFCFE}
+  .pn-m-doc textarea{border-left:3px solid #9B1B33;background:#FFFCFC}
+  .pn-m-case textarea:focus{border-color:#2B4570;outline:none}
+  .pn-m-doc textarea:focus{border-color:#9B1B33;outline:none}
   @media(max-width:980px){
     .pn-body{grid-template-columns:1fr}
     .pn-left{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
@@ -14898,7 +14910,7 @@ function pnCard(x){
       var f2=chips[ci];
       var pj2=JSON.stringify(f2.path).replace(/"/g,"&quot;");
       var nj2=JSON.stringify(f2.show).replace(/"/g,"&quot;");
-      h+='<span class="pn-fchip'+(f2.main?" main":"")+'">'
+      h+='<span class="pn-fchip'+(f2.main?" orig":"")+'">'
         +'<button class="pn-fname" title="눌러서 미리보기" onclick="pnPreview('+pj2+','+nj2+')">'
         +PN_IC.eye+'<span>'+esc(f2.show)+'</span></button>'
         +'<button class="pn-fdl" title="내려받기" onclick="downloadBojeong('+pj2+','+nj2+')">'+PN_IC.dl+'</button>'
@@ -14910,12 +14922,13 @@ function pnCard(x){
   }
   /* ★2026-09-05 혜림 : 사건 메모를 먼저(왼쪽) 본다 */
   h+='<div class="pn-memos">'
-    +'<div><div class="pn-mlb2">사건 메모 <span class="pn-note2">(의뢰인 상세와 같습니다)</span></div>'
+    +'<div class="pn-m-case"><div class="pn-mlb2"><span class="pn-mtag">사건 전체</span>사건 메모'
+      +' <span class="pn-note2">(의뢰인 상세와 같음)</span></div>'
     +(r.delivery_id
       ? '<textarea placeholder="이 사건 전체에 남길 메모" onblur="pnCaseMemo(\''+r.delivery_id+'\',this.value)">'+esc((x.c&&x.c.memo)||"")+'</textarea>'
       : '<div class="pn-note2">송달문서에 연결돼 있지 않습니다</div>')
     +'</div>'
-    +'<div><div class="pn-mlb2">이 문서 메모</div>'
+    +'<div class="pn-m-doc"><div class="pn-mlb2"><span class="pn-mtag">이 문서만</span>이 문서 메모</div>'
     +(x.isDel
       ? '<div class="pn-note2">아직 보정 문서를 등록하지 않아 문서 메모가 없습니다</div>'
       : '<textarea placeholder="이 보정 문서에 남길 메모" onblur="pnDocMemo('+sid+',this.value)">'+esc(r.memo||"")+'</textarea>')

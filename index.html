@@ -1362,6 +1362,11 @@
   .pn-fmore{border:1px dashed #DDD8D2;background:transparent;border-radius:8px;padding:4px 9px;
     font-size:11.5px;color:#8A8078;cursor:pointer;font-family:inherit;white-space:nowrap}
   .pn-fmore:hover{background:#F4F1EC;color:#231F1D}
+  /* ★2026-09-07 혜림 : 구글시트 비고(bj_board.todo)가 화면에서 빠져 있었다. 메모 두 칸 위에 따로 보여 준다 */
+  .pn-sheet{margin-top:11px;padding:8px 11px 9px;background:#F6F4EF;border:1px solid #E6E1D8;border-radius:10px}
+  .pn-sheet .pn-mlb2{margin-bottom:4px}
+  .pn-sheet .pn-mtag{background:#E4E9DF;color:#3d5a2f}
+  .pn-sheettext{font-size:13px;line-height:1.55;color:#231F1D;white-space:pre-wrap;word-break:break-all}
   .pn-memos{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:11px}
   .pn-mlb2{font-size:11.5px;color:#6B645E;font-weight:700;margin-bottom:5px;
     display:flex;align-items:center;gap:6px}
@@ -14656,6 +14661,25 @@ async function pnBdFile(id,ev){
   if(!c){ try{ ev.target.value=""; }catch(e){} return; }
   await pnFile(c.id,ev);
 }
+/* ★2026-09-07 : 시트 비고(bj_board.todo). 사건 줄(ref '')에만 들어 있다 */
+function pnSheetMemoOf(cid){
+  if(!cid||typeof pnBd==="undefined"||!pnBd)return {text:"",row:null};
+  var b=pnBd[pnBdKey(cid,"")];
+  if(!b)return {text:"",row:null};
+  return {text:String(b.todo||"").trim(), row:b.sheet_row||null};
+}
+/* 시트 비고를 이 문서 메모 뒤에 붙여 저장한다. 이미 들어 있으면 두 번 안 붙인다 */
+async function pnSheetToMemo(id){
+  var t=pnRef[id]||{};
+  var sm=pnSheetMemoOf(t.cid);
+  if(!sm.text){ if(typeof wdToast==="function")wdToast("시트 비고가 없습니다"); return; }
+  var cur="";
+  if(String(id).indexOf("bd:")===0){ var b=pnBd[pnBdKey(t.cid,"")]; cur=String((b&&b.memo)||""); }
+  else{ for(var i=0;i<(bxRows||[]).length;i++){ if(bxRows[i].id===id){ cur=String(bxRows[i].memo||""); break; } } }
+  if(cur.indexOf(sm.text)>=0){ if(typeof wdToast==="function")wdToast("이미 문서 메모에 들어 있습니다"); return; }
+  var next=cur.trim()?(cur.replace(/\s+$/,"")+"\n[시트] "+sm.text):("[시트] "+sm.text);
+  await pnUpd(id,{memo:next},"시트 비고를 문서 메모에 붙였습니다");
+}
 /* ★2026-09-05 혜림 : 진행 중인 보정건에 올려 둔 보정 파일을 카드에서 바로 보고 받게 한다.
    파일은 의뢰인 폴더(bojeong 버킷의 사무소id/의뢰인id)에 있다. 화면에 보이는 줄만 한 번씩 훑고 기억해 둔다. */
 var pnFiles={};     /* 폴더경로 → [{name,path,show}] */
@@ -15022,19 +15046,27 @@ function pnRender(){
       +(pnHideDone?'<br>「완료한 건 숨기기」를 꺼 보세요.':'')+'</div>';
   }else{
     if(g.urg.length){
+      /* ★2026-09-07 혜림 : "오늘 게 왜 4개야, 15개 넘었는데" — 기한이 오늘인 줄은 여기(급한 것)로 올라온다.
+         그래서 오늘 기한이 몇 건인지 여기서 바로 보이게 센다. */
+      var tk=fmt(today0());
+      var nToday=g.urg.filter(function(x){ return pnKeyDate(x)===tk; }).length;
+      var nPast=g.urg.length-nToday;
       h+='<div class="pn-ghead urg"><span class="pn-gbar"></span><h3>급한 것</h3>'
         +'<span class="pn-gn">'+g.urg.length+'건</span>'
         +pnOfcCount(g.urg)
-        +'<span class="pn-gnote">사무소와 상관없이 맨 위에 모읍니다</span></div>';
+        +'<span class="pn-gnote">'+(nToday?'<b>오늘 기한 '+nToday+'건</b>':'')+(nToday&&nPast?' · ':'')+(nPast?'지난 기한 '+nPast+'건':'')
+          +' — 기한이 오늘이거나 지난 줄은 날짜 묶음이 아니라 여기에 모입니다</span></div>';
       h+=g.urg.map(pnCard).join("");
     }
     g.keys.forEach(function(k){
       var list=g.map[k];
       var isPlan=list.length&&list[0].plan===k&&k!=="~";
+      var nUp=(k==="~")?0:g.urg.filter(function(x){ return pnKeyDate(x)===k; }).length;
       h+='<div class="pn-ghead"><span class="pn-gbar"></span><h3>'+esc(pnDateTitle(k==="~"?"":k))+'</h3>'
         +'<span class="pn-gn">'+list.length+'건</span>'
         +pnOfcCount(list)
         +(isPlan?'<span class="pn-gnote">처리 예정으로 잡아 둔 날</span>':'')
+        +(nUp?'<span class="pn-gnote">＋ 급한 것에 '+nUp+'건 (같은 날짜인데 위로 올라감)</span>':'')
         +'</div>';
       h+=list.map(pnCard).join("");
     });
@@ -15220,6 +15252,17 @@ function pnCard(x){
       h+='<button class="pn-fmore" onclick="goDetail(\''+(r.delivery_id||"")+'\')">＋'+(chips.length-showN)+'개 더</button>';
     h+='</div>';
   }
+  /* ★2026-09-07 혜림 : "시트에 메모 있던 거 다 넣어줘" — 시트 비고는 bj_board.todo 에 있다.
+     사건 줄(ref '')의 todo 를 같은 의뢰인의 모든 줄(문서·판독 전·점검표)에서 보여 준다. */
+  var sm=pnSheetMemoOf(x.cid);
+  if(sm.text){
+    h+='<div class="pn-sheet"><div class="pn-mlb2"><span class="pn-mtag">시트</span>시트 비고'
+      +(sm.row?' <span class="pn-note2">(사건목록표 '+esc(String(sm.row))+'행)</span>':'')
+      +' <span class="pn-note2">· 시트에 적혀 있던 그대로. 고치려면 아래 메모로 옮겨서 고치세요</span>'
+      +((x.isBd||!x.isDel)?'<button class="pn-mini2" style="margin-left:auto" onclick="pnSheetToMemo('+sid+')">이 문서 메모에 붙이기</button>':'')
+      +'</div>'
+      +'<div class="pn-sheettext">'+esc(sm.text)+'</div></div>';
+  }
   /* ★2026-09-05 혜림 : 사건 메모를 먼저(왼쪽) 본다 */
   h+='<div class="pn-memos">'
     +'<div class="pn-m-case"><div class="pn-mlb2"><span class="pn-mtag">사건 전체</span>사건 메모'
@@ -15293,7 +15336,7 @@ function pnPrint(){
       +'<td>'+esc((typeof bjCardKind==="function")?bjCardKind(x.r):"")+'</td>'
       +'<td>'+esc(x.due||"")+'</td><td>'+esc(pnLeftTxt(x.left))+'</td>'
       +'<td>'+esc(x.ws)+'</td><td>'+esc(x.plan||"")+'</td>'
-      +'<td style="width:70px"></td><td style="width:70px"></td><td>'+esc(String(x.r.memo||"").slice(0,40))+'</td></tr>';
+      +'<td style="width:70px"></td><td style="width:70px"></td><td>'+esc((String(x.r.memo||"")+(pnSheetMemoOf(x.cid).text?" [시트] "+pnSheetMemoOf(x.cid).text:"")).slice(0,60))+'</td></tr>';
   }
   var body="";
   if(g.urg.length)body+='<tr class="gh"><td colspan="11">급한 것 '+g.urg.length+'건</td></tr>'+g.urg.map(tr).join("");
@@ -15317,14 +15360,15 @@ function pnPrint(){
 /* ---- 엑셀(CSV) 내보내기 ---- */
 function pnExcel(){
   var g=pnGroups(pnRows());
-  var head=["구역","사무소","의뢰인","법원","사건번호","문서","법원기한","남은날","상태","추후제출기한","처리예정","연락함","서류받음","법원제출함","완료","문서메모","사건메모"];
+  var head=["구역","사무소","의뢰인","법원","사건번호","문서","법원기한","남은날","상태","추후제출기한","처리예정","연락함","서류받음","법원제출함","완료","문서메모","사건메모","시트비고"];
   var lines=[head];
   function push(zone,x){
     var m=x.m||{};
     lines.push([zone,rcFirmShort(x.firm||"")||"",x.r.client_name||"",x.r.court||"",x.r.case_no||"",
       (typeof bjCardKind==="function")?bjCardKind(x.r):"",x.due||"",pnLeftTxt(x.left),x.ws,x.hold||"",x.plan||"",
       m.called?"O":"",m.got?"O":"",(x.ws==="보정완료")?"O":"",m.done?"O":"",
-      String(x.r.memo||"").replace(/\n/g," "),String((x.c&&x.c.memo)||"").replace(/\n/g," ")]);
+      String(x.r.memo||"").replace(/\n/g," "),String((x.c&&x.c.memo)||"").replace(/\n/g," "),
+      pnSheetMemoOf(x.cid).text.replace(/\n/g," ")]);
   }
   g.urg.forEach(function(x){ push("급한 것",x); });
   g.keys.forEach(function(k){ g.map[k].forEach(function(x){ push(pnDateTitle(k==="~"?"":k),x); }); });

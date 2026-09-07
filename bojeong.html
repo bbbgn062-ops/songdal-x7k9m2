@@ -2023,7 +2023,8 @@ function MATS(){var o=[];D.tasks.forEach(function(t){(t.steps||[]).forEach(funct
   o.push({key:s.provides,task:t,step:s,mat:s.mat,ty:s.mat_type||"파일",why:s.mat_why||""});});});return o;}
 function M(k){var l=MATS();for(var i=0;i<l.length;i++)if(l[i].key===k)return l[i];return null;}
 function full(a){
-  if(a.step.from_accounts&&D.accounts){var r=D.accounts.rows;if(r.length&&r.every(function(x){return x.got;}))return true;}
+  a.mat=a.mat||{};
+  if(a.step.from_accounts&&D.accounts){var r=D.accounts.rows||[];if(r.length&&r.every(function(x){return x.got;}))return true;}
   var n=mt(a).need,f=(a.mat.files||[]).length>0,s=String(a.mat.say||"").trim().length>0;
   if(n==="파일")return f; if(n==="진술")return s; if(n==="둘다")return f&&s; return true;
 }
@@ -2105,13 +2106,13 @@ function hDone(h){var c=hChain(h);return c.length&&c.every(function(x){return x.
 /* 이번 차수에 넣을 항인가. 자동이 기본, 사람이 끄고 켤 수 있다 */
 function hAuto(h){
   if(h.round)return false;
-  var live=h.docs.filter(function(d){
+  var live=(h.docs||[]).filter(function(d){
     if(d.only_if_receipt&&!h.receipt_required)return false;
     if(!d.mat)return hDone(h);
     var a=M(d.mat);return a&&full(a)&&!a.mat.round&&a.mat.pick!==false;});
   if(live.length)return true;
   if(h.say&&hDone(h))return true;
-  return !h.docs.length&&hDone(h);
+  return !(h.docs||[]).length&&hDone(h);
 }
 function hPick(h){return h.round?false:(h.pick===undefined?hAuto(h):!!h.pick);}
 function hDocs(h){
@@ -3225,8 +3226,8 @@ function pickHang(i){var h=D.hangs[i];if(h.round)return;h.pick=!hPick(h);draw();
 function allCheck(){
   var d=0,n=0;
   D.tasks.forEach(function(t){ (t.steps||[]).forEach(function(s){ n++; if(s.done)d++; }); });
-  if(D.accounts){ D.accounts.rows.forEach(function(r){ n++; if(r.got)d++; }); }
-  if(D.final){ var dn=D.final.done||[]; D.final.items.forEach(function(_,i){ n++; if(dn[i])d++; }); }
+  if(D.accounts){ (D.accounts.rows||[]).forEach(function(r){ n++; if(r.got)d++; }); }
+  if(D.final){ var dn=D.final.done||[]; (D.final.items||[]).forEach(function(_,i){ n++; if(dn[i])d++; }); }
   return {d:d,n:n};
 }
 function viewCheck(){
@@ -3319,11 +3320,8 @@ function loadJson(){
   try{
     var o=JSON.parse(v);
     if(!o.case||!o.tasks) throw new Error("case 와 tasks 가 있어야 합니다");
-    o.rounds=o.rounds||[{no:1,label:"1차",deadline:"",submitted_at:"",promise:"",mode:"date",status:"준비중"}];
-    o.hangs=o.hangs||[];
-    o.delay_reasons=o.delay_reasons||D.delay_reasons;
-    o.submit=o.submit||{date:"",reason_key:(o.delay_reasons[0]||{}).key,tone:"정중",len:"보통",kind:"보정서",
-                        closing_all:"채무자는 위와 같이 성실히 보정하였으니 부디 선처하여 주시기 바랍니다."};
+    o["case"]=inCaseNorm(o["case"], (D&&D["case"])||{}, o);
+    o=inNormalize(o);                          /* ★2026-09-07 : 모양 맞추기 */
     D=o; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null;
     toast("불러왔습니다. 할 일 "+D.tasks.length+"건");
     view="today"; draw(); window.scrollTo({top:0,behavior:"smooth"});
@@ -3699,7 +3697,7 @@ async function wbSwitch(no){
   try{
     var got=await cloudLoad(no);
     if(!got||!got.state){ alert("그 사건의 저장본을 찾지 못했습니다."); saveDot("저장됨","g"); return; }
-    D=got.state; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null; msgDraft={};
+    D=inNormalize(got.state); openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null; msgDraft={};
     await rehydrate();
     draw();
     saveDot("서버에서 불러옴 "+String(got.updated_at||"").slice(0,10),"g");
@@ -3757,13 +3755,13 @@ function boot(){
   var localState=null;
   idbGet("kv","state").then(function(st){
     if(st&&st.tasks&&st["case"])localState=st;
-    if(localState){ D=localState; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null; }
+    if(localState){ D=inNormalize(localState); openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null; }
     var no=wbCase();
     if(!cloudOn||!no)return null;
     /* ★서버에 더 최근 것이 있으면 그것으로 연다. 회사 컴퓨터와 집 컴퓨터가 어긋나지 않게 */
     return cloudLoad(no).then(function(got){
       if(got&&got.state){
-        D=got.state; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null; msgDraft={};
+        D=inNormalize(got.state); openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null; msgDraft={};
         return {from:"서버",at:String(got.updated_at||"").slice(0,10)};
       }
       return null;
@@ -4271,15 +4269,120 @@ function inCheck(){
   /* ★2026-09-07 혜림 : "검사하기 해도 등록이 안 된다" — case 칸 이름이 조금 달라도 읽고, 없으면 지금 열려 있는 사건 정보를 이어받는다.
      사건번호가 있어야 회사 서버(bj_workbench)에 저장되어 「사건 바꾸기」 목록에 뜬다. */
   o["case"]=inCaseNorm(o["case"], (D&&D["case"])||{}, o);
-  o.rounds=o.rounds||[{no:1,label:"1차",deadline:"",submitted_at:"",promise:"",mode:"date",status:"준비중"}];
-  o.hangs=o.hangs||[];
-  o.delay_reasons=o.delay_reasons||D.delay_reasons;
-  o.submit=o.submit||{date:"",reason_key:(o.delay_reasons[0]||{}).key,tone:"정중",len:"보통",kind:"보정서",
-                      closing_all:"채무자는 위와 같이 성실히 보정하였으니 부디 선처하여 주시기 바랍니다."};
+  o=inNormalize(o);                            /* ★2026-09-07 : 칸 이름·모양이 달라도 앱이 아는 모양으로 맞춘다 (안 그러면 3단계가 안 그려진다) */
   D=o; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null; DICTST={};
   markSave();                                  /* ★검사 통과 = 바로 저장 (사건번호가 있으면 회사 서버까지) */
   toast("불러왔습니다. 할 일 "+D.tasks.length+"건"+(wbCase()?"":" · 사건번호를 넣어야 서버에 저장됩니다"));
   inGo(3);
+}
+/* ★2026-09-07 혜림 : "검사하기 눌러도 3단계로 안 넘어간다" — 다른 세션이 만든 JSON 은 칸 이름·모양이 조금씩 다르다
+   (hangs 가 {항,제목,완결조건}, tasks 에 id·owner 없음, accounts 가 배열, final 이 문장, rounds 가 {차수,제출일}).
+   그대로 그리면 draw() 가 중간에 죽어 화면이 2단계에 멈춘다. 그래서 앱이 아는 모양으로 먼저 맞춘다. */
+function inNormalize(o){
+  o=(o&&typeof o==="object")?o:{};
+  function arr(v){ return Array.isArray(v)?v:[]; }
+  function str(v){ return (v===undefined||v===null)?"":String(v); }
+  o.tasks=arr(o.tasks); o.hangs=arr(o.hangs);
+  var OWN={"당사자":"당사자","사무실":"사무실","공동":"공동","당사자+사무실":"공동","회사":"사무실","우리":"사무실","의뢰인":"당사자","채무자":"당사자","사무소":"사무실","본인":"당사자"};
+  var WHEN={"즉시":"즉시","지금바로":"즉시","자료받고":"자료 받고","자료받은뒤":"자료 받고","조건부즉시":"조건부 즉시"};
+  var SN={P1:"연락·회수",P2:"회사발급",P3:"도표작성",P4:"서면작성"};
+  o.tasks.forEach(function(t,i){
+    if(!t||typeof t!=="object")return;
+    if(!t.id)t.id="t"+(i+1);
+    t.title=str(t.title||t.제목||t.name)||("할 일 "+(i+1));
+    t.owner=OWN[str(t.owner||t.담당).replace(/\s/g,"")]||"사무실";
+    var wv=str(t.when||t.start||t.착수시점).trim(); t.when=WHEN[wv.replace(/\s/g,"")]||wv||"즉시";
+    t.hang=str(t.hang||t.항);
+    t.kind=str(t.kind); t.why=str(t.why||t.이유);
+    t.steps=arr(t.steps);
+    t.steps.forEach(function(s,j){
+      if(!s||typeof s!=="object"){ t.steps[j]=s={text:str(s)}; }
+      s.text=str(s.text||s.제목||s.내용);
+      if(s.provides&&(!s.mat||typeof s.mat!=="object"))s.mat={status:"요청전",files:[],memo:"",say:"",round:0,pick:true};
+      if(s.mat&&typeof s.mat==="object"){ if(!Array.isArray(s.mat.files))s.mat.files=[]; if(s.mat.pick===undefined)s.mat.pick=true; if(!s.mat.status)s.mat.status="요청전"; }
+    });
+    t.needs=arr(t.needs).map(str); t.blocked_by=arr(t.blocked_by).map(str); t.howto=arr(t.howto).map(str);
+    t.status=str(t.status)||"대기"; if(t.order===undefined||t.order===null)t.order=i+1;
+    t.station=str(t.station)||"P1"; t.station_name=str(t.station_name)||SN[t.station]||"";
+  });
+  o.tasks=o.tasks.filter(function(t){return t&&typeof t==="object";});
+  o.hangs.forEach(function(h,i){
+    if(!h||typeof h!=="object")return;
+    h.no=str(h.no||h.항||h.번호||(i+1)).trim(); if(/^\d+$/.test(h.no))h.no="보정 "+h.no;
+    h.title=str(h.title||h.제목||h.summary); h.court=str(h.court||h.원문||h.내용||h.완결조건);
+    h.docs=arr(h.docs).filter(function(d){return d&&typeof d==="object";}).map(function(d){ d.name=str(d.name||d.이름); return d; });
+    h.tasks=arr(h.tasks).map(str);
+  });
+  o.hangs=o.hangs.filter(function(h){return h&&typeof h==="object";});
+  var linked=o.hangs.some(function(h){return h.tasks.length;})||o.tasks.some(function(t){return t.hang;});
+  if(!linked&&o.hangs.length&&o.hangs.length===o.tasks.length){
+    o.hangs.forEach(function(h,i){ h.tasks=[o.tasks[i].id]; o.tasks[i].hang=h.no; });
+  }else{
+    o.hangs.forEach(function(h){
+      if(h.tasks.length)return;
+      var k=h.no.replace(/\s/g,"");
+      o.tasks.forEach(function(t){ var th=str(t.hang).replace(/\s/g,""); if(th&&(th===k||"보정"+th===k||th==="보정"+k))h.tasks.push(t.id); });
+    });
+  }
+  /* 활동성 계좌 : 배열로 오면 {rows:[...]} 로 */
+  if(Array.isArray(o.accounts))o.accounts={title:"거래내역서 받아야 할 활동성 계좌",rows:o.accounts};
+  if(o.accounts&&typeof o.accounts==="object"){
+    o.accounts.rows=arr(o.accounts.rows).filter(function(r){return r&&typeof r==="object";}).map(function(r){
+      r.bank=str(r.bank||r.은행); r.no=str(r.no||r.계좌번호||r.계좌); r.got=!!r.got; return r; });
+    if(!o.accounts.rows.length)delete o.accounts;
+  }else delete o.accounts;
+  /* 최종 재제출 : 문장이나 배열로 오면 {title,items,done} 으로 */
+  if(o.final&&typeof o.final==="object"&&!Array.isArray(o.final)){
+    o.final.items=arr(o.final.items).map(str); o.final.title=str(o.final.title)||"보정사항 반영 후 재제출"; o.final.done=arr(o.final.done);
+    if(!o.final.items.length&&arr(o.재제출).length)o.final.items=arr(o.재제출).map(str);
+  }else{
+    var note=(typeof o.final==="string")?o.final:"";
+    var items=Array.isArray(o.final)?o.final.map(str):arr(o.재제출).map(str);
+    o.final=items.length?{title:"보정사항 반영 후 재제출",items:items,done:[],note:note}:undefined;
+    if(!o.final)delete o.final;
+  }
+  /* 이미 낸 것 */
+  if(o.predone&&typeof o.predone==="object"){ o.predone.items=arr(o.predone.items).map(str); if(!o.predone.items.length)delete o.predone; }
+  else if(Array.isArray(o.predone)){ o.predone={title:"이미 제출한 사항",items:o.predone.map(str),pick:true}; }
+  else delete o.predone;
+  /* 차수 : {차수,제출일,법원기한} 처럼 와도 받는다 */
+  o.rounds=arr(o.rounds).filter(function(r){return r&&typeof r==="object";}).map(function(r,i){
+    var no=parseInt(r.no||r.차수||(i+1),10)||(i+1);
+    var sub=str(r.submitted_at||r.제출일).slice(0,10);
+    r.no=no; r.label=str(r.label)||(no+"차"); r.deadline=str(r.deadline||r.법원기한||r.마감일).slice(0,10);
+    r.submitted_at=sub; r.promise=str(r.promise||r.추후제출기한||r.확약일).slice(0,10); r.mode=str(r.mode)||"date";
+    r.status=str(r.status)||(sub?"제출함":"준비중"); r.note=str(r.note||r.형태||r.제출내용);
+    return r;
+  });
+  if(!o.rounds.length)o.rounds=[{no:1,label:"1차",deadline:"",submitted_at:"",promise:"",mode:"date",status:"준비중"}];
+  /* 보정서 설정 : 다른 모양이면 기본값으로 두고 본문은 따로 보관 */
+  if(!o.submit||typeof o.submit!=="object"||!("reason_key" in o.submit||"tone" in o.submit||"closing_all" in o.submit)){
+    var extra=(o.submit&&typeof o.submit==="object")?o.submit:(typeof o.submit==="string"?{본문:o.submit}:null);
+    o.submit=null; if(extra)o.submit_extra=extra;
+  }
+  /* 연장 사유 : key 와 말투별 문장(t)이 있는 것만 인정. 하나도 없으면 앱 기본(seed)으로 */
+  var seed=inSeed();
+  function okReasons(v){ return Array.isArray(v)&&v.length&&v.every(function(r){return r&&typeof r==="object"&&r.key&&r.t&&typeof r.t==="object";}); }
+  if(Array.isArray(o.delay_reasons))o.delay_reasons=o.delay_reasons.filter(function(r){return r&&typeof r==="object"&&r.key&&r.t&&typeof r.t==="object";});
+  if(!okReasons(o.delay_reasons))o.delay_reasons=okReasons(D&&D.delay_reasons)?D.delay_reasons:seed.delay_reasons;
+  if(!o.submit)o.submit={date:"",reason_key:(o.delay_reasons[0]||{}).key,tone:"정중",len:"보통",kind:"보정서",
+                        closing_all:"채무자는 위와 같이 성실히 보정하였으니 부디 선처하여 주시기 바랍니다."};
+  if(!o.delay_reasons.some(function(r){return r.key===o.submit.reason_key;})&&o.submit.reason_key!=="직접입력")o.submit.reason_key=(o.delay_reasons[0]||{}).key;
+  if(["담백","보통","정중"].indexOf(o.submit.tone)<0)o.submit.tone="정중";
+  if(["짧게","보통","길게"].indexOf(o.submit.len)<0)o.submit.len="보통";
+  if(typeof o.submit.closing_all!=="string")o.submit.closing_all="채무자는 위와 같이 성실히 보정하였으니 부디 선처하여 주시기 바랍니다.";
+  /* 작업대(P1~P6) : 없으면 앱 기본으로 */
+  function okSt(v){ return Array.isArray(v)&&v.length&&v.every(function(x){return x&&typeof x==="object"&&x.code&&x.name;}); }
+  if(!okSt(o.stations))o.stations=okSt(D&&D.stations)?D.stations:seed.stations;
+  if(!Array.isArray(o.messages))o.messages=(D&&Array.isArray(D.messages))?D.messages:seed.messages;
+  return o;
+}
+var _inSeed=null;
+function inSeed(){
+  if(_inSeed)return _inSeed;
+  try{ _inSeed=JSON.parse(document.getElementById("seed").textContent); }catch(e){ _inSeed={}; }
+  _inSeed.delay_reasons=_inSeed.delay_reasons||[]; _inSeed.stations=_inSeed.stations||[]; _inSeed.messages=_inSeed.messages||[];
+  return _inSeed;
 }
 /* case 칸 이름을 너그럽게 읽는다. 클로드가 "사건번호"·"신청인"·"name" 처럼 써도 받아 준다.
    비어 있으면 지금 열려 있던 사건(prev)의 값을 이어받는다. */

@@ -1257,8 +1257,7 @@
   .pn-gbar{width:6px;height:24px;border-radius:3px;background:#231F1D;flex:none}
   .pn-ghead.urg .pn-gbar{background:#C62828}
   .pn-ghead.urg h3{color:#C62828}
-  .pn-ghead.fin .pn-gbar{background:#9AA09A}
-  .pn-ghead.fin h3{color:#5F665F}
+  .pn-gn.fin{color:#5F665F;background:#EEF0EE;border-color:#D5D9D5}
   .pn-gn{font-size:12px;color:#8A8078;background:#FFF;border:1px solid #E7E3DE;border-radius:20px;padding:2px 10px;white-space:nowrap}
   .pn-gcnt{font-size:11px;font-weight:800;border-radius:5px;padding:2px 8px;white-space:nowrap}
   .pn-gcnt.s{background:#EEF1F8;color:#2B4570}
@@ -14476,6 +14475,12 @@ async function wdSubDel(subId){
      그래서 SQL 을 돌릴 필요가 없고, 직원끼리 같은 값을 본다. */
 var pnOffice="전체", pnFilt="할일", pnHideDone=false, pnReady=false;   /* ★2026-09-07 혜림 : 끝난 것도 기본으로 보인다 */
 /* 끝난 줄 = 우리 쪽 완료 표시·점검표 종결·법원에 제출함. 급한 것·날짜 묶음에 섞지 않고 맨 아래 「끝난 것」 묶음으로 */
+/* 날짜만 보고 '지났거나 오늘'인지. 끝난 줄의 자리를 정할 때 쓴다 (급한 것 판정 pnUrg 와 같은 날짜 규칙, 상태는 안 본다) */
+function pnLate(x){
+  if(x.plan)return (x.planLeft!==null&&x.planLeft<0);
+  if(x.hold)return (x.holdLeft!==null&&x.holdLeft<0);
+  return (x.left!==null&&x.left<=0);
+}
 function pnFin(x){
   var m=x.m||{};
   if(m.done||m.closed||x.ws==="보정완료"||x.ws==="종결"||x.ws==="처리완료")return true;
@@ -14997,7 +15002,11 @@ function pnRows(){
     x.urgent=b.closed?false:pnUrg(x);
     out.push(x);
   });
-  out.forEach(function(x){ x.fin=pnFin(x); });
+  out.forEach(function(x){
+    x.fin=pnFin(x);
+    /* ★2026-09-07 혜림 : 끝난 줄도 제자리에. 자리는 날짜만 본다(기한 지남·오늘 → 급한 것 자리, 아니면 날짜 묶음) */
+    x.place=x.fin?pnLate(x):x.urgent;
+  });
   out=out.filter(function(x){
     if(pnHideDone&&x.fin)return false;           /* ★2026-09-07 : 「끝난 것 숨기기」는 여기서만 */
     if(pnFilt==="급건")return x.urgent;
@@ -15044,17 +15053,11 @@ function pnDateTitle(ymd){
    기준 날짜 = 오늘 처리 예정일(미뤄 둔 날)이 있으면 그 날, 없으면 법원기한 */
 function pnKeyDate(x){ return x.plan||x.hold||x.due||""; }   /* ★2026-09-07 : 추후제출 기한이 있으면 그 날짜로 묶는다(급한 것 판정과 같은 순서) */
 function pnGroups(rows){
-  var urg=[], rest=[], fin=[];
-  rows.forEach(function(x){ (x.fin?fin:(x.urgent?urg:rest)).push(x); });
-  /* ★2026-09-07 : 끝난 것은 최근 날짜가 위, 같은 날짜면 사무소끼리 */
-  fin.sort(function(a,b){
-    var ak=pnKeyDate(a)||"", bk=pnKeyDate(b)||"";
-    if(ak!==bk)return ak<bk?1:-1;
-    var ao=pnOfcOrder(a.firm),bo=pnOfcOrder(b.firm);
-    if(ao!==bo)return ao-bo;
-    return String(a.r.client_name||"").localeCompare(String(b.r.client_name||""));
-  });
+  var urg=[], rest=[];
+  /* ★2026-09-07 혜림 : 끝난 줄도 제자리(급한 것 자리 / 날짜 묶음)에 회색으로 남긴다. 아래로 안 내린다 */
+  rows.forEach(function(x){ (x.place?urg:rest).push(x); });
   urg.sort(function(a,b){
+    if(!!a.fin!==!!b.fin)return a.fin?1:-1;       /* 안 끝난 줄이 먼저, 끝난(회색) 줄은 그 아래 */
     var av=(a.planLeft!==null?a.planLeft:(a.left!==null?a.left:9999));
     var bv=(b.planLeft!==null?b.planLeft:(b.left!==null?b.left:9999));
     if(av!==bv)return av-bv;
@@ -15071,12 +15074,13 @@ function pnGroups(rows){
   keys.sort();                                   /* 날짜 오름차순, "~"(미정)은 맨 뒤 */
   keys.forEach(function(k){
     map[k].sort(function(a,b){
+      if(!!a.fin!==!!b.fin)return a.fin?1:-1;     /* 안 끝난 줄이 먼저 */
       var ao=pnOfcOrder(a.firm),bo=pnOfcOrder(b.firm);
       if(ao!==bo)return ao-bo;                   /* ★같은 날짜 안에서는 사무소끼리 */
       return String(a.r.client_name||"").localeCompare(String(b.r.client_name||""));
     });
   });
-  return {urg:urg, keys:keys, map:map, fin:fin};
+  return {urg:urg, keys:keys, map:map};
 }
 function pnOfcCount(list){
   var c={};
@@ -15129,36 +15133,31 @@ function pnRender(){
       /* ★2026-09-07 혜림 : "오늘 게 왜 4개야, 15개 넘었는데" — 기한이 오늘인 줄은 여기(급한 것)로 올라온다.
          그래서 오늘 기한이 몇 건인지 여기서 바로 보이게 센다. */
       var tk=fmt(today0());
-      var nToday=g.urg.filter(function(x){ return pnKeyDate(x)===tk; }).length;
-      var nPast=g.urg.length-nToday;
+      var live=g.urg.filter(function(x){ return !x.fin; }), nFin=g.urg.length-live.length;
+      var nToday=live.filter(function(x){ return pnKeyDate(x)===tk; }).length;
+      var nPast=live.length-nToday;
       h+='<div class="pn-ghead urg"><span class="pn-gbar"></span><h3>급한 것</h3>'
-        +'<span class="pn-gn">'+g.urg.length+'건</span>'
-        +pnOfcCount(g.urg)
+        +'<span class="pn-gn">'+live.length+'건</span>'
+        +pnOfcCount(live)
+        +(nFin?'<span class="pn-gn fin">끝난 것 '+nFin+'건 포함</span>':'')
         +'<span class="pn-gnote">'+(nToday?'<b>오늘 기한 '+nToday+'건</b>':'')+(nToday&&nPast?' · ':'')+(nPast?'지난 기한 '+nPast+'건':'')
-          +' — 기한이 오늘이거나 지난 줄은 날짜 묶음이 아니라 여기에 모입니다</span></div>';
+          +' — 기한이 오늘이거나 지난 줄은 날짜 묶음이 아니라 여기에 모입니다'+(nFin?'. 끝난 줄은 회색으로 그 아래에 그대로 둡니다':'')+'</span></div>';
       h+=g.urg.map(pnCard).join("");
     }
     g.keys.forEach(function(k){
       var list=g.map[k];
       var isPlan=list.length&&list[0].plan===k&&k!=="~";
-      var nUp=(k==="~")?0:g.urg.filter(function(x){ return pnKeyDate(x)===k; }).length;
+      var nUp=(k==="~")?0:g.urg.filter(function(x){ return !x.fin&&pnKeyDate(x)===k; }).length;
+      var liveL=list.filter(function(x){ return !x.fin; }), nFinL=list.length-liveL.length;
       h+='<div class="pn-ghead"><span class="pn-gbar"></span><h3>'+esc(pnDateTitle(k==="~"?"":k))+'</h3>'
-        +'<span class="pn-gn">'+list.length+'건</span>'
-        +pnOfcCount(list)
+        +'<span class="pn-gn">'+liveL.length+'건</span>'
+        +pnOfcCount(liveL)
+        +(nFinL?'<span class="pn-gn fin">끝난 것 '+nFinL+'건 포함</span>':'')
         +(isPlan?'<span class="pn-gnote">처리 예정으로 잡아 둔 날</span>':'')
         +(nUp?'<span class="pn-gnote">＋ 급한 것에 '+nUp+'건 (같은 날짜인데 위로 올라감)</span>':'')
         +'</div>';
       h+=list.map(pnCard).join("");
     });
-    if(g.fin.length){
-      /* ★2026-09-07 혜림 : 끝난 것(법원 제출함·완료·종결)도 숨기지 않는다. 다만 날짜 묶음에 섞으면
-         지난 날짜 묶음이 오늘 것 위로 올라와 순서가 흐트러지므로 맨 아래 한 묶음으로 둔다 */
-      h+='<div class="pn-ghead fin"><span class="pn-gbar"></span><h3>끝난 것 · 보류</h3>'
-        +'<span class="pn-gn">'+g.fin.length+'건</span>'
-        +pnOfcCount(g.fin)
-        +'<span class="pn-gnote">법원에 제출했거나 완료·종결 표시한 줄, 사건이 끝난 단계(종결·기각·인가·면책·폐지)이거나 보류 중인 줄 — 최근 것부터. 위쪽 순서에는 영향을 주지 않습니다</span></div>';
-      h+=g.fin.map(pnCard).join("");
-    }
   }
   w.innerHTML=h;
   /* 글자를 칠 때마다 다시 그리므로 찾기 칸에 커서를 되돌려 놓는다 */
@@ -15182,8 +15181,10 @@ function pnCard(x){
   var open=!!pnOpen[id];
   var ddCol=(x.left===null)?"":(x.left<0?"r":(x.left<=1?"a":"g"));
 
-  var h='<div class="pn-card '+(x.urgent?"urg ":"")+(m.done?"done":"")+'">';
+  var h='<div class="pn-card '+(x.urgent?"urg ":"")+(x.fin?"done":"")+'">';
   if(m.done)h+='<div class="pn-donebar">완료 처리한 건입니다. 「완료」를 다시 누르면 되돌아옵니다.</div>';
+  else if(x.ws==="보정완료")h+='<div class="pn-donebar">법원에 제출한 건입니다. 「법원 제출함」을 다시 누르면 되돌아옵니다.</div>';
+  else if(x.ws==="종결"||m.closed)h+='<div class="pn-donebar">케이스허브 점검표에서 종결로 표시된 건입니다.</div>';
   else if(x.stageClosed)
     h+='<div class="pn-donebar" style="background:#8a5a00">케이스허브 단계가 <b>'+esc(x.stg)+'</b> 입니다. '
       +'끝난 사건이면 「완료」를 눌러 목록에서 내려 주세요. 급한 것에서는 빼 두었습니다.</div>';
@@ -15450,7 +15451,6 @@ function pnPrint(){
   g.keys.forEach(function(k){
     body+='<tr class="gh"><td colspan="11">'+esc(pnDateTitle(k==="~"?"":k))+' · '+g.map[k].length+'건</td></tr>'+g.map[k].map(tr).join("");
   });
-  if(g.fin.length)body+='<tr class="gh"><td colspan="11">끝난 것 '+g.fin.length+'건</td></tr>'+g.fin.map(tr).join("");
   var html='<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>보정 점검판 '+fmt(today0())+'</title>'
     +'<style>body{font-family:"Malgun Gothic",sans-serif;font-size:11px;margin:14px}'
     +'h1{font-size:16px;margin:0 0 10px}table{width:100%;border-collapse:collapse}'
@@ -15480,7 +15480,6 @@ function pnExcel(){
   }
   g.urg.forEach(function(x){ push("급한 것",x); });
   g.keys.forEach(function(k){ g.map[k].forEach(function(x){ push(pnDateTitle(k==="~"?"":k),x); }); });
-  g.fin.forEach(function(x){ push("끝난 것",x); });
   var csv=lines.map(function(a){
     return a.map(function(v){ return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'; }).join(",");
   }).join("\r\n");

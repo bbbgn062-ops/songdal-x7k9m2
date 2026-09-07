@@ -4,13 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>전자소송 개인회생 송달 관리</title>
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" type="image/svg+xml" href="songdal-icon.svg">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="manifest" href="site.webmanifest">
-<meta name="theme-color" content="#9B1B33">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&display=swap" rel="stylesheet">
@@ -1253,6 +1246,10 @@
   .pn-chip{border:1px solid #DDD8D2;background:#FFF;border-radius:20px;padding:5px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap}
   .pn-chip.on{background:#231F1D;color:#FFF;border-color:#231F1D}
   .pn-ck{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#5B554F;cursor:pointer;white-space:nowrap}
+  .pn-q{display:inline-flex;align-items:center;gap:6px;margin-left:14px}
+  .pn-q input{width:190px;padding:5px 10px;border:1px solid #DDD8D2;border-radius:20px;font-size:12.5px;font-family:inherit}
+  .pn-q input:focus{outline:none;border-color:#231F1D}
+  .pn-qnote{margin:8px 20px 0;font-size:12.5px;color:#8a5a00;background:#FDF8EE;border:1px solid #F0E2C6;border-radius:8px;padding:6px 11px}
   .pn-empty{margin:18px 20px;padding:34px;text-align:center;color:#8A8078;font-size:13.5px;background:#FAF8F6;border-radius:12px}
   /* 날짜·급건 구역 제목 */
   .pn-ghead{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:22px 20px 9px}
@@ -14474,6 +14471,26 @@ async function wdSubDel(subId){
      '연락함'과 '미룬 날짜'만 bj_settings(key·value) 에 한 줄씩 넣는다.
      그래서 SQL 을 돌릴 필요가 없고, 직원끼리 같은 값을 본다. */
 var pnOffice="전체", pnFilt="할일", pnHideDone=true, pnReady=false;
+/* ★2026-09-07 혜림 : "검색도 안돼" — 점검판 자체 찾기. 찾는 동안엔 거르기를 전부 무시한다 */
+var pnQ="", pnQFocus=false;
+function pnQNorm(v){ return String(v||"").replace(/\s+/g,"").toLowerCase(); }
+function pnQHit(x,q){
+  if(!q)return true;
+  var hay=[x.r.client_name,(x.c&&x.c.name),x.r.case_no,(x.c&&x.c.caseno),x.r.court,(x.c&&x.c.court),
+           (pnCli[x.cid]&&pnCli[x.cid].case_no),(x.cid?pnPhone[x.cid]:"")].map(pnQNorm).join("|");
+  return hay.indexOf(q)>=0;
+}
+/* 찾는 말이 있으면 사무소·보기·완료숨김을 다 풀고 전부에서 찾는다 */
+function pnRowsQ(){
+  var q=pnQNorm(pnQ);
+  if(!q)return pnRows();
+  var ko=pnOffice,kf=pnFilt,kh=pnHideDone;
+  pnOffice="전체"; pnFilt="전체"; pnHideDone=false;
+  var rows;
+  try{ rows=pnRows().filter(function(x){ return pnQHit(x,q); }); }
+  finally{ pnOffice=ko; pnFilt=kf; pnHideDone=kh; }
+  return rows;
+}
 var pnMeta={};      /* 문서id → {called:참/거짓, plan:"2026-09-05"} */
 var pnPhone={};     /* 의뢰인id → 전화번호 */
 /* ★2026-09-05 혜림 : "케이스허브에 써 놓은 게 왜 송달앱에 안 보이냐"
@@ -15040,7 +15057,7 @@ function pnOfcCount(list){
 }
 function pnRender(){
   var w=document.getElementById("pn-wrap"); if(!w)return;
-  var rows=pnRows();
+  var rows=pnRowsQ();
   var g=pnGroups(rows);
   var urgentN=0;
   (function(){ var kf=pnFilt,kh=pnHideDone; pnFilt="전체"; pnHideDone=true;
@@ -15066,11 +15083,17 @@ function pnRender(){
     +pnChip("할 일 전부",pnFilt,"할일","pnFilt='할일';pnRender()")
     +pnChip("전부",pnFilt,"전체","pnFilt='전체';pnRender()")
     +'<label class="pn-ck" style="margin-left:14px"><input type="checkbox" '+(pnHideDone?"checked":"")+' onchange="pnHideDone=this.checked;pnRender()">완료한 건 숨기기</label>'
-    +'<span class="pn-cnt">'+rows.length+'건</span>'
+    +'<span class="pn-q"><input id="pn-q" type="search" placeholder="이름·사건번호로 찾기" value="'+esc(pnQ)+'" '
+      +'oninput="pnQ=this.value;pnQFocus=true;pnRender()" onfocus="pnQFocus=true" onblur="pnQFocus=false" '
+      +'title="이름 일부만 쳐도 됩니다. 찾는 동안은 사무소·보기·완료 숨기기를 무시하고 전부에서 찾습니다">'
+      +(pnQ?'<button class="pn-mini2" onclick="pnQ=\'\';pnRender()">지우기</button>':'')+'</span>'
+    +'<span class="pn-cnt">'+rows.length+'건'+(pnQ?' 찾음':'')+'</span>'
     +'</div>';
+  if(pnQ)h+='<div class="pn-qnote">「'+esc(pnQ)+'」 으로 찾는 중 — 사무소·보기·완료 숨기기를 무시하고 전부에서 찾습니다</div>';
   if(!rows.length){
-    h+='<div class="pn-empty">여기에 해당하는 보정 문서가 없습니다.'
-      +(pnHideDone?'<br>「완료한 건 숨기기」를 꺼 보세요.':'')+'</div>';
+    h+='<div class="pn-empty">'+(pnQ
+      ?('「'+esc(pnQ)+'」 에 맞는 줄이 없습니다.<br>점검판에는 케이스허브 <b>보정 점검표</b>에 있는 사건, 등록된 <b>보정 문서</b>, <b>송달문서</b>만 올라옵니다. 셋 다 없으면 여기서 안 보입니다.')
+      :('여기에 해당하는 보정 문서가 없습니다.'+(pnHideDone?'<br>「완료한 건 숨기기」를 꺼 보세요.':'')))+'</div>';
   }else{
     if(g.urg.length){
       /* ★2026-09-07 혜림 : "오늘 게 왜 4개야, 15개 넘었는데" — 기한이 오늘인 줄은 여기(급한 것)로 올라온다.
@@ -15099,6 +15122,8 @@ function pnRender(){
     });
   }
   w.innerHTML=h;
+  /* 글자를 칠 때마다 다시 그리므로 찾기 칸에 커서를 되돌려 놓는다 */
+  if(pnQFocus){ var qe=document.getElementById("pn-q"); if(qe){ qe.focus(); try{ var L=qe.value.length; qe.setSelectionRange(L,L); }catch(e){} } }
   /* 파일 목록은 화면을 그린 뒤에 채운다. 한 번 채우면 다시 서버를 보지 않는다 */
   pnLoadFiles(rows).then(function(changed){ if(changed)pnRender(); });
 }

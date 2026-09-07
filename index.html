@@ -5158,6 +5158,8 @@ function dashMode(m){
 function dashPick(o){dashOwner=o;render();}
 function tbSearch(v){
   /* 상단 검색창 = 화면마다 있는 검색칸으로 넘겨준다 */
+  /* ★2026-09-07 혜림 : 점검판이 열려 있으면 점검판 찾기로 넘긴다 (송달문서 목록 칸으로만 가서 "검색이 안 된다"고 했다) */
+  if(typeof view!=="undefined"&&view==="plan"&&typeof pnRender==="function"){ pnQ=v; pnQFocus=false; pnRender(); return; }
   var t=document.getElementById("q")||document.getElementById("fltQ");
   if(t){t.value=v;if(typeof render==="function")render();}
 }

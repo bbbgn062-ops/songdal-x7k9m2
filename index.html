@@ -14478,7 +14478,8 @@ var pnOffice="전체", pnFilt="할일", pnHideDone=false, pnReady=false;   /* �
 /* 끝난 줄 = 우리 쪽 완료 표시·점검표 종결·법원에 제출함. 급한 것·날짜 묶음에 섞지 않고 맨 아래 「끝난 것」 묶음으로 */
 function pnFin(x){
   var m=x.m||{};
-  return !!(m.done||m.closed||x.ws==="보정완료"||x.ws==="종결"||x.ws==="처리완료");
+  if(m.done||m.closed||x.ws==="보정완료"||x.ws==="종결"||x.ws==="처리완료")return true;
+  return !!(x.stageClosed||x.onHold);   /* 사건 단계가 종결·기각·인가·면책·폐지이거나 보류 중인 사건도 위쪽엔 안 둔다 */
 }
 /* ★2026-09-07 혜림 : "검색도 안돼" — 점검판 자체 찾기. 찾는 동안엔 거르기를 전부 무시한다 */
 var pnQ="", pnQFocus=false;
@@ -15041,7 +15042,7 @@ function pnDateTitle(ymd){
    ① 급한 것은 사무소와 상관없이 맨 위에 한 무리로 모은다
    ② 나머지는 '날짜'로 묶고, 같은 날짜 안에서 '사무소'끼리 붙여 놓는다
    기준 날짜 = 오늘 처리 예정일(미뤄 둔 날)이 있으면 그 날, 없으면 법원기한 */
-function pnKeyDate(x){ return x.plan||x.due||""; }
+function pnKeyDate(x){ return x.plan||x.hold||x.due||""; }   /* ★2026-09-07 : 추후제출 기한이 있으면 그 날짜로 묶는다(급한 것 판정과 같은 순서) */
 function pnGroups(rows){
   var urg=[], rest=[], fin=[];
   rows.forEach(function(x){ (x.fin?fin:(x.urgent?urg:rest)).push(x); });
@@ -15152,10 +15153,10 @@ function pnRender(){
     if(g.fin.length){
       /* ★2026-09-07 혜림 : 끝난 것(법원 제출함·완료·종결)도 숨기지 않는다. 다만 날짜 묶음에 섞으면
          지난 날짜 묶음이 오늘 것 위로 올라와 순서가 흐트러지므로 맨 아래 한 묶음으로 둔다 */
-      h+='<div class="pn-ghead fin"><span class="pn-gbar"></span><h3>끝난 것</h3>'
+      h+='<div class="pn-ghead fin"><span class="pn-gbar"></span><h3>끝난 것 · 보류</h3>'
         +'<span class="pn-gn">'+g.fin.length+'건</span>'
         +pnOfcCount(g.fin)
-        +'<span class="pn-gnote">법원에 제출했거나 완료·종결 표시한 줄 — 최근 것부터. 위쪽 순서에는 영향을 주지 않습니다</span></div>';
+        +'<span class="pn-gnote">법원에 제출했거나 완료·종결 표시한 줄, 사건이 끝난 단계(종결·기각·인가·면책·폐지)이거나 보류 중인 줄 — 최근 것부터. 위쪽 순서에는 영향을 주지 않습니다</span></div>';
       h+=g.fin.map(pnCard).join("");
     }
   }

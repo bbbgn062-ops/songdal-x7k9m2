@@ -4172,7 +4172,22 @@ function viewIntake(){
   }
   if(inStep===3){
     var mats=MATS();
-    panel='<section class="card"><div class="hd"><h3>읽은 내용</h3><span class="sp"></span>'
+    var cs=D["case"]||{}; var noCase=!String(cs.case_no||"").trim();
+    panel='<section class="card"><div class="hd"><h3>사건 정보</h3><span class="sp"></span>'
+     +(noCase?'<span class="tag r">사건번호가 없어 서버에 저장되지 않습니다</span>':'<span class="tag g">'+esc(cs.case_no)+' · '+esc(cs.debtor||"이름 없음")+'</span>')
+     +'</div><div class="pad">'
+     +'<div class="needbox '+(noCase?"":"ok")+'" style="margin-bottom:12px"><b>'+(noCase?'사건번호와 이름을 넣어 주세요.':'이 사건으로 저장됩니다.')+'</b>'
+     +' <span class="dim">JSON 에 없던 값은 여기서 채우면 됩니다. 사건번호가 들어가는 순간 회사 서버에 저장되고 「사건 바꾸기」 목록에 뜹니다.</span></div>'
+     +'<div class="grid3">'
+     +'<label style="display:block"><span class="cap" style="display:block;margin-bottom:4px">사건번호</span><input class="in" value="'+esc(cs.case_no||"")+'" placeholder="2026개회116451" onchange="inCaseSet(\'case_no\',this.value)"></label>'
+     +'<label style="display:block"><span class="cap" style="display:block;margin-bottom:4px">신청인(이름)</span><input class="in" value="'+esc(cs.debtor||"")+'" placeholder="김선열" onchange="inCaseSet(\'debtor\',this.value)"></label>'
+     +'<label style="display:block"><span class="cap" style="display:block;margin-bottom:4px">법원</span><input class="in" value="'+esc(cs.court||"")+'" placeholder="수원회생법원" onchange="inCaseSet(\'court\',this.value)"></label>'
+     +'</div>'
+     +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'
+     +'<button class="b p" onclick="wbSaveNow()" '+(noCase?'disabled title="사건번호를 먼저 넣으세요"':'')+'>회사 서버에 저장</button>'
+     +'<span class="dim" style="align-self:center">저장 상태는 위쪽 「'+esc((document.getElementById("savedot")||{}).textContent||"저장 준비 중")+'」 표시로도 볼 수 있습니다</span>'
+     +'</div></div></section>'
+     +'<section class="card" style="margin-top:14px"><div class="hd"><h3>읽은 내용</h3><span class="sp"></span>'
      +'<span class="tag g">검사 통과</span></div><div class="pad">'
      +'<div class="grid3">'
      +'<div class="sub-card"><div class="pad"><span class="cap">법원 문항</span><div class="fig">'+(D.hangs||[]).length+'<span class="figu">항</span></div></div></div>'
@@ -4253,14 +4268,44 @@ function inCheck(){
   catch(e){ bad("wait","<b>모양이 깨져 있습니다.</b><div class=\"dim\">따옴표나 쉼표가 빠졌을 수 있습니다. 클로드에게 JSON만 다시 달라고 부탁해 보세요.<br><span class=\"m\">"+esc(String(e.message||e).slice(0,110))+"</span></div>"); return; }
   var lack=["case","tasks"].filter(function(k){return !o[k];});
   if(lack.length){ bad("wait","<b>"+lack.join(" · ")+" 칸이 없습니다.</b><div class=\"dim\">클로드에게 이 칸을 빼먹지 말라고 다시 부탁해 주세요.</div>"); return; }
+  /* ★2026-09-07 혜림 : "검사하기 해도 등록이 안 된다" — case 칸 이름이 조금 달라도 읽고, 없으면 지금 열려 있는 사건 정보를 이어받는다.
+     사건번호가 있어야 회사 서버(bj_workbench)에 저장되어 「사건 바꾸기」 목록에 뜬다. */
+  o["case"]=inCaseNorm(o["case"], (D&&D["case"])||{}, o);
   o.rounds=o.rounds||[{no:1,label:"1차",deadline:"",submitted_at:"",promise:"",mode:"date",status:"준비중"}];
   o.hangs=o.hangs||[];
   o.delay_reasons=o.delay_reasons||D.delay_reasons;
   o.submit=o.submit||{date:"",reason_key:(o.delay_reasons[0]||{}).key,tone:"정중",len:"보통",kind:"보정서",
                       closing_all:"채무자는 위와 같이 성실히 보정하였으니 부디 선처하여 주시기 바랍니다."};
   D=o; openHang={}; openRound={}; openTask=null; justNew={}; notice=null; peekAt=null; DICTST={};
-  toast("불러왔습니다. 할 일 "+D.tasks.length+"건");
+  markSave();                                  /* ★검사 통과 = 바로 저장 (사건번호가 있으면 회사 서버까지) */
+  toast("불러왔습니다. 할 일 "+D.tasks.length+"건"+(wbCase()?"":" · 사건번호를 넣어야 서버에 저장됩니다"));
   inGo(3);
+}
+/* case 칸 이름을 너그럽게 읽는다. 클로드가 "사건번호"·"신청인"·"name" 처럼 써도 받아 준다.
+   비어 있으면 지금 열려 있던 사건(prev)의 값을 이어받는다. */
+function inCaseNorm(c, prev, root){
+  c=(c&&typeof c==="object")?c:{}; prev=prev||{}; root=root||{};
+  function pick(obj,keys){ for(var i=0;i<keys.length;i++){ var v=obj&&obj[keys[i]]; if(v!==undefined&&v!==null&&String(v).trim()!=="")return String(v).trim(); } return ""; }
+  var no=pick(c,["case_no","caseno","case_number","number","사건번호"])||pick(root,["case_no","사건번호"]);
+  var nm=pick(c,["debtor","debtor_name","name","client","client_name","applicant","신청인","채무자","의뢰인","이름"])||pick(root,["debtor","신청인","의뢰인"]);
+  var ct=pick(c,["court","court_name","법원","관할법원"])||pick(root,["court","법원","관할법원"]);
+  /* "수원회생법원 2026개회116451" 처럼 한 칸에 같이 적힌 경우 */
+  var m=no.match(/(20\d{2}\s*(?:개회|하단|하면|회단|회합)\s*\d+)/);
+  if(m){ var before=no.slice(0,m.index).trim(); if(before&&!ct)ct=before; no=m[1].replace(/\s/g,""); }
+  var prevNo=String(prev.case_no||"").trim();
+  var sameCase=!no||!prevNo||no===prevNo;
+  c.case_no=no||prevNo;
+  c.debtor=nm||(sameCase?String(prev.debtor||""):"");
+  c.court=ct||(sameCase?String(prev.court||""):"");
+  if(sameCase){ ["case_kind","firm_label","served_at","term_days","order_date","urgent_at"].forEach(function(k){ if((c[k]===undefined||c[k]===null||c[k]==="")&&prev[k]!==undefined)c[k]=prev[k]; }); }
+  return c;
+}
+function inCaseSet(k,v){
+  D["case"]=D["case"]||{};
+  var t=String(v||"").trim();
+  if(k==="case_no"){ var m=t.match(/(20\d{2}\s*(?:개회|하단|하면|회단|회합)\s*\d+)/); if(m){ var before=t.slice(0,m.index).trim(); if(before&&!D["case"].court)D["case"].court=before; t=m[1].replace(/\s/g,""); } }
+  D["case"][k]=t;
+  markSave(); draw();
 }
 
 /* ---------- 받을 것 ---------- */

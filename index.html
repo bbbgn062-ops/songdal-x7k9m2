@@ -1257,6 +1257,8 @@
   .pn-gbar{width:6px;height:24px;border-radius:3px;background:#231F1D;flex:none}
   .pn-ghead.urg .pn-gbar{background:#C62828}
   .pn-ghead.urg h3{color:#C62828}
+  .pn-ghead.fin .pn-gbar{background:#9AA09A}
+  .pn-ghead.fin h3{color:#5F665F}
   .pn-gn{font-size:12px;color:#8A8078;background:#FFF;border:1px solid #E7E3DE;border-radius:20px;padding:2px 10px;white-space:nowrap}
   .pn-gcnt{font-size:11px;font-weight:800;border-radius:5px;padding:2px 8px;white-space:nowrap}
   .pn-gcnt.s{background:#EEF1F8;color:#2B4570}
@@ -14472,7 +14474,12 @@ async function wdSubDel(subId){
    ★새 DB 칸을 만들지 않았다. 상태·기한·메모는 원래 있던 칸을 그대로 쓰고,
      '연락함'과 '미룬 날짜'만 bj_settings(key·value) 에 한 줄씩 넣는다.
      그래서 SQL 을 돌릴 필요가 없고, 직원끼리 같은 값을 본다. */
-var pnOffice="전체", pnFilt="할일", pnHideDone=true, pnReady=false;
+var pnOffice="전체", pnFilt="할일", pnHideDone=false, pnReady=false;   /* ★2026-09-07 혜림 : 끝난 것도 기본으로 보인다 */
+/* 끝난 줄 = 우리 쪽 완료 표시·점검표 종결·법원에 제출함. 급한 것·날짜 묶음에 섞지 않고 맨 아래 「끝난 것」 묶음으로 */
+function pnFin(x){
+  var m=x.m||{};
+  return !!(m.done||m.closed||x.ws==="보정완료"||x.ws==="종결"||x.ws==="처리완료");
+}
 /* ★2026-09-07 혜림 : "검색도 안돼" — 점검판 자체 찾기. 찾는 동안엔 거르기를 전부 무시한다 */
 var pnQ="", pnQFocus=false;
 function pnQNorm(v){ return String(v||"").replace(/\s+/g,"").toLowerCase(); }
@@ -14913,8 +14920,7 @@ function pnRows(){
     var c=(typeof cases!=="undefined"&&cases)?cases.find(function(x){return x.id===r.delivery_id;}):null;
     var cid=(c&&c.client_id)||r.client_id||null;
     var m0=pnBind(r.id,cid,"doc:"+r.id);
-    /* ★「법원 제출함」과 「완료」는 다른 것이다. 숨기는 기준은 우리 쪽 마무리 표시인 '완료'다 */
-    if(pnHideDone&&m0.done)return;
+    /* ★2026-09-07 : 여기서 숨기지 않는다. 숨김은 맨 끝에서 한 번에(합치기 규칙이 숨김에 따라 달라지지 않게) */
     var firm=pnFirmOf(cid);
     if(pnOffice!=="전체"&&rcFirmShort(firm)!==pnOffice)return;
     var due0=(typeof bjDueOf==="function")?(bjDueOf(r).date||""):String(r.court_deadline||"").slice(0,10);
@@ -14940,7 +14946,6 @@ function pnRows(){
     var firm=pnFirmOf(c.client_id);
     if(pnOffice!=="전체"&&rcFirmShort(firm)!==pnOffice)return;
     var m2=pnBind("del:"+c.id, c.client_id||null, "del:"+c.id);
-    if(pnHideDone&&m2.done)return;
     var due="";
     try{ var dd=(typeof procDueDate==="function")?procDueDate(c):null; if(dd)due=fmt(dd); }catch(e){}
     var off=(typeof isOffDeadline==="function")&&isOffDeadline(c);
@@ -14968,7 +14973,6 @@ function pnRows(){
     var firm=pnFirmOf(b.client_id);
     if(pnOffice!=="전체"&&rcFirmShort(firm)!==pnOffice)return;
     var m3=pnBind("bd:"+b.client_id, b.client_id, "");
-    if(pnHideDone&&m3.done)return;
     var cl=(typeof calCli!=="undefined"&&calCli)?calCli[b.client_id]:null;
     var sp=pnSplitCase(info.case_no||"");
     var x={
@@ -14992,7 +14996,9 @@ function pnRows(){
     x.urgent=b.closed?false:pnUrg(x);
     out.push(x);
   });
+  out.forEach(function(x){ x.fin=pnFin(x); });
   out=out.filter(function(x){
+    if(pnHideDone&&x.fin)return false;           /* ★2026-09-07 : 「끝난 것 숨기기」는 여기서만 */
     if(pnFilt==="급건")return x.urgent;
     if(pnFilt==="오늘")return x.urgent||(x.planLeft===0)||(x.left===0);
     if(pnFilt==="주간")return x.urgent||(x.left!==null&&x.left<=7)||(x.planLeft!==null&&x.planLeft<=7);
@@ -15037,8 +15043,16 @@ function pnDateTitle(ymd){
    기준 날짜 = 오늘 처리 예정일(미뤄 둔 날)이 있으면 그 날, 없으면 법원기한 */
 function pnKeyDate(x){ return x.plan||x.due||""; }
 function pnGroups(rows){
-  var urg=[], rest=[];
-  rows.forEach(function(x){ (x.urgent?urg:rest).push(x); });
+  var urg=[], rest=[], fin=[];
+  rows.forEach(function(x){ (x.fin?fin:(x.urgent?urg:rest)).push(x); });
+  /* ★2026-09-07 : 끝난 것은 최근 날짜가 위, 같은 날짜면 사무소끼리 */
+  fin.sort(function(a,b){
+    var ak=pnKeyDate(a)||"", bk=pnKeyDate(b)||"";
+    if(ak!==bk)return ak<bk?1:-1;
+    var ao=pnOfcOrder(a.firm),bo=pnOfcOrder(b.firm);
+    if(ao!==bo)return ao-bo;
+    return String(a.r.client_name||"").localeCompare(String(b.r.client_name||""));
+  });
   urg.sort(function(a,b){
     var av=(a.planLeft!==null?a.planLeft:(a.left!==null?a.left:9999));
     var bv=(b.planLeft!==null?b.planLeft:(b.left!==null?b.left:9999));
@@ -15061,7 +15075,7 @@ function pnGroups(rows){
       return String(a.r.client_name||"").localeCompare(String(b.r.client_name||""));
     });
   });
-  return {urg:urg, keys:keys, map:map};
+  return {urg:urg, keys:keys, map:map, fin:fin};
 }
 function pnOfcCount(list){
   var c={};
@@ -15097,7 +15111,7 @@ function pnRender(){
     +pnChip("이번주",pnFilt,"주간","pnFilt='주간';pnRender()")
     +pnChip("할 일 전부",pnFilt,"할일","pnFilt='할일';pnRender()")
     +pnChip("전부",pnFilt,"전체","pnFilt='전체';pnRender()")
-    +'<label class="pn-ck" style="margin-left:14px"><input type="checkbox" '+(pnHideDone?"checked":"")+' onchange="pnHideDone=this.checked;pnRender()">완료한 건 숨기기</label>'
+    +'<label class="pn-ck" style="margin-left:14px"><input type="checkbox" '+(pnHideDone?"checked":"")+' onchange="pnHideDone=this.checked;pnRender()">끝난 것 숨기기</label>'
     +'<span class="pn-q"><input id="pn-q" type="search" placeholder="이름·사건번호로 찾기" value="'+esc(pnQ)+'" '
       +'oninput="pnQ=this.value;pnQFocus=true;pnRender()" onfocus="pnQFocus=true" onblur="pnQFocus=false" '
       +'title="이름 일부만 쳐도 됩니다. 찾는 동안은 사무소·보기·완료 숨기기를 무시하고 전부에서 찾습니다">'
@@ -15108,7 +15122,7 @@ function pnRender(){
   if(!rows.length){
     h+='<div class="pn-empty">'+(pnQ
       ?('「'+esc(pnQ)+'」 에 맞는 줄이 없습니다.<br>점검판에는 케이스허브 <b>보정 점검표</b>에 있는 사건, 등록된 <b>보정 문서</b>, <b>송달문서</b>만 올라옵니다. 셋 다 없으면 여기서 안 보입니다.')
-      :('여기에 해당하는 보정 문서가 없습니다.'+(pnHideDone?'<br>「완료한 건 숨기기」를 꺼 보세요.':'')))+'</div>';
+      :('여기에 해당하는 보정 문서가 없습니다.'+(pnHideDone?'<br>「끝난 것 숨기기」를 꺼 보세요.':'')))+'</div>';
   }else{
     if(g.urg.length){
       /* ★2026-09-07 혜림 : "오늘 게 왜 4개야, 15개 넘었는데" — 기한이 오늘인 줄은 여기(급한 것)로 올라온다.
@@ -15135,6 +15149,15 @@ function pnRender(){
         +'</div>';
       h+=list.map(pnCard).join("");
     });
+    if(g.fin.length){
+      /* ★2026-09-07 혜림 : 끝난 것(법원 제출함·완료·종결)도 숨기지 않는다. 다만 날짜 묶음에 섞으면
+         지난 날짜 묶음이 오늘 것 위로 올라와 순서가 흐트러지므로 맨 아래 한 묶음으로 둔다 */
+      h+='<div class="pn-ghead fin"><span class="pn-gbar"></span><h3>끝난 것</h3>'
+        +'<span class="pn-gn">'+g.fin.length+'건</span>'
+        +pnOfcCount(g.fin)
+        +'<span class="pn-gnote">법원에 제출했거나 완료·종결 표시한 줄 — 최근 것부터. 위쪽 순서에는 영향을 주지 않습니다</span></div>';
+      h+=g.fin.map(pnCard).join("");
+    }
   }
   w.innerHTML=h;
   /* 글자를 칠 때마다 다시 그리므로 찾기 칸에 커서를 되돌려 놓는다 */
@@ -15426,6 +15449,7 @@ function pnPrint(){
   g.keys.forEach(function(k){
     body+='<tr class="gh"><td colspan="11">'+esc(pnDateTitle(k==="~"?"":k))+' · '+g.map[k].length+'건</td></tr>'+g.map[k].map(tr).join("");
   });
+  if(g.fin.length)body+='<tr class="gh"><td colspan="11">끝난 것 '+g.fin.length+'건</td></tr>'+g.fin.map(tr).join("");
   var html='<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>보정 점검판 '+fmt(today0())+'</title>'
     +'<style>body{font-family:"Malgun Gothic",sans-serif;font-size:11px;margin:14px}'
     +'h1{font-size:16px;margin:0 0 10px}table{width:100%;border-collapse:collapse}'
@@ -15455,6 +15479,7 @@ function pnExcel(){
   }
   g.urg.forEach(function(x){ push("급한 것",x); });
   g.keys.forEach(function(k){ g.map[k].forEach(function(x){ push(pnDateTitle(k==="~"?"":k),x); }); });
+  g.fin.forEach(function(x){ push("끝난 것",x); });
   var csv=lines.map(function(a){
     return a.map(function(v){ return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'; }).join(",");
   }).join("\r\n");

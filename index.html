@@ -4,13 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>전자소송 개인회생 송달 관리</title>
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" type="image/svg+xml" href="songdal-icon.svg">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="manifest" href="site.webmanifest">
-<meta name="theme-color" content="#9B1B33">
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&display=swap" rel="stylesheet">
@@ -1374,6 +1367,8 @@
   .pn-sheet .pn-mlb2{margin-bottom:4px}
   .pn-sheet .pn-mtag{background:#E4E9DF;color:#3d5a2f}
   .pn-sheettext{font-size:13px;line-height:1.55;color:#231F1D;white-space:pre-wrap;word-break:break-all}
+  .pn-sheet.board{background:#FFF9F5;border-color:#F1DDD0}
+  .pn-sheet.board .pn-mtag{background:#F8E8EC;color:#9B1B33}
   .pn-memos{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:11px}
   .pn-mlb2{font-size:11.5px;color:#6B645E;font-weight:700;margin-bottom:5px;
     display:flex;align-items:center;gap:6px}
@@ -14675,6 +14670,24 @@ function pnSheetMemoOf(cid){
   if(!b)return {text:"",row:null};
   return {text:String(b.todo||"").trim(), row:b.sheet_row||null};
 }
+/* 사건 줄(ref '')에 적어 둔 점검판 메모 */
+function pnBoardMemoOf(cid){
+  if(!cid||typeof pnBd==="undefined"||!pnBd)return "";
+  var b=pnBd[pnBdKey(cid,"")];
+  return b?String(b.memo||"").trim():"";
+}
+/* 점검판 메모를 이 문서(bj_documents) 메모 뒤에 붙여 저장한다 */
+async function pnBoardToMemo(id){
+  var t=pnRef[id]||{};
+  var bm=pnBoardMemoOf(t.cid);
+  if(!bm){ if(typeof wdToast==="function")wdToast("점검판 메모가 없습니다"); return; }
+  if(String(id).indexOf("bd:")===0)return;         /* 사건 줄 자체는 이미 그 메모를 보여 준다 */
+  var cur="";
+  for(var i=0;i<(bxRows||[]).length;i++){ if(bxRows[i].id===id){ cur=String(bxRows[i].memo||""); break; } }
+  if(cur.indexOf(bm)>=0){ if(typeof wdToast==="function")wdToast("이미 문서 메모에 들어 있습니다"); return; }
+  var next=cur.trim()?(cur.replace(/\s+$/,"")+"\n[점검판] "+bm):("[점검판] "+bm);
+  await pnUpd(id,{memo:next},"점검판 메모를 문서 메모에 붙였습니다");
+}
 /* 시트 비고를 이 문서 메모 뒤에 붙여 저장한다. 이미 들어 있으면 두 번 안 붙인다 */
 async function pnSheetToMemo(id){
   var t=pnRef[id]||{};
@@ -15269,6 +15282,16 @@ function pnCard(x){
       +((x.isBd||!x.isDel)?'<button class="pn-mini2" style="margin-left:auto" onclick="pnSheetToMemo('+sid+')">이 문서 메모에 붙이기</button>':'')
       +'</div>'
       +'<div class="pn-sheettext">'+esc(sm.text)+'</div></div>';
+  }
+  /* ★2026-09-07 혜림 : "내가 점검판에 써 둔 멘트도 사라졌어" — 사건 줄(ref '')의 memo 는 그 줄이 문서 줄과
+     합쳐져(같은 사람+같은 기한) 사라지면 같이 사라졌다. 그래서 같은 의뢰인의 다른 줄에도 보여 준다. */
+  var bm=(!x.isBd)?pnBoardMemoOf(x.cid):"";
+  if(bm){
+    h+='<div class="pn-sheet board"><div class="pn-mlb2"><span class="pn-mtag">점검판</span>점검판 메모'
+      +' <span class="pn-note2">· 이 의뢰인의 사건 줄에 적어 둔 것</span>'
+      +(!x.isDel?'<button class="pn-mini2" style="margin-left:auto" onclick="pnBoardToMemo('+sid+')">이 문서 메모에 붙이기</button>':'')
+      +'</div>'
+      +'<div class="pn-sheettext">'+esc(bm)+'</div></div>';
   }
   /* ★2026-09-05 혜림 : 사건 메모를 먼저(왼쪽) 본다 */
   h+='<div class="pn-memos">'

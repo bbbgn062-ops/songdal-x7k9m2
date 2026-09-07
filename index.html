@@ -14586,6 +14586,17 @@ function pnBdKeep(nb){
   for(var i=0;i<pnBdRows.length;i++){ if(pnBdRows[i].id===nb.id){ pnBdRows[i]=nb; return; } }
   pnBdRows.push(nb);
 }
+/* ★2026-09-07 : 점검표 줄의 상태. 시트 말(제출함·임시저장·추후제출)을 앱 말로 바꾼다 */
+function pnBdWs(b){
+  if(!b)return "보정중";
+  if(b.closed)return "종결";
+  var st=String(b.status||"").trim();
+  if(st==="제출함"||st==="보정완료"||st==="완료"||b.filed)return "보정완료";
+  if(st==="임시저장")return "임시저장";
+  if(st==="추후제출"||st==="추후처리")return "추후제출";
+  if(st)return st;
+  return (b.kind==="완료")?"보정완료":"보정중";
+}
 /* 기한·상태·메모를 bj_board 에 저장한다 (사건 줄 전용 경로) */
 async function pnBdUpd(id,patch,msg){
   var t=pnRef[id]||{};
@@ -14595,8 +14606,10 @@ async function pnBdUpd(id,patch,msg){
   if("hold_until" in patch)row.ext_date=patch.hold_until||null;
   if("memo" in patch)row.memo=patch.memo||null;
   if("work_state" in patch){
-    row.status=patch.work_state||null;
-    if(patch.work_state==="보정완료")row.filed=true;
+    /* ★2026-09-07 : 시트(케이스허브)와 같은 말로 저장한다. 보정완료→제출함, 보정중→비움 */
+    var ws=String(patch.work_state||"");
+    row.status=(ws==="보정완료")?"제출함":(ws==="보정중"||ws==="")?null:ws;
+    row.filed=(ws==="보정완료");
   }
   busy(true);
   try{
@@ -14963,7 +14976,7 @@ function pnRows(){
          doc_type:(b.kind||"보정"), delivery_id:null,
          court:sp.court, case_no:sp.no, memo:String(b.memo||""), pdf_path:""},
       c:null, cid:b.client_id, firm:firm,
-      ws:(b.closed?"종결":(b.status||(b.kind==="완료"?"보정완료":"보정중"))),
+      ws:pnBdWs(b),                                 /* ★2026-09-07 : 시트 말(제출함) → 앱 말(보정완료) */
       due:pnRoll(String(b.court_deadline||b.check_date||"").slice(0,10)),
       hold:pnRoll(String(b.ext_date||"").slice(0,10)),
       plan:pnRoll(String(b.plan_date||m3.plan||"").slice(0,10)),
@@ -15193,8 +15206,8 @@ function pnCard(x){
   h+='<div class="pn-cks">'
     +pnBigCk(id,"called","당사자 연락함",m.called)
     +pnBigCk(id,"got","서류 받음",m.got)
-    +(x.isDel?'':pnBigCk(id,"draft","전자소송 임시저장",(x.ws==="임시저장")))
-    +(x.isDel?'':pnBigCk(id,"filed","법원 제출함",(x.ws==="보정완료")))
+    +((x.isDel&&!x.isBd)?'':pnBigCk(id,"draft","전자소송 임시저장",(x.ws==="임시저장")))   /* ★2026-09-07 : 점검표 줄도 상태 단계가 있다 */
+    +((x.isDel&&!x.isBd)?'':pnBigCk(id,"filed","법원 제출함",(x.ws==="보정완료")))
     +pnBigCk(id,"done","완료",m.done)
     /* ★2026-09-05 혜림 : 체크를 눌렀을 때 상태가 바뀐 것이 보여야 한다.
        [더 보기] 안에만 있던 상태를 밖으로 꺼내 항상 띄운다. */
@@ -15227,6 +15240,12 @@ function pnCard(x){
     +'</div>';
   if(open&&x.isBd){
     h+='<div class="pn-more">'
+      +'<div class="pn-mrow"><span class="pn-mlb">상태</span>'
+      +['보정중','임시저장','추후제출','보정완료'].map(function(v){
+          var lab=(v==="임시저장")?"전자소송 임시저장":(v==="보정완료"?"보정완료(법원 제출함)":v);
+          return '<button class="pn-chip2'+(x.ws===v?" on":"")+'" onclick="pnState('+sid+',null,\''+v+'\')">'+esc(lab)+'</button>';
+        }).join("")
+      +'</div>'
       +'<div class="pn-mrow"><span class="pn-mlb">법원기한</span>'
       +'<input type="date" value="'+esc(x.due)+'" onchange="pnDue('+sid+',this.value)">'
       +'<span class="pn-mlb" style="margin-left:8px">추후제출</span>'
@@ -15373,7 +15392,7 @@ function pnPreview(path,name){
    ★「법원 제출함」은 원래 있던 work_state 를 쓰고(송달문서 줄에도 반영된다),
      「완료」는 우리 쪽 마무리 표시라 bj_settings 에 넣는다. 그래서 둘이 따로 논다. */
 async function pnCk(id,key,v){
-  if((String(id).indexOf("del:")===0||String(id).indexOf("bd:")===0)&&(key==="filed"||key==="draft")){
+  if(String(id).indexOf("del:")===0&&(key==="filed"||key==="draft")){   /* ★2026-09-07 : 점검표 줄(bd:)은 bj_board 에 저장하므로 막지 않는다 */
     alert("아직 보정 문서를 등록하지 않은 송달문서입니다.\n[＋ 파일]로 PDF를 올린 뒤에 상태를 바꿀 수 있습니다.");
     pnRender(); return;
   }

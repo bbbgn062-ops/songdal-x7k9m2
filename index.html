@@ -1928,7 +1928,15 @@
           <div><label>사건번호 *</label><input id="f-caseno" placeholder="예: 2026개회12345"></div>
           <div><label>당사자명 *</label><input id="f-name" placeholder="예: 홍길동"></div>
           <div><label>담당 직원</label><select id="f-owner"></select></div>
-          <div><label>관할 법원 *</label><input id="f-court" placeholder="예: 서울회생법원"></div>
+          <!-- 2026-09-08 : 취합앱과 «똑같은 목록»으로 고르게 한다(표기가 갈리면 두 앱이 같은 사건을 못 찾는다).
+               문서 종류 칸과 같은 방식이라 목록에 없는 법원(지원 등)은 그냥 쳐 넣으면 된다.
+               ★칸 id 는 f-court 그대로 — 읽고 쓰는 곳(set/v/pickClient/edit/resetForm)을 하나도 안 고쳐도 된다. -->
+          <div><label>관할 법원 * <span style="font-weight:400;color:#8a94a6">(골라도 되고 직접 쳐도 됩니다)</span></label>
+            <input id="f-court" list="f-court-list" placeholder="예: 서울회생법원" autocomplete="off">
+            <datalist id="f-court-list">
+              <option>수원회생법원</option><option>부산회생법원</option><option>서울회생법원</option><option>대전회생법원</option><option>대구회생법원</option><option>광주회생법원</option>
+              <option>대전지방법원</option><option>의정부지방법원</option><option>인천지방법원</option><option>대구지방법원</option><option>청주지방법원</option><option>광주지방법원</option><option>제주지방법원</option><option>전주지방법원</option><option>울산지방법원</option><option>창원지방법원</option><option>춘천지방법원</option><option>수원지방법원</option><option>부산지방법원</option><option>서울중앙지방법원</option><option>서울동부지방법원</option><option>서울서부지방법원</option><option>서울남부지방법원</option><option>서울북부지방법원</option>
+            </datalist></div>
           <div><label>문서 종류 <span style="font-weight:400;color:#8a94a6">(골라도 되고 직접 쳐도 됩니다)</span></label>
             <input id="f-doctype" list="f-doctype-list" placeholder="예: 금지명령" autocomplete="off">
             <datalist id="f-doctype-list">
@@ -3035,12 +3043,31 @@ var rcIntake="";      /* 접수 유형 거르기 : ""=모두 / "전체" / "보�
 function rcNormCase(x){ return String(x||"").replace(/[\s\-]/g,"").toUpperCase(); }
 /* ★법원 줄임말 펴기. 전자소송 엑셀은 '인천지법'처럼 줄여 쓰는데
    케이스허브에는 '인천지방법원'으로 들어 있어서, 안 펴면 같은 법원인데도 못 찾는다. */
+/* ★2026-09-08 : 손으로 친 법원 이름을 «저장 직전»에 표준 표기로 고친다.
+   왜 = 케이스허브 실측에서 '서울회생법원원'·'부산개인회생법원'·'수원개인회생법원' 같은 값이 12건 나왔다.
+   송달 사건의 유니크 열쇠가 uq_delivery_court(법원 포함)라서 법원 이름이 한 글자만 달라도
+   같은 사건이 완전히 다른 사건으로 갈라지고, 미확인송달 대조에서도 조용히 빠진다.
+   ★rcCourtExpand 를 그대로 쓰면 안 된다 — 그건 «대조용 열쇠»라 공백을 전부 지우기 때문에
+   '춘천지방법원 강릉지원'이 '춘천지방법원강릉지원'으로 저장되어 케이스허브와 어긋난다.
+   여기서는 공백을 살리고 표기만 고친다. 목록에 없는 법원(지원 등)은 사람이 친 대로 존중한다. */
+function sdCourtFix(c){
+  var t=String(c==null?"":c).trim().replace(/\s+/g," ");
+  if(!t) return "";
+  t=t.replace(/지법/g,"지방법원").replace(/회법/g,"회생법원").replace(/가법/g,"가정법원");
+  t=t.replace(/개인회생법원/g,"회생법원");
+  t=t.replace(/지방법원지방법원/g,"지방법원");
+  t=t.replace(/법원원+/g,"법원");          /* '서울회생법원원' 처럼 '원'이 덧붙은 것 */
+  return t;
+}
 function rcCourtExpand(c){
   var t=String(c||"").replace(/\s/g,"");
   if(!t)return "";
   t=t.replace(/지법/g,"지방법원").replace(/고법/g,"고등법원").replace(/가법/g,"가정법원").replace(/회법/g,"회생법원");
   /* ★2026-09-04 혜림 : 옛 기록에 '부산개인회생법원'처럼 적힌 것이 간혹 있다.
-     우리나라 회생법원은 서울·수원·부산 셋뿐이고 정식 이름에 '개인'이 없다.
+     회생법원 정식 이름에는 '개인'이 들어가지 않는다.
+     ★2026-09-08 정정 : 회생법원은 셋이 아니라 여섯 곳이다.
+       서울(2017-03-01) · 수원 · 부산(2023-03-01) · 대전 · 대구 · 광주(2026-03-01).
+       제주회생법원은 없다(제주지방법원 도산사건은 광주회생법원에도 낼 수 있는 중복관할).
      펴 두지 않으면 같은 법원인데 다른 법원으로 갈라져 사건을 놓친다. */
   t=t.replace(/개인회생법원/g,"회생법원");
   t=t.replace(/지방법원지방법원/g,"지방법원");   /* 이미 펴져 있던 것이 두 번 붙는 것 막기 */
@@ -5268,7 +5295,7 @@ function pickClient(id,caseno,court,name){
 
 /* ---------- 등록/수정/삭제 ---------- */
 async function saveCase(){
-  const caseno=v("f-caseno"),name=v("f-name"),date=v("f-date"),court=v("f-court");
+  const caseno=v("f-caseno"),name=v("f-name"),date=v("f-date"),court=sdCourtFix(v("f-court"));   /* 2026-09-08 : 표기 교정 후 저장 */
   if(!caseno||!name||!court){alert("사건번호, 당사자명, 관할 법원은 필수입니다.");return;}
   // 송달 도착일은 선택 — 비워두고 먼저 등록한 뒤, 나중에 채우면 기한이 자동 계산된다.
   const ownerSel=document.getElementById("f-owner").value;
@@ -6421,7 +6448,7 @@ var BJ_RE={
   rrn:/(\d{6})\s*[-‐–]\s*([1-4])\d{6}/g
 };
 var BJ_KOR="가나다라마바사아자차카타파하";
-var BJ_SYN=["대전","대구","부산","수원","서울"];
+var BJ_SYN=["대전","대구","부산","수원","서울","광주"];   /* 2026-09-08 광주 추가 — 광주회생법원이 2026-03-01 에 문을 열었는데 빠져 있어서 '광주지방법원'과 '광주회생법원'을 서로 다른 법원으로 보고 대조에서 놓칠 수 있었다 */
 /* 문서 종류 : 세션 K 결함 수정 → 하나만 고르지 않고 복수 배열로 돌려준다
    (부산 5건 = 재보정 + 표준양식. 우선순위는 표시 순서에만 사용) */
 function bjDocKinds(txt,caseNo){

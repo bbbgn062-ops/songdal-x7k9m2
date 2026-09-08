@@ -5887,15 +5887,28 @@ async function autoLinkOne(c){
     if(typeof render==="function")render();
   }catch(e){}
 }
+/* ===== 영업소득자 간소화제도 (2026-09-08) =====
+   취합앱 '의뢰인 기본정보'에서 체크하면 clients.simple_biz 에 저장된다.
+   그 칸이 아직 없는 DB에서는 취합앱이 app_json.simpleBiz 에도 함께 적어 두므로 그 값을 본다.
+   송달앱은 읽기만 한다(고치는 곳은 취합앱 한 곳). */
+function sdSbizOn(c){
+  if(!c)return false;
+  if(Object.prototype.hasOwnProperty.call(c,"simple_biz"))return !!c.simple_biz;
+  try{ var aj=(typeof c.app_json==="string")?JSON.parse(c.app_json):(c.app_json||{}); return !!aj.simpleBiz; }catch(e){ return false; }
+}
+function sdSbizChip(c){ return sdSbizOn(c)?'<span style="display:inline-block;padding:2px 9px;border-radius:999px;background:#E8F1FB;color:#12467E;border:1px solid #C3D8F0;font-size:11.5px;font-weight:800;white-space:nowrap">🧾 영업소득자 간소화</span>':""; }
 async function loadClientInfo(c){
   try{
-    const {data}=await sbc.from("clients").select("id,phone,rrn_front,office_id").eq("id",c.client_id).single();
+    var _cr=await sbc.from("clients").select("id,phone,rrn_front,office_id,simple_biz,app_json").eq("id",c.client_id).single();
+    if(_cr.error) _cr=await sbc.from("clients").select("id,phone,rrn_front,office_id").eq("id",c.client_id).single();   /* simple_biz 칸이 아직 없는 DB */
+    const data=_cr.data;
     if(!data)return; _clientCache[c.id]=data;
     const el=document.getElementById("clientinfo-"+c.id); if(!el)return;
     const canEdit=me.isMaster||me.role==="staff";
     el.innerHTML=`<div style="font-weight:600;font-size:12.5px;margin-bottom:6px;color:var(--brand)">의뢰인 정보 (케이스허브 연동 · 수정하면 전 앱 동기화)</div>
       <div class="kv"><span class="k">전화번호</span><span>${canEdit?'<input id="ph-'+c.id+'" value="'+esc(data.phone||"")+'" placeholder="010-0000-0000" style="width:auto;padding:5px 8px;font-size:12px">':esc(data.phone||"-")}</span></div>
       <div class="kv"><span class="k">주민번호</span><span><span id="rrnview-${c.id}">${data.rrn_front?esc(maskRrn(data.rrn_front)):"-"}</span>${data.rrn_front?' <button class="btn ghost mini" id="rrnbtn-'+c.id+'" onclick="toggleRrn(\''+c.id+'\')">보기</button>':""}${canEdit?' <input id="rrn-'+c.id+'" value="" placeholder="변경 시에만 입력" style="width:auto;padding:5px 8px;font-size:12px">':""}</span></div>
+      <div class="kv"><span class="k">영업소득자 간소화</span><span>${sdSbizOn(data)?sdSbizChip(data):'해당 없음'}</span></div>
       ${canEdit?'<button class="btn primary mini" onclick="saveClientInfo(\''+c.id+'\')">의뢰인 정보 저장</button>':""}`;
   }catch(e){}
 }
@@ -9268,17 +9281,17 @@ async function bjLoadCtx(){
   bjCli=null;bjChk=[];bjReqs=[];
   var cid=bjDel?bjDel.client_id:null;
   /* 07-24: 사무소·주민번호도 함께 불러온다. rrn_front·office_id 칸이 없는 예전 DB에서도 앱이 죽지 않게 실패하면 기본 칸만 다시 조회 */
-  var COLS="id,name,phone,case_no,office_id,rrn_front";
+  var COLS="id,name,phone,case_no,office_id,rrn_front,simple_biz,app_json";
+  /* 칸이 없는 예전 DB에서도 앱이 죽지 않게 한 단계씩 줄여 가며 다시 조회한다 (2026-09-08: simple_biz 단계 추가) */
+  var COLSETS=["id,name,phone,case_no,office_id,rrn_front,simple_biz,app_json","id,name,phone,case_no,office_id,rrn_front","id,name,phone,case_no"];
   async function _pickCli(){
-    try{
-      if(cid){ var c=await sbc.from("clients").select(COLS).eq("id",cid).single(); if(c.error)throw c.error; return c.data||null; }
-      else if(bjD&&bjD.case_no){ var f=await sbc.from("clients").select(COLS).ilike("case_no","%"+bjD.case_no+"%").limit(1); if(f.error)throw f.error; return (f.data&&f.data.length)?f.data[0]:null; }
-    }catch(e){
-      COLS="id,name,phone,case_no";   /* 확장 칸이 없으면 기본 칸으로 폴백 */
+    for(var i=0;i<COLSETS.length;i++){
+      COLS=COLSETS[i];
       try{
-        if(cid){ var c2=await sbc.from("clients").select(COLS).eq("id",cid).single(); return c2.data||null; }
-        else if(bjD&&bjD.case_no){ var f2=await sbc.from("clients").select(COLS).ilike("case_no","%"+bjD.case_no+"%").limit(1); return (f2.data&&f2.data.length)?f2.data[0]:null; }
-      }catch(e2){}
+        if(cid){ var c=await sbc.from("clients").select(COLS).eq("id",cid).single(); if(c.error)throw c.error; return c.data||null; }
+        else if(bjD&&bjD.case_no){ var f=await sbc.from("clients").select(COLS).ilike("case_no","%"+bjD.case_no+"%").limit(1); if(f.error)throw f.error; return (f.data&&f.data.length)?f.data[0]:null; }
+        else return null;
+      }catch(e){}
     }
     return null;
   }
@@ -10484,6 +10497,7 @@ function bjSendHtml(){
   h+='<div class="facts">'
     +'<div class="f"><span class="k">사건번호</span><span class="v">'+esc(bjD.case_no||"-")+'</span></div>'
     +((bjCli&&bjCli.rrn_front)?('<div class="f"><span class="k">주민등록번호</span><span class="v" id="bj-send-rrnview">'+esc(maskRrn(bjCli.rrn_front))+'</span><button class="rbtn" id="bj-send-rrnbtn" onclick="bjSendRrnToggle()">보기</button></div>'):'')
+    +(sdSbizOn(bjCli)?('<div class="f"><span class="k">영업소득자</span><span class="v">'+sdSbizChip(bjCli)+'</span></div>'):'')
     +'<div class="f"><span class="k">관할 법원</span><span class="v">'+esc(bjD.court||(bjDel&&bjDel.court)||"-")+'</span></div>'
     +'<div class="f"><span class="k">소속 사무소</span><select class="fsel" style="color:'+bjFirmColor(bjSendFirm)+'" onchange="bjSendFirm=this.value;bjRender()">'
     +BJ_FIRMS.map(function(f){return '<option '+(f===bjSendFirm?"selected":"")+'>'+esc(f)+'</option>';}).join("")
@@ -12107,6 +12121,7 @@ function wdWhoHtml(){
     +'<span class="f"><span class="l">주민번호</span> <b id="wd-rrn">'+(rrn?esc(maskRrn(rrn)):"-")+'</b>'
     +(rrn?' <button class="btn ghost mini" id="wd-rrn-btn" onclick="wdToggleRrn()">보기</button>':'')
     +'</span>'
+    +(sdSbizOn(wdCli)?('<span class="f">'+sdSbizChip(wdCli)+'</span>'):'')
     +'<span class="f"><span class="l">사건</span> <b>'+esc(wdCase.case_no)+'</b></span>'
     +(wdCase.court?'<span class="f"><span class="l">법원</span> <b>'+esc(wdCase.court)+'</b></span>':'')
     +'<span class="wd-sync">취합앱·케이스허브 동기화</span>'

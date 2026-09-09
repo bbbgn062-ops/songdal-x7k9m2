@@ -1939,7 +1939,9 @@
             <input id="f-court" list="f-court-list" placeholder="예: 서울회생법원" autocomplete="off">
             <datalist id="f-court-list">
               <option>수원회생법원</option><option>부산회생법원</option><option>서울회생법원</option><option>대전회생법원</option><option>대구회생법원</option><option>광주회생법원</option>
-              <option>대전지방법원</option><option>의정부지방법원</option><option>인천지방법원</option><option>대구지방법원</option><option>청주지방법원</option><option>광주지방법원</option><option>제주지방법원</option><option>전주지방법원</option><option>울산지방법원</option><option>창원지방법원</option><option>춘천지방법원</option><option>수원지방법원</option><option>부산지방법원</option><option>서울중앙지방법원</option><option>서울동부지방법원</option><option>서울서부지방법원</option><option>서울남부지방법원</option><option>서울북부지방법원</option>
+              <!-- 2026-09-09 : 대전·대구·광주·수원·부산 「지방법원」은 뺐다. 그 도시는 회생법원이 도산사건 관할이라 위 목록으로 통일한다.
+                   목록에 없는 법원(지원 등)은 그대로 쳐 넣으면 된다. -->
+              <option>의정부지방법원</option><option>인천지방법원</option><option>청주지방법원</option><option>제주지방법원</option><option>전주지방법원</option><option>울산지방법원</option><option>창원지방법원</option><option>춘천지방법원</option><option>서울중앙지방법원</option><option>서울동부지방법원</option><option>서울서부지방법원</option><option>서울남부지방법원</option><option>서울북부지방법원</option>
             </datalist></div>
           <div><label>문서 종류 <span style="font-weight:400;color:#8a94a6">(골라도 되고 직접 쳐도 됩니다)</span></label>
             <input id="f-doctype" list="f-doctype-list" placeholder="예: 금지명령" autocomplete="off">
@@ -3010,7 +3012,7 @@ async function bjMkCopy(){
     L.push("담당변호사 "+(f.lawyer||"")+" (인)");
     L.push("");
   }
-  L.push((f.court||"")+(f.dept?" "+f.dept:"")+" 귀중");
+  L.push(sdCourtFix(f.court||"")+(f.dept?" "+f.dept:"")+" 귀중");   /* 2026-09-09 : 한 이름으로 통일 */
   var ok=await wdCopyText(L.join("\n"));
   wdToast(ok?"글자를 복사했습니다":"복사에 실패했습니다. 글자를 직접 선택해 주세요");
 }
@@ -3061,7 +3063,22 @@ function sdCourtFix(c){
   t=t.replace(/개인회생법원/g,"회생법원");
   t=t.replace(/지방법원지방법원/g,"지방법원");
   t=t.replace(/법원원+/g,"법원");          /* '서울회생법원원' 처럼 '원'이 덧붙은 것 */
+  /* ★2026-09-09 혜림 : 같은 법원을 한 이름(회생법원)으로 통일한다.
+     광주회생법원이 2026-03-01 에 문을 열면서 같은 광주 사건이
+     '광주지방법원'(2025년 접수)과 '광주회생법원'(2026년 접수)으로 갈라져 적혀 있다(실측 17건 : 7건).
+     도산사건 관할이 회생법원으로 넘어갔으니 두 이름은 같은 법원이다. 대전·대구도 같고, 서울·수원·부산은 전부터 그렇다.
+     취합앱 courtUni · 케이스허브 courtUni 와 같은 규칙이어야 한다.
+     ★'서울중앙지방법원'은 안 바뀐다 — '지방법원'을 떼면 '서울중앙'이 남아 BJ_SYN 에 없다.
+     ★'춘천지방법원 강릉지원'처럼 목록에 없는 법원도 그대로 둔다. */
+  try{ var _b=t.replace("지방법원","").replace("회생법원",""); if(BJ_SYN.indexOf(_b)>=0) t=_b+"회생법원"; }catch(e){}
   return t;
+}
+/* '광주지방법원 2025개회54230' 한 줄에서 앞의 법원 이름만 통일한다(뒤는 글자 하나 안 건드림) */
+function sdCaseNoUni(raw){
+  var v=String(raw==null?"":raw).trim(); if(!v)return v;
+  var m=v.match(/(\d{4})\s*([가-힣]+)\s*(\d+)/); if(!m||!m.index)return v;
+  var ct=v.slice(0,m.index).trim(), u=sdCourtFix(ct);
+  return (u===ct)?v:(u+v.slice(ct.length));
 }
 function rcCourtExpand(c){
   var t=String(c||"").replace(/\s/g,"");
@@ -4821,7 +4838,7 @@ function calRender(){
       var when=x.old?("옛 기일 · "+x.newDate+"로 바뀜"):(kd.why+" · "+calLeftTxt(x.left));
       return '<div class="cal-dcard'+(x.left!==null&&x.left<0&&!x.old?" over":"")+'">'
         +'<div class="cal-l1"><span class="cal-who">'+esc(x.name)+'</span>'
-          +'<span class="cal-case">'+esc((x.court?x.court+" ":"")+x.caseno)+'</span>'
+          +'<span class="cal-case">'+esc((x.court?sdCourtFix(x.court)+" ":"")+x.caseno)+'</span>'
           +(a.t?'<span class="cal-acct '+a.cls+'">'+a.t+'</span>':'')
           +(x.round?'<span class="cal-acct nb">'+x.round+'회차</span>':'')+'</div>'
         +'<div class="cal-l2"><span class="cal-kind '+kd.cls+'">'+esc(kd.label)+'</span><span>'+esc(when)+'</span>'
@@ -5069,7 +5086,7 @@ function bxCard(r){
       +bxLeftBlock(r)
       +'<div class="bx-mid">'
         +'<div class="l1"><b>'+esc(bxName(r))+'</b> <span class="bx-st s-'+(st==="완료"?"done":(st==="진행중"?"prog":(st==="판독 중"?"read":"wait")))+'">'+st+'</span></div>'
-        +'<div class="l2">'+esc(r.court||"법원 미상")+' · '+esc(r.case_no||"")+'  <b>'+esc(bjCardKind(r)||"보정 문서")+' · '+(r.round_no||1)+'회차</b>'
+        +'<div class="l2">'+esc(sdCourtFix(r.court)||"법원 미상")+' · '+esc(r.case_no||"")+'  <b>'+esc(bjCardKind(r)||"보정 문서")+' · '+(r.round_no||1)+'회차</b>'
         +(bjIsOurDoc(r)
            ? '  <span class="bj-note">제출일 '+esc(String(r.submitted_at||"").slice(0,10)||"미확인")+'</span>'
            : (r.order_date?'  <span class="bj-note">명령일 '+esc(String(r.order_date).slice(0,10))+'</span>':''))
@@ -5275,7 +5292,7 @@ async function clientSearch(){
     const {data,error}=await sbc.from("clients").select("id,name,case_no,court,case_type,stage").or(`name.ilike.%${q}%,case_no.ilike.%${q}%`).limit(20);
     if(error)throw error;
     if(!data||!data.length){box.innerHTML='<div class="cp" style="cursor:default;color:var(--muted)">검색 결과 없음. 아래에 직접 입력하세요.</div>';box.classList.remove("hide");return;}
-    box.innerHTML=data.map(c=>`<div class="cp" onclick="pickClient('${esc(c.id)}','${esc((c.case_no||"").replace(/'/g,""))}','${esc((c.court||"").replace(/'/g,""))}','${esc((c.name||"").replace(/'/g,""))}')"><b>${esc(c.name||"이름없음")}</b> · ${esc(c.case_no||"사건번호 미입력")} <span style="color:var(--muted);font-size:12px">${esc(c.case_type||"")} ${esc(c.stage||"")}</span></div>`).join("");
+    box.innerHTML=data.map(c=>`<div class="cp" onclick="pickClient('${esc(c.id)}','${esc((c.case_no||"").replace(/'/g,""))}','${esc((c.court||"").replace(/'/g,""))}','${esc((c.name||"").replace(/'/g,""))}')"><b>${esc(c.name||"이름없음")}</b> · ${esc(sdCaseNoUni(c.case_no)||"사건번호 미입력")} <span style="color:var(--muted);font-size:12px">${esc(c.case_type||"")} ${esc(c.stage||"")}</span></div>`).join("");
     box.classList.remove("hide");
   }catch(e){
     box.innerHTML='<div class="cp" style="cursor:default;color:var(--muted)">검색 오류: '+esc(e.message||e)+'</div>';box.classList.remove("hide");
@@ -5291,7 +5308,7 @@ function pickClient(id,caseno,court,name){
   pickedClientId=id;
   const p=splitCourtCase(caseno);
   if(p.caseNo)set("f-caseno",p.caseNo);
-  set("f-court",(court&&court.trim())||p.court||"");
+  set("f-court",sdCourtFix((court&&court.trim())||p.court||""));   /* 2026-09-09 : 케이스허브에서 끌어온 법원 이름도 통일해서 채운다 */
   set("f-name",name);
   document.getElementById("clientpick").classList.add("hide");
   set("f-clientq",name+(caseno?" ("+caseno+")":""));
@@ -5419,7 +5436,7 @@ async function fixLinkAll(){
 function editCase(id){
   const c=cases.find(x=>x.id===id);if(!c)return;
   showView("list");showForm();editId=id;pickedClientId=c.client_id||null;fillOwnerSelect();
-  set("f-caseno",c.caseno);set("f-name",c.name);set("f-court",c.court||"");set("f-doctype",c.doctype||"보정명령");set("f-date",c.date);set("f-memo",c.memo||"");
+  set("f-caseno",c.caseno);set("f-name",c.name);set("f-court",sdCourtFix(c.court||""));set("f-doctype",c.doctype||"보정명령");set("f-date",c.date);set("f-memo",c.memo||"");
   set("f-clientq",c.client_id?(c.name+" (연동됨)"):"");
   if(me.isMaster)document.getElementById("f-owner").value=c.owner_id||"";
   const preset=(c.termDays===null||c.termDays===undefined||c.termDays==="")?"none"
@@ -5694,7 +5711,7 @@ function render(){
     return `<tr class="${cls}" style="cursor:pointer" onclick="goDetail('${c.id}')">
       <td>${procBadge(c)}<div style="font-size:11.5px;color:var(--muted);margin-top:3px">${due?fmt(due):"확인 후 확정"}</div></td>
       <td><b style="font-size:15px">${esc(c.name)}</b> <span style="color:var(--muted)">${esc(c.doctype||"")}</span>${c.delayStrategy?' <span class="chip" style="background:var(--amber-bg);color:var(--amber)">시간끌기</span>':''}</td>
-      <td>${esc(c.court||"")} <b>${esc(c.caseno)}</b>${firmChipOf(c)}</td>
+      <td>${esc(sdCourtFix(c.court))} <b>${esc(c.caseno)}</b>${firmChipOf(c)}</td>
       <td>${esc(c.date||"")||'<span class="bj-note">미입력</span>'}</td>
       <td>${confChip(c)}</td>
       <td><span class="pill">${docProg(c)}%</span></td>
@@ -5793,7 +5810,7 @@ function renderDetail(){
     : isNotice(c) ? '<b style="color:#8a5a00">당사자 안내</b> · 법원에 낼 것은 없고 당사자에게 알리기만 하면 됩니다 (안내를 마치면 상태를 처리완료로 내리세요)'
     : procDueDate(c) ? (fmt(procDueDate(c))+' ('+esc(c.termType)+')'+(procRolled(c)?' · 주말·공휴일로 연장(원래 '+fmt(procDueRaw(c))+')':'')+' · '+procBadge(c)) : ('송달 확인 후 확정 (확인일 +'+c.termDays+'일)');
   w.innerHTML=`<div class="detail">
-    <div class="h2row"><h2 style="margin:0">${esc(c.name)} · ${esc(c.caseno)} <span class="pill">서류 ${docProg(c)}%</span>${firmChipOf(c)}${c.court?' <span class="pill" style="font-size:10.5px;background:#EEF1F8;color:#2b3a67">'+esc(c.court)+'</span>':''}</h2>
+    <div class="h2row"><h2 style="margin:0">${esc(c.name)} · ${esc(c.caseno)} <span class="pill">서류 ${docProg(c)}%</span>${firmChipOf(c)}${c.court?' <span class="pill" style="font-size:10.5px;background:#EEF1F8;color:#2b3a67">'+esc(sdCourtFix(c.court))+'</span>':''}</h2>
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">닫기</button></div>
     <div class="dm-top">
       <div class="dm-hd"><span class="dm-t">사건 메모</span>
@@ -5815,7 +5832,7 @@ function renderDetail(){
       <button class="btn ghost mini" style="margin-top:4px" onclick="goLinkClient('${c.id}')">직접 골라서 연결</button>
     </div>`}
     <div style="margin:10px 0 2px"><div style="font-weight:600;font-size:13px;margin:0 0 6px">이 사건의 문서</div><div id="bjprev-${c.id}">불러오는 중…</div></div>
-    <div class="kv"><span class="k">사건번호</span><span>${esc(c.caseno||"")}${c.court?' · '+esc(c.court):''} <button class="btn ghost mini" onclick="bjMoveCase('${c.id}')" title="법원 이송으로 관할법원과 사건번호가 바뀌었을 때 씁니다. 이 의뢰인의 옛 번호로 된 송달문서와 보정문서를 한꺼번에 새 번호로 옮깁니다">이송 처리</button></span></div>
+    <div class="kv"><span class="k">사건번호</span><span>${esc(c.caseno||"")}${c.court?' · '+esc(sdCourtFix(c.court)):''} <button class="btn ghost mini" onclick="bjMoveCase('${c.id}')" title="법원 이송으로 관할법원과 사건번호가 바뀌었을 때 씁니다. 이 의뢰인의 옛 번호로 된 송달문서와 보정문서를 한꺼번에 새 번호로 옮깁니다">이송 처리</button></span></div>
     <div class="kv"><span class="k">담당자</span><span>${esc(ownerName(c.owner_id)||"미지정")}</span></div>
     ${c.client_id?'<div id="clientinfo-'+c.id+'" style="margin:8px 0;padding:10px 12px;background:#faf8f6;border-radius:10px;font-size:13px">의뢰인 정보 불러오는 중…</div>':''}
     <div class="kv"><span class="k">송달 도착일</span><span>${esc(c.date)}</span></div>
@@ -6421,7 +6438,7 @@ function renderPending(){
   document.getElementById("pending-empty").style.display=pendingRows.length?"none":"block";
   el.innerHTML=pendingRows.map(p=>`<div class="pc" style="margin-bottom:10px">
     <div class="r1"><span class="nm">${esc(p.doctype||"송달문서")}</span><span class="dd a">감지 ${esc(p.sent_date||"")}</span></div>
-    <div class="meta">${esc(p.court||"")} · ${esc(p.case_no||"")}</div>
+    <div class="meta">${esc(sdCourtFix(p.court))} · ${esc(p.case_no||"")}</div>
     <div id="pmatch-${p.id}" class="meta" style="color:var(--muted)">케이스허브 매칭 확인 중…</div>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="btn primary mini" id="papprove-${p.id}" onclick="approvePending('${p.id}')" disabled>승인(정식 등록)</button>
@@ -10628,7 +10645,7 @@ function bjSendHtml(){
     +'<div class="f"><span class="k">사건번호</span><span class="v">'+esc(bjD.case_no||"-")+'</span></div>'
     +((bjCli&&bjCli.rrn_front)?('<div class="f"><span class="k">주민등록번호</span><span class="v" id="bj-send-rrnview">'+esc(maskRrn(bjCli.rrn_front))+'</span><button class="rbtn" id="bj-send-rrnbtn" onclick="bjSendRrnToggle()">보기</button></div>'):'')
     +(sdSbizOn(bjCli)?('<div class="f"><span class="k">영업소득자</span><span class="v">'+sdSbizChip(bjCli)+'</span></div>'):'')
-    +'<div class="f"><span class="k">관할 법원</span><span class="v">'+esc(bjD.court||(bjDel&&bjDel.court)||"-")+'</span></div>'
+    +'<div class="f"><span class="k">관할 법원</span><span class="v">'+esc(sdCourtFix(bjD.court||(bjDel&&bjDel.court)||"")||"-")+'</span></div>'
     +'<div class="f"><span class="k">소속 사무소</span><select class="fsel" style="color:'+bjFirmColor(bjSendFirm)+'" onchange="bjSendFirm=this.value;bjRender()">'
     +BJ_FIRMS.map(function(f){return '<option '+(f===bjSendFirm?"selected":"")+'>'+esc(f)+'</option>';}).join("")
     +'</select></div></div>';
@@ -12148,7 +12165,7 @@ function wdPickListHtml(q){
         +'<div class="p1">'+esc(c.name||"이름 없음")
           +(c.round?'<span class="rnd">'+c.round+'회차</span>':'')
           +(c.src==="보정"?'<span class="rnd bj">보정 문서함</span>':'')+'</div>'
-        +'<div class="p2">'+esc(c.caseno)+(c.court?' · '+esc(c.court):'')+(c.doctype?' · '+esc(c.doctype):'')+'</div>'
+        +'<div class="p2">'+esc(c.caseno)+(c.court?' · '+esc(sdCourtFix(c.court)):'')+(c.doctype?' · '+esc(c.doctype):'')+'</div>'
       +'</div>'
       +'<div class="pr">'
         +(c.courtDue

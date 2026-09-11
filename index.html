@@ -1803,7 +1803,152 @@
   .rc-file{display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:11.5px}
   .rc-file .nm{flex:1;min-width:0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     background:#EDF7F0;color:#1B7F4B;font-weight:700;border-radius:5px;padding:2px 7px}
-</style>
+
+/* ===== 보정 연락 폰 (2026-09-11) ===== */
+.cph-chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;padding:2px 9px;border-radius:999px;background:#EFECE8;color:#2E2A26;border:1px solid #DCD6CE;white-space:nowrap;vertical-align:1px;line-height:1.45}
+.cph-chip.sm{font-size:10px;padding:1px 7px;margin-left:4px}
+.cph-tail{font-weight:600;color:#8B857D;font-variant-numeric:tabular-nums}
+.cph-mbtn{flex:0 0 auto;border:1px solid #D8D2CA;background:#fff;color:#9B1B33;border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
+.cph-mbtn:hover{background:#FCF1F2}
+.cph-ov{position:fixed;inset:0;background:rgba(25,24,22,.45);z-index:10050;display:flex;align-items:center;justify-content:center;padding:16px}
+.cph-box{background:#fff;color:#191816;border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow:auto;padding:18px 18px 0;box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:inherit}
+.cph-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.cph-hd b{font-size:17px;font-weight:800}
+.cph-x{border:none;background:none;font-size:18px;color:#8B857D;cursor:pointer;padding:4px 8px}
+.cph-note{font-size:12.5px;color:#6B655E;line-height:1.65;margin:0 0 12px}
+.cph-rows{display:flex;flex-direction:column;gap:8px}
+.cph-row{display:grid;grid-template-columns:auto minmax(0,1fr) 96px auto;gap:6px;align-items:center}
+.cph-row.off .cph-in{background:#F5F3F0;color:#A8A29E}
+.cph-mv{display:flex;flex-direction:column;gap:2px}
+.cph-mv button{border:1px solid #E1DCD5;background:#fff;border-radius:5px;font-size:9px;line-height:1;padding:3px 5px;cursor:pointer;color:#48443E}
+.cph-mv button:disabled{opacity:.35;cursor:default}
+.cph-in{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:9px 10px;border:1.5px solid #E1DCD5;border-radius:9px;background:#fff;color:#191816}
+.cph-in:focus{outline:none;border-color:#9B1B33}
+.cph-tl{font-variant-numeric:tabular-nums}
+.cph-hide{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:#6B655E;white-space:nowrap;cursor:pointer}
+.cph-hide input{width:15px;height:15px;accent-color:#9B1B33;margin:0}
+.cph-add{margin-top:10px;border:1.5px dashed #D2CCC3;background:#FBFAF7;border-radius:9px;padding:9px;width:100%;font:inherit;font-size:13px;font-weight:800;color:#48443E;cursor:pointer}
+.cph-ft{position:sticky;bottom:0;background:#fff;display:flex;gap:8px;justify-content:flex-end;padding:12px 0 16px;margin-top:12px;border-top:1px solid #EFEBE5}
+.cph-b1,.cph-b2{height:40px;padding:0 18px;border-radius:9px;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+.cph-b1{border:none;background:#9B1B33;color:#fff}.cph-b1:disabled{opacity:.6}
+.cph-b2{border:1.5px solid #E1DCD5;background:#fff;color:#191816}
+.cph-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#191816;color:#fff;font-size:13.5px;font-weight:700;padding:10px 16px;border-radius:10px;z-index:10060;opacity:0;pointer-events:none;transition:opacity .2s}
+.cph-toast.on{opacity:1}
+@media (max-width:480px){.cph-row{grid-template-columns:auto minmax(0,1fr) 78px;}.cph-hide{grid-column:2/-1}}</style>
+<script>
+/* ===== 보정 연락 폰 (2026-09-11 혜림 확정) =====
+   회사 폰 목록은 contact_phones 표 하나를 세 앱(송달앱·케이스허브·취합앱)이 같이 읽고 고친다.
+   의뢰인마다 고른 폰은 clients.contact_phone_id 칸 하나.
+   표나 칸이 아직 없으면(SQL 실행 전) 이 기능만 조용히 숨고 앱은 그대로 돈다.
+   폰은 지우지 않고 숨기기만 한다. 지우면 그 폰을 고른 의뢰인 칸이 한꺼번에 비기 때문이다. */
+var CPH={ok:false,colOk:false,list:[]};
+function cphCanUse(){ return !!(CPH.ok&&CPH.colOk); }
+function cphEsc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];}); }
+function cphById(id){ if(!id)return null; for(var i=0;i<CPH.list.length;i++){ if(CPH.list[i].id===id)return CPH.list[i]; } return null; }
+function cphTailClean(t){ return String(t==null?"":t).replace(/[^0-9]/g,""); }
+function cphLabel(p){ return p?(String(p.name||"")+(p.tail?" "+p.tail:"")):""; }
+function cphOptions(cur){
+  cur=cur||"";
+  var h='<option value=""'+(cur?"":" selected")+'>미지정</option>';
+  CPH.list.forEach(function(p){
+    if(p.active===false&&p.id!==cur)return;
+    h+='<option value="'+cphEsc(p.id)+'"'+(p.id===cur?" selected":"")+'>'+cphEsc(p.name)+(p.tail?" (끝번호 "+cphEsc(p.tail)+")":"")+(p.active===false?" (숨긴 폰)":"")+'</option>';
+  });
+  if(cur&&!cphById(cur))h+='<option value="'+cphEsc(cur)+'" selected>목록에 없는 폰</option>';
+  return h;
+}
+function cphChip(id,small){
+  var p=cphById(id); if(!p)return "";
+  return '<span class="cph-chip'+(small?" sm":"")+'" title="보정 연락 폰">'+cphEsc(p.name)+(p.tail?'<span class="cph-tail">'+cphEsc(p.tail)+'</span>':'')+'</span>';
+}
+async function cphLoad(db){
+  try{
+    var r=await db.from("contact_phones").select("id,name,tail,sort,active").order("sort",{ascending:true}).order("created_at",{ascending:true});
+    if(r.error){ CPH.ok=false; CPH.list=[]; return false; }
+    CPH.ok=true; CPH.list=r.data||[]; return true;
+  }catch(e){ CPH.ok=false; CPH.list=[]; return false; }
+}
+function cphToast(msg){
+  var t=document.getElementById("cph-toast");
+  if(!t){ t=document.createElement("div"); t.id="cph-toast"; t.className="cph-toast"; document.body.appendChild(t); }
+  t.textContent=msg; t.classList.add("on"); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove("on");},2200);
+}
+/* 폰 목록 고치기 창 (세 앱 공통) */
+var CPH_M=null;
+function cphManage(db,onDone,who){
+  CPH_M={db:db,onDone:onDone,who:who||"",rows:CPH.list.map(function(p){
+    return {id:p.id,name:p.name||"",tail:p.tail||"",active:p.active!==false,sort:p.sort,orig:[p.name||"",p.tail||"",p.active!==false].join("|")};
+  })};
+  if(!CPH_M.rows.length)CPH_M.rows.push({id:null,name:"",tail:"",active:true});
+  cphMDraw();
+}
+function cphMClose(){ var d=document.getElementById("cph-ov"); if(d)d.remove(); CPH_M=null; }
+function cphMDraw(focusLast){
+  var old=document.getElementById("cph-ov"); if(old)old.remove();
+  if(!CPH_M)return;
+  var rows=CPH_M.rows.map(function(r,i){
+    return '<div class="cph-row'+(r.active?"":" off")+'">'
+      +'<div class="cph-mv"><button type="button" aria-label="위로" onclick="cphMMove('+i+',-1)"'+(i===0?" disabled":"")+'>▲</button><button type="button" aria-label="아래로" onclick="cphMMove('+i+',1)"'+(i===CPH_M.rows.length-1?" disabled":"")+'>▼</button></div>'
+      +'<input class="cph-in cph-nm" id="cph-nm-'+i+'" value="'+cphEsc(r.name)+'" placeholder="부르는 이름 (예: 업무폰 1)" oninput="CPH_M.rows['+i+'].name=this.value">'
+      +'<input class="cph-in cph-tl" id="cph-tl-'+i+'" value="'+cphEsc(r.tail)+'" placeholder="끝번호 4자리" inputmode="numeric" maxlength="4" oninput="this.value=cphTailClean(this.value).slice(0,4);CPH_M.rows['+i+'].tail=this.value">'
+      +'<label class="cph-hide"><input type="checkbox" id="cph-hd-'+i+'"'+(r.active?"":" checked")+' onchange="CPH_M.rows['+i+'].active=!this.checked;this.closest(\'.cph-row\').classList.toggle(\'off\',this.checked)">숨기기</label>'
+      +'</div>';
+  }).join("");
+  var d=document.createElement("div"); d.id="cph-ov"; d.className="cph-ov";
+  d.innerHTML='<div class="cph-box" role="dialog" aria-modal="true" aria-labelledby="cph-ttl">'
+    +'<div class="cph-hd"><b id="cph-ttl">보정 연락 폰 목록</b><button type="button" class="cph-x" aria-label="닫기" onclick="cphMClose()">✕</button></div>'
+    +'<p class="cph-note">송달앱·케이스허브·취합앱이 같은 목록을 씁니다. 더 안 쓰는 폰은 지우지 말고 <b>숨기기</b>를 체크하세요. 이미 그 폰을 고른 의뢰인은 그대로 남습니다.</p>'
+    +'<div class="cph-rows">'+rows+'</div>'
+    +'<button type="button" class="cph-add" onclick="cphMAdd()">＋ 폰 추가</button>'
+    +'<div class="cph-ft"><button type="button" class="cph-b2" onclick="cphMClose()">닫기</button><button type="button" class="cph-b1" id="cph-save" onclick="cphMSave(this)">저장</button></div>'
+    +'</div>';
+  d.addEventListener("click",function(e){ if(e.target===d)cphMClose(); });
+  document.body.appendChild(d);
+  if(focusLast){ var el=document.getElementById("cph-nm-"+(CPH_M.rows.length-1)); if(el)el.focus(); }
+}
+function cphMMove(i,dir){ if(!CPH_M)return; var j=i+dir; if(j<0||j>=CPH_M.rows.length)return; var t=CPH_M.rows[i]; CPH_M.rows[i]=CPH_M.rows[j]; CPH_M.rows[j]=t; cphMDraw(); }
+function cphMAdd(){ if(!CPH_M)return; CPH_M.rows.push({id:null,name:"",tail:"",active:true}); cphMDraw(true); }
+/* 저장할 일 목록을 만든다 (화면과 떼어 놓아 시험하기 쉽게) */
+function cphMPlan(rows){
+  var ups=[],ins=[],errs=[];
+  rows.forEach(function(r,i){
+    var name=String(r.name||"").trim(), tail=cphTailClean(r.tail), sort=(i+1)*10;
+    if(!name){ if(r.id)errs.push((i+1)+"번째 줄: 이름을 비울 수 없습니다. 안 쓰는 폰이면 숨기기를 체크하세요."); return; }
+    if(tail&&tail.length!==4){ errs.push("「"+name+"」 끝번호는 숫자 4자리로 적어 주세요."); return; }
+    var active=r.active!==false;
+    if(r.id){
+      if([name,tail,active].join("|")!==r.orig||r.sort!==sort)ups.push({id:r.id,patch:{name:name,tail:tail||null,active:active,sort:sort}});
+    }else ins.push({name:name,tail:tail||null,active:active,sort:sort});
+  });
+  return {ups:ups,ins:ins,errs:errs};
+}
+async function cphMSave(btn){
+  if(!CPH_M)return;
+  var plan=cphMPlan(CPH_M.rows);
+  if(plan.errs.length){ alert(plan.errs.join("\n")); return; }
+  var db=CPH_M.db, who=CPH_M.who, done=CPH_M.onDone, now=new Date().toISOString();
+  if(btn){ btn.disabled=true; btn.textContent="저장 중"; }
+  try{
+    for(var i=0;i<plan.ups.length;i++){
+      var u=plan.ups[i]; u.patch.updated_at=now; u.patch.updated_by=who||null;
+      var r=await db.from("contact_phones").update(u.patch).eq("id",u.id).select("id");
+      if(r.error)throw r.error;
+      if(!r.data||!r.data.length)throw new Error("고칠 권한이 없습니다.");
+    }
+    if(plan.ins.length){
+      var rows=plan.ins.map(function(x){ x.updated_by=who||null; return x; });
+      var r2=await db.from("contact_phones").insert(rows).select("id");
+      if(r2.error)throw r2.error;
+    }
+    await cphLoad(db);
+    cphMClose();
+    cphToast((plan.ups.length||plan.ins.length)?"폰 목록을 저장했습니다":"바뀐 내용이 없습니다");
+    if(typeof done==="function"){ try{ done(); }catch(e){} }
+  }catch(e){
+    alert("폰 목록을 저장하지 못했습니다: "+((e&&e.message)||e));
+    if(btn){ btn.disabled=false; btn.textContent="저장"; }
+  }
+}</script>
 </head>
 <body>
 
@@ -2233,6 +2378,8 @@ async function refreshAll(){
     holidays=[...new Set([...DEFAULT_HOLIDAYS,...dbDays])].sort();
     /* ★사무소 딱지에 쓸 표. offices 는 작으니 기다리고, clients 는 뒤에서 불러온 뒤 한 번 더 그린다 */
     try{ await rcLoadOffices(); }catch(e){}
+    /* 보정 연락 폰 목록 (2026-09-11) : 우리 직원 계정만 읽는다. 표가 아직 없으면 이 기능만 숨는다 */
+    if(me&&(me.role==="master"||me.role==="staff")){ try{ await cphLoad(sbc); }catch(e){} }
     render();
     if(!calCli){ calLoadClients().then(function(){ try{ render(); }catch(e){} }); }
   }catch(e){
@@ -3949,6 +4096,39 @@ function rcTags(r){
 /* ★2026-09-01 혜림 지시 : 송달문서 목록의 '허브' 딱지를 사무소 딱지로 바꾼다.
    사무소는 deliveries 에 없고 clients.office_id 에 있으므로 달력이 쓰는 의뢰인 표(calCli)를 함께 쓴다.
    아직 안 불러왔거나 못 찾으면 예전처럼 '허브'로 둔다. */
+/* 보정 연락 폰 (2026-09-11) : 송달문서 목록·대시보드에서 사건번호 옆에 붙는 칩. 사무소 딱지와 같은 방법으로 의뢰인을 찾는다.
+   폰을 안 정한 의뢰인은 아무것도 안 붙인다(혜림 확정) */
+function sdCphChipOf(c){
+  if(!c||!cphCanUse())return "";
+  var v=(c.client_id&&calCli&&calCli[c.client_id])||((typeof calCliOf==="function")?calCliOf(c.court,c.caseno):null);
+  return (v&&v.cph)?cphChip(v.cph,true):"";
+}
+/* 보정 발송 화면 사건정보 줄의 「연락 폰」 칸 (혜림 확정 시안 송달앱 A) */
+function bjCphFact(){
+  /* 칸이 있는지는 불러온 의뢰인 줄에 contact_phone_id 가 실제로 왔는지로 본다(달력용 의뢰인 표를 기다리지 않게) */
+  if(!CPH.ok||!bjCli||!Object.prototype.hasOwnProperty.call(bjCli,"contact_phone_id"))return "";
+  return '<div class="f"><span class="k">연락 폰</span><select class="fsel" id="bj-send-cph" aria-label="연락 폰" onchange="bjCphSet(this)">'+cphOptions(bjCli.contact_phone_id||"")+'</select><button class="rbtn" type="button" onclick="bjCphManage()">목록 고치기</button></div>';
+}
+/* 고르는 순간 저장한다. 케이스허브·취합앱이 같은 칸을 읽는다 */
+async function bjCphSet(sel){
+  if(!bjCli||!sel)return;
+  var v=sel.value||null, old=bjCli.contact_phone_id||null;
+  sel.disabled=true;
+  try{
+    var r=await sbc.from("clients").update({contact_phone_id:v}).eq("id",bjCli.id).select("id");
+    if(r.error)throw r.error;
+    if(!r.data||!r.data.length)throw new Error("저장 권한이 없습니다.");
+    bjCli.contact_phone_id=v;
+    if(calCli&&calCli[bjCli.id])calCli[bjCli.id].cph=v;
+    cphToast(v?("연락 폰을 "+cphLabel(cphById(v))+"(으)로 저장했습니다"):"연락 폰을 비웠습니다");
+  }catch(e){
+    alert("연락 폰을 저장하지 못했습니다: "+((e&&e.message)||e));
+    sel.value=old||"";
+  }finally{ sel.disabled=false; }
+}
+function bjCphManage(){
+  cphManage(sbc,function(){ try{ bjRender(); }catch(e){} try{ render(); }catch(e){} },(me&&me.name)||"");
+}
 function firmChipOf(c){
   if(!c)return "";
   var v=(c.client_id&&calCli&&calCli[c.client_id])||((typeof calCliOf==="function")?calCliOf(c.court,c.caseno):null);
@@ -4460,15 +4640,18 @@ var calCliByCase=null;
 async function calLoadClients(){
   calCli={}; calCliByCase={};
   try{
-    var COLS="id,name,office_id,case_no,court";
+    /* 2026-09-11 : 연락 폰 칸(contact_phone_id)도 같이 읽는다. 칸이 없으면 한 단계씩 줄여 다시 읽어 사무소 딱지는 지킨다 */
+    var COLSETS=["id,name,office_id,case_no,court,contact_phone_id","id,name,office_id,case_no,court","id,name"], ci=0;
+    var COLS=COLSETS[0];
     var from=0,STEP=1000;
     for(var i=0;i<60;i++){
       var r=await sbc.from("clients").select(COLS).range(from,from+STEP-1);
-      if(r.error&&COLS!=="id,name"){ COLS="id,name"; r=await sbc.from("clients").select(COLS).range(from,from+STEP-1); }
+      while(r.error&&ci<COLSETS.length-1){ ci++; COLS=COLSETS[ci]; r=await sbc.from("clients").select(COLS).range(from,from+STEP-1); }
+      if(from===0)CPH.colOk=(ci===0&&!r.error);
       if(r.error)throw r.error;
       var d=r.data||[];
       d.forEach(function(c){
-        var v={name:c.name||"",office_id:c.office_id||null};
+        var v={name:c.name||"",office_id:c.office_id||null,cph:c.contact_phone_id||null};
         calCli[c.id]=v;
         String(c.case_no||"").split(/[,\n\r\t;]+/).forEach(function(chunk){
           chunk=String(chunk||"").trim(); if(!chunk)return;
@@ -5680,7 +5863,7 @@ function render(){
     return `<div class="todo ${red?'red':''}" onclick="goDetail('${c.id}')">
       ${procBadge(c)}
       <span class="t1">${esc(c.name)}</span>
-      <span class="t2">${esc(c.doctype||"")} · ${esc(c.caseno)}${on?" · "+esc(on):""}${c.delayStrategy?' <span class="chip" style="background:#FCEFD3;color:#8a5a00">시간끌기</span>':''}</span>
+      <span class="t2">${esc(c.doctype||"")} · ${esc(c.caseno)}${sdCphChipOf(c)}${on?" · "+esc(on):""}${c.delayStrategy?' <span class="chip" style="background:#FCEFD3;color:#8a5a00">시간끌기</span>':''}</span>
       <span class="spacer"></span>
       <span class="t2" style="font-weight:600;color:${red?'var(--red)':'var(--amber)'}">${act}</span>
     </div>`;
@@ -5711,7 +5894,7 @@ function render(){
     return `<tr class="${cls}" style="cursor:pointer" onclick="goDetail('${c.id}')">
       <td>${procBadge(c)}<div style="font-size:11.5px;color:var(--muted);margin-top:3px">${due?fmt(due):"확인 후 확정"}</div></td>
       <td><b style="font-size:15px">${esc(c.name)}</b> <span style="color:var(--muted)">${esc(c.doctype||"")}</span>${c.delayStrategy?' <span class="chip" style="background:var(--amber-bg);color:var(--amber)">시간끌기</span>':''}</td>
-      <td>${esc(sdCourtFix(c.court))} <b>${esc(c.caseno)}</b>${firmChipOf(c)}</td>
+      <td>${esc(sdCourtFix(c.court))} <b>${esc(c.caseno)}</b>${firmChipOf(c)}${sdCphChipOf(c)}</td>
       <td>${esc(c.date||"")||'<span class="bj-note">미입력</span>'}</td>
       <td>${confChip(c)}</td>
       <td><span class="pill">${docProg(c)}%</span></td>
@@ -5726,7 +5909,7 @@ function render(){
     const on=ownerName(c.owner_id);
     return `<div class="pc ${isUnconfDanger(c)?'warn':''}" style="cursor:pointer" onclick="goDetail('${c.id}')">
     <div class="r1"><span class="nm">${esc(c.name)}${(c.memo&&c.memo.indexOf("자동감지")>=0)?' <span title="전자소송 자동감지 등록" style="font-size:13px"></span>':''}</span>${procBadge(c)}</div>
-    <div class="meta">${esc(c.doctype||"")} · ${esc(c.caseno)}${firmChipOf(c)}<br>송달도착 ${esc(c.date)}${svc}<br>처리기한 ${dueTxt}</div>
+    <div class="meta">${esc(c.doctype||"")} · ${esc(c.caseno)}${firmChipOf(c)}${sdCphChipOf(c)}<br>송달도착 ${esc(c.date)}${svc}<br>처리기한 ${dueTxt}</div>
     <div class="chips">${confChip(c)}${submitChip(c)}${c.delayStrategy?'<span class="chip" style="background:#FCEFD3;color:#8a5a00">시간끌기</span>':''}${on?'<span class="chip" style="background:var(--gray-bg);color:var(--muted)">'+esc(on)+'</span>':''}</div>
     <div class="lab"><span>처리기한 진행</span><span>${timeProg(c)}%</span></div>
     <div class="bar"><i style="width:${timeProg(c)}%;background:${barc}"></i></div>
@@ -5785,7 +5968,7 @@ function listRowHtml(c){
     const _cls=isOffDeadline(c)?"done":(isUnconfDanger(c)||(_d!==null&&_d<=0)?"hot":((_d!==null&&_d<=2)?"warn":""));
     return `<tr class="${_cls}">
     <td>${procBadge(c)}<div style="font-size:12px;font-weight:700;color:${due?(procLeft(c)<=0?'var(--red)':procLeft(c)<=2?'var(--amber)':'#3B3733'):'var(--muted)'};margin-top:3px">${due?fmt(due)+"까지":"확인 후 확정"}${procRolled(c)?" ↗":""}</div></td>
-    <td><b>${esc(c.caseno)}</b>${firmChipOf(c)}</td><td>${esc(c.name)}${(listGrpCount[listGrpKey(c)]>1)?`<span class="gchip" title="이 분의 송달문서가 ${listGrpCount[listGrpKey(c)]}건입니다. 누르면 이 분 것만 모아 봅니다" onclick="event.stopPropagation();listPickGrp(${JSON.stringify(c.name||"").replace(/"/g,"&quot;")})">문서 ${listGrpCount[listGrpKey(c)]}건</span>`:''}${c.delayStrategy?' <span title="시간끌기"></span>':''}${c.submitStatus==="일부제출"?'<br><span style="font-size:10.5px;color:var(--amber)">추후 '+esc(c.followupDate||'')+'</span>':''}</td><td>${esc(c.doctype||"")}</td>
+    <td><b>${esc(c.caseno)}</b>${firmChipOf(c)}${sdCphChipOf(c)}</td><td>${esc(c.name)}${(listGrpCount[listGrpKey(c)]>1)?`<span class="gchip" title="이 분의 송달문서가 ${listGrpCount[listGrpKey(c)]}건입니다. 누르면 이 분 것만 모아 봅니다" onclick="event.stopPropagation();listPickGrp(${JSON.stringify(c.name||"").replace(/"/g,"&quot;")})">문서 ${listGrpCount[listGrpKey(c)]}건</span>`:''}${c.delayStrategy?' <span title="시간끌기"></span>':''}${c.submitStatus==="일부제출"?'<br><span style="font-size:10.5px;color:var(--amber)">추후 '+esc(c.followupDate||'')+'</span>':''}</td><td>${esc(c.doctype||"")}</td>
     <td><select class="status-sel" style="width:auto;padding:4px 6px;font-size:11.5px" onchange="setTermInline('${c.id}',this.value)">
       ${[7,10,14,20,30,60].map(d=>`<option value="${d}" ${(!isOffDeadline(c)&&c.termDays===d)?'selected':''}>${d}일</option>`).join("")}${(![7,10,14,20,30,60].includes(c.termDays)&&!isOffDeadline(c))?`<option value="${c.termDays}" selected>${c.termDays}일</option>`:''}<option value="hold" ${isHold(c)?'selected':''}>추후 처리</option><option value="notice" ${isNotice(c)?'selected':''}>당사자 안내</option><option value="custom">직접 입력…</option></select>
       <div style="margin-top:3px">${isOffDeadline(c)&&c.status!=="처리완료"?`<span class="bj-note" style="font-size:11px">기한 없음</span>`:`<input type="date" value="${due?fmt(due):''}" ${serviceDate(c)?'':'disabled title="송달 확인 후 고칠 수 있습니다"'} onchange="setDueDate('${c.id}',this.value)" style="width:auto;padding:3px 5px;font-size:11px">`}</div></td>
@@ -5810,7 +5993,7 @@ function renderDetail(){
     : isNotice(c) ? '<b style="color:#8a5a00">당사자 안내</b> · 법원에 낼 것은 없고 당사자에게 알리기만 하면 됩니다 (안내를 마치면 상태를 처리완료로 내리세요)'
     : procDueDate(c) ? (fmt(procDueDate(c))+' ('+esc(c.termType)+')'+(procRolled(c)?' · 주말·공휴일로 연장(원래 '+fmt(procDueRaw(c))+')':'')+' · '+procBadge(c)) : ('송달 확인 후 확정 (확인일 +'+c.termDays+'일)');
   w.innerHTML=`<div class="detail">
-    <div class="h2row"><h2 style="margin:0">${esc(c.name)} · ${esc(c.caseno)} <span class="pill">서류 ${docProg(c)}%</span>${firmChipOf(c)}${c.court?' <span class="pill" style="font-size:10.5px;background:#EEF1F8;color:#2b3a67">'+esc(sdCourtFix(c.court))+'</span>':''}</h2>
+    <div class="h2row"><h2 style="margin:0">${esc(c.name)} · ${esc(c.caseno)} <span class="pill">서류 ${docProg(c)}%</span>${firmChipOf(c)}${sdCphChipOf(c)}${c.court?' <span class="pill" style="font-size:10.5px;background:#EEF1F8;color:#2b3a67">'+esc(sdCourtFix(c.court))+'</span>':''}</h2>
       <button class="btn ghost mini" onclick="openDetail('${c.id}')">닫기</button></div>
     <div class="dm-top">
       <div class="dm-hd"><span class="dm-t">사건 메모</span>
@@ -9438,7 +9621,7 @@ async function bjLoadCtx(){
   /* 07-24: 사무소·주민번호도 함께 불러온다. rrn_front·office_id 칸이 없는 예전 DB에서도 앱이 죽지 않게 실패하면 기본 칸만 다시 조회 */
   var COLS="id,name,phone,case_no,office_id,rrn_front,simple_biz,app_json";
   /* 칸이 없는 예전 DB에서도 앱이 죽지 않게 한 단계씩 줄여 가며 다시 조회한다 (2026-09-08: simple_biz 단계 추가) */
-  var COLSETS=["id,name,phone,case_no,office_id,rrn_front,simple_biz,app_json","id,name,phone,case_no,office_id,rrn_front","id,name,phone,case_no"];
+  var COLSETS=["id,name,phone,case_no,office_id,rrn_front,simple_biz,app_json,contact_phone_id","id,name,phone,case_no,office_id,rrn_front,simple_biz,app_json","id,name,phone,case_no,office_id,rrn_front","id,name,phone,case_no"];
   async function _pickCli(){
     for(var i=0;i<COLSETS.length;i++){
       COLS=COLSETS[i];
@@ -10656,7 +10839,7 @@ function bjSendHtml(){
     +'<div class="f"><span class="k">관할 법원</span><span class="v">'+esc(sdCourtFix(bjD.court||(bjDel&&bjDel.court)||"")||"-")+'</span></div>'
     +'<div class="f"><span class="k">소속 사무소</span><select class="fsel" style="color:'+bjFirmColor(bjSendFirm)+'" onchange="bjSendFirm=this.value;bjRender()">'
     +BJ_FIRMS.map(function(f){return '<option '+(f===bjSendFirm?"selected":"")+'>'+esc(f)+'</option>';}).join("")
-    +'</select></div></div>';
+    +'</select></div>'+bjCphFact()+'</div>';
   /* ★2026-08-04: 위쪽 4단계 바가 같은 내용을 보여 주므로 여기 breadcrumb 는 지웠다.
      대신 이 회차에서 무엇이 확정됐는지를 한 줄로 적는다. */
   var _nc=(S.clientAll&&S.clientAll.length)||0, _no=(S.office&&S.office.length)||0;
